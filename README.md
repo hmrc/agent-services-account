@@ -8,7 +8,7 @@ allowing them to access to a range of HMRC digital services.
 
 ## Running the tests
 
-    sbt test it:test
+    sbt test it/test
 
 ## Running the app locally
 
