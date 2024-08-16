@@ -1,7 +1,20 @@
 
 # agent-services-account
 
-This is a placeholder README.md for a new repository
+## What the service does
+
+This is a backend microservice for the Agent Services account page. It is available to agents who have the HMRC-AS-AGENT enrolment,
+allowing them to access to a range of HMRC digital services.
+
+## Running the tests
+
+    sbt test it/test
+
+## Running the app locally
+
+    sm2 --start AGENT_ONBOARDING
+    sm2 --stop AGENT_SUBSCRIPTION
+    sbt run
 
 ### License
 
