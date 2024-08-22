@@ -1,3 +1,5 @@
 # microservice specific routes
 
-GET        /hello-world             uk.gov.hmrc.agentservicesaccount.controllers.MicroserviceHelloWorldController.hello()
+GET         /change-of-details-request/:arn                     uk.gov.hmrc.agentservicesaccount.controllers.ChangeOfDetailsRequestController.find(arn: String)
+POST        /change-of-details-request                          uk.gov.hmrc.agentservicesaccount.controllers.ChangeOfDetailsRequestController.upsert()
+DELETE      /change-of-details-request/:arn                     uk.gov.hmrc.agentservicesaccount.controllers.ChangeOfDetailsRequestController.delete(arn: String)

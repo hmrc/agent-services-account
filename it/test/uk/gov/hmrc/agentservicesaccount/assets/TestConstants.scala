@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentservicesaccount.config
+package uk.gov.hmrc.agentservicesaccount.assets
 
-import javax.inject.Inject
-import javax.inject.Singleton
+import uk.gov.hmrc.agentservicesaccount.models.ChangeOfDetailsRequest
 
-import play.api.Configuration
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
-@Singleton
-class AppConfig @Inject() (config: Configuration):
+object TestConstants:
+  
+  val testTimeSubmitted: Instant = Instant.now.truncatedTo(ChronoUnit.SECONDS)
 
-  val mongoTtl: Long = config.get[Long]("mongodb.timeToLive")
+  val testChangeOfDetailsRequest: ChangeOfDetailsRequest = ChangeOfDetailsRequest("AARN1234567", testTimeSubmitted)

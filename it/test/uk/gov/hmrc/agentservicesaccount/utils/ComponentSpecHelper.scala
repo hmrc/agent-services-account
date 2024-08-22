@@ -25,11 +25,13 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Writes
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
+import play.api.test.DefaultAwaitTimeout
 import play.api.test.Helpers.*
 
 trait ComponentSpecHelper
   extends AnyWordSpec
     with Matchers
+    with DefaultAwaitTimeout
     with CustomMatchers
     with WiremockHelper
     with BeforeAndAfterAll
