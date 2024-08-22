@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.agentservicesaccount.utils
 
+import org.scalatest.matchers.should
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.PlaySpec
 import play.api.test.DefaultAwaitTimeout
 
-trait UnitSpec extends PlaySpec with DefaultAwaitTimeout with MockitoSugar
+trait UnitSpec extends AnyWordSpec with should.Matchers with DefaultAwaitTimeout with MockitoSugar

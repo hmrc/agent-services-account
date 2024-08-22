@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentservicesaccount.controllers
+package uk.gov.hmrc.agentservicesaccount.assets
 
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Request}
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import java.time.Instant
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import uk.gov.hmrc.agentservicesaccount.models.ChangeOfDetailsRequest
 
-@Singleton()
-class MicroserviceHelloWorldController @Inject()(cc: ControllerComponents) extends BackendController(cc):
-
-  def hello(): Action[AnyContent] = Action.async:
-    request =>
-      given Request[AnyContent] = request
-      Future.successful(Ok("Hello world"))
-
+object TestConstants:
+  val testChangeOfDetailsRequest: ChangeOfDetailsRequest = ChangeOfDetailsRequest("AARN1234567", Instant.now())
