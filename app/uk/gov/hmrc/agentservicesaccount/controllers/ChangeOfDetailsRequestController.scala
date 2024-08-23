@@ -25,7 +25,6 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import play.api.mvc.Request
 import uk.gov.hmrc.agentservicesaccount.models.ChangeOfDetailsRequest
 import uk.gov.hmrc.agentservicesaccount.services.ChangeOfDetailsRequestService
 import uk.gov.hmrc.http.InternalServerException
@@ -39,8 +38,6 @@ class ChangeOfDetailsRequestController @Inject() (
     extends BackendController(cc):
 
   def find(arn: String): Action[AnyContent] = Action.async: request =>
-    given Request[AnyContent] = request
-
     changeOfDetailsRequestService
       .find(arn)
       .map:
@@ -51,8 +48,6 @@ class ChangeOfDetailsRequestController @Inject() (
 
   def upsert(): Action[ChangeOfDetailsRequest] =
     Action.async(parse.json[ChangeOfDetailsRequest](ChangeOfDetailsRequest.format)): request =>
-      given Request[ChangeOfDetailsRequest] = request
-
       changeOfDetailsRequestService
         .upsert(request.body)
         .map(_ => NoContent)
@@ -61,8 +56,6 @@ class ChangeOfDetailsRequestController @Inject() (
             throw new InternalServerException("Failed to upsert ChangeOfDetailsRequest for ARN: " + request.body.arn)
 
   def delete(arn: String): Action[AnyContent] = Action.async: request =>
-    given Request[AnyContent] = request
-
     changeOfDetailsRequestService
       .delete(arn)
       .map:
