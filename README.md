@@ -3,8 +3,7 @@
 
 ## What the service does
 
-This is a backend microservice for the Agent Services account page. It is available to agents who have the HMRC-AS-AGENT enrolment,
-allowing them to access to a range of HMRC digital services.
+This is a backend microservice to store all pertinent data for Agent Services Accounts.
 
 ## Running the tests
 
