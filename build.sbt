@@ -13,7 +13,7 @@ lazy val microservice = Project("agent-services-account", file("."))
     scalacOptions += "-Wconf:src=routes/.*:s"
   )
   .settings(resolvers += Resolver.jcenterRepo)
-  //.settings(CodeCoverageSettings.settings) excluded packages broken by Scala 3.5.0 https://github.com/scoverage/sbt-scoverage/issues/550
+  .settings(CodeCoverageSettings.settings)
 
 lazy val it = project
   .enablePlugins(PlayScala)
