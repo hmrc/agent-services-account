@@ -12,7 +12,6 @@ lazy val microservice = Project("agent-services-account", file("."))
     // suppress warnings in generated routes files
     scalacOptions += "-Wconf:src=routes/.*:s"
   )
-  .settings(resolvers += Resolver.jcenterRepo)
   .settings(CodeCoverageSettings.settings)
 
 lazy val it = project
