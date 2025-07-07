@@ -76,6 +76,6 @@ class AuditService @Inject()(appConfig: AppConfig,
       )
   }
 
-  private val auditSource = "agent-assurance"
+  private val auditSource = "agent-services-account"
 
 }

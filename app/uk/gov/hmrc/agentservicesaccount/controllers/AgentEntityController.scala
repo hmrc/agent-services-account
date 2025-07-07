@@ -16,16 +16,20 @@
 
 package uk.gov.hmrc.agentservicesaccount.controllers
 
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.services.AgentEntityService
+import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
+import uk.gov.hmrc.agentservicesaccount.services.{AgentEntityService, DmsService}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.time.temporal.ChronoUnit
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -33,6 +37,7 @@ import scala.concurrent.ExecutionContext
 class AgentEntityController @Inject()(
                                        cc: ControllerComponents,
                                        agentEntityService: AgentEntityService,
+                                       dmsService: DmsService,
                                        val authConnector: AuthConnector,
                                        auth: BackendAuthComponents
 )(implicit
@@ -40,9 +45,11 @@ class AgentEntityController @Inject()(
   appConfig: AppConfig
 )
 extends BackendController(cc) 
-  with AuthActions {
+  with AuthActions
+  with Logging {
 
   //for agents
+  //TODO WG - do me renaming
   def agentVerifyEntity: Action[AnyContent] = AuthorisedWithArn { implicit request => arn =>
     agentEntityService
       .verifyAgent(arn)
@@ -54,6 +61,25 @@ extends BackendController(cc)
     agentEntityService
       .verifyAgent(arn)
       .map(entityCheckResult => Ok(Json.toJson(entityCheckResult.agentRecord)))
+    }
+
+  private val strideRoles = Seq(appConfig.manuallyAssuredStrideRole)
+  
+  def postAgencyDetails(arn: Arn): Action[AnyContent] =
+    withAffinityGroupAgentOrStride(strideRoles) {
+      implicit request =>
+        for {
+          dmsResponse <- dmsService.submitToDms(
+            request.body.asText,
+            Instant.now().truncatedTo(ChronoUnit.SECONDS),
+            DmsSubmissionReference.create
+          )
+        } yield {
+          logger.info(
+            s"Dms Submission successful for ${arn.value}: ${dmsResponse.reference} at ${dmsResponse.processingDate}"
+          )
+          Created
+        }
     }
 
 

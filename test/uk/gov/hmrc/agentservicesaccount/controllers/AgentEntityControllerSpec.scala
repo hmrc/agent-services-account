@@ -43,6 +43,7 @@ with MockAuthConnector
 with MockAgentEntityService
   with MockDesConnector
   with MockInternalAuth
+  with MockDmsService
 with MockFactory {
 
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
@@ -55,6 +56,7 @@ with MockFactory {
     new AgentEntityController(
       stubControllerComponents(),
       mockAgentEntityService,
+      mockDmsService,
       mockAuthConnector,
       stubBackendAuthComponents
     )(ec, mockAppConfig)

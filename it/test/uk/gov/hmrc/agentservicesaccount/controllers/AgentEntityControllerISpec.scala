@@ -20,10 +20,11 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
-import play.api.http.Status.{NOT_FOUND, OK, UNAUTHORIZED}
+import play.api.http.Status.*
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.*
-import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
+import play.api.libs.ws.{BodyWritable, WSClient, WSResponse}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 import uk.gov.hmrc.agentservicesaccount.helpers.InstantClockTestSupport
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
@@ -37,18 +38,19 @@ import java.time.format.DateTimeFormatter
 import scala.concurrent.Await
 import scala.util.{Failure, Success, Try}
 
-class AgentEntityControllerISpec
-extends PlaySpec
-with AgentAuthStubs
-with GuiceOneServerPerSuite
-with WireMockSupport
-with CleanMongoCollectionSupport
 
+class AgentEntityControllerISpec
+  extends PlaySpec
+    with AgentAuthStubs
+    with GuiceOneServerPerSuite
+    with WireMockSupport
+    with CleanMongoCollectionSupport
 with InstantClockTestSupport
 with DesStubs
 with InternalAuthStub
 with CitizenDetailsStubs
   with AgentAssuranceStubs
+  with DmsSubmissionStubs
 with EmailStub {
 
   override implicit lazy val app: Application = appBuilder.build()
@@ -67,8 +69,10 @@ with EmailStub {
       "microservice.services.internal-auth.host" -> wireMockHost,
       "microservice.services.email.port" -> wireMockPort,
       "microservice.services.email.host" -> wireMockHost,
+      "microservice.services.dms-submission.host" -> wireMockHost,
+      "microservice.services.dms-submission.port" -> wireMockPort,
       "auditing.enabled" -> false,
-      "stride.roles.agent-assurance" -> "maintain_agent_manually_assure",
+      "stride.roles.agent-services-account" -> "maintain_agent_manually_assure",
       "internal-auth-token-enabled-on-start" -> false,
       "http-verbs.retries.intervals" -> List("1ms"),
       "agent.entity.cache.enabled" -> false, //test are not ready for cache enabled
@@ -89,6 +93,7 @@ with EmailStub {
 
   def clientUrl(arn: Arn) = s"http://localhost:$port/agent-services-account/agent-record-with-checks/arn/${arn.value}"
   val agentUrl = s"http://localhost:$port/agent-services-account/agent-record-with-checks"
+  def postUrl(arn:Arn) = s"http://localhost:$port/agent-services-account/agent/agency-details/arn/${arn.value}"
 
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
@@ -105,6 +110,14 @@ with EmailStub {
       .url(agentUrl)
       .withHttpHeaders("Authorization" -> "Bearer XYZ")
       .get(),
+    15.seconds
+  )
+
+  def doPOSTRequest[T](arn: Arn, body: T)(implicit wr: BodyWritable[T]) = Await.result(
+    wsClient
+      .url(postUrl(arn))
+      .withHttpHeaders("Authorization" -> "Bearer XYZ")
+      .post(body),
     15.seconds
   )
 
@@ -263,6 +276,34 @@ with EmailStub {
 
         verifyEmailRequestWasSent(1)
       }
+    }
+  }
+
+  "POST /agent/agency-details/:arn" should {
+    "return ACCEPTED status when the DMS submission was successful" in {
+      isLoggedInAsStride("stride")
+      givenDmsSubmissionSuccess
+
+      val html = "<html><head></head><body></body></html>"
+      val encodedHtmlStr = java.util.Base64.getEncoder.encodeToString(html.getBytes())
+      val response = doPOSTRequest(testArn, encodedHtmlStr)
+      response.status mustBe CREATED
+    }
+
+    "return internal server error when payload is not encoded" in {
+      isLoggedInAsStride("stride")
+
+      val response = doPOSTRequest(testArn, s"""{"a":"b"}""")
+      response.status mustBe INTERNAL_SERVER_ERROR
+      response.body.contains("build PDF failed with error:")
+    }
+
+    "return internal server error when payload empty" in {
+      isLoggedInAsStride("stride")
+
+      val response = doPOSTRequest(testArn, "")
+      response.status mustBe INTERNAL_SERVER_ERROR
+      response.body.contains("base64 encoding failed with field not provided")
     }
   }
 

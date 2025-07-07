@@ -44,7 +44,7 @@ trait MockAppConfig extends MockitoSugar { this: TestSuite =>
     .thenReturn(3600L)
 
   // Stub ServicesConfig - getString
-  when(mockServiceConfig.getString(meq("stride.roles.agent-assurance")))
+  when(mockServiceConfig.getString(meq("stride.roles.agent-services-account")))
     .thenReturn("maintain_agent_manually_assure")
 
   when(mockServiceConfig.getString(meq("internal-auth.token")))
