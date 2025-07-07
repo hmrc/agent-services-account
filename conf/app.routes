@@ -3,3 +3,6 @@
 GET         /change-of-details-request/:arn                     uk.gov.hmrc.agentservicesaccount.controllers.ChangeOfDetailsRequestController.find(arn: String)
 POST        /change-of-details-request                          uk.gov.hmrc.agentservicesaccount.controllers.ChangeOfDetailsRequestController.upsert()
 DELETE      /change-of-details-request/:arn                     uk.gov.hmrc.agentservicesaccount.controllers.ChangeOfDetailsRequestController.delete(arn: String)
+
+GET         /agent-record-with-checks/arn/:arn                  uk.gov.hmrc.agentservicesaccount.controllers.AgentEntityController.clientVerifyEntity(arn:Arn)
+GET         /agent-record-with-checks                           uk.gov.hmrc.agentservicesaccount.controllers.AgentEntityController.agentVerifyEntity()

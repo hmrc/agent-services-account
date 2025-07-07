@@ -1,0 +1,51 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.agentservicesaccount.connectors
+
+import play.api.Logging
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
+import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.models.*
+import uk.gov.hmrc.agentservicesaccount.utils.HttpAPIMonitor
+import uk.gov.hmrc.http.*
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
+
+import java.net.URL
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
+@Singleton
+class AgentAssuranceConnector @Inject() (http: HttpClientV2, val metrics: Metrics)(
+    implicit val ec: ExecutionContext,
+    appConfig: AppConfig
+) extends HttpAPIMonitor
+    with Logging {
+
+  val baseUrl = appConfig.agentAssuranceBaseUrl
+
+  def getAgentUtrChecks(utr: Utr)(implicit hc: HeaderCarrier): Future[UtrChecksResponse] = {
+    val url = new URL(s"$baseUrl/agent-assurance/restricted-collection-check/utr/${utr.value}?nameRequired=false")
+    monitor(s"ConsumedAPI-Get-AgentAssurance-restricted-collection-check") {
+      http
+        .get(url)
+        .execute[UtrChecksResponse]
+    }
+  }
+}
+  
