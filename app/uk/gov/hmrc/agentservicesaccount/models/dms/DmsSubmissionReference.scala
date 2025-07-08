@@ -21,7 +21,6 @@ import play.api.libs.json.{Json, OFormat}
 import scala.util.Random
 
 case class DmsSubmissionReference(submissionReference: String)
-extends Product
 
 object DmsSubmissionReference {
 

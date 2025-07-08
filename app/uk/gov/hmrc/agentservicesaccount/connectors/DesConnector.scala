@@ -20,14 +20,12 @@ import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logging
 import play.api.libs.json.*
-import play.api.libs.json.Reads.*
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
-import uk.gov.hmrc.domain.SaAgentReference
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderNames, HttpReads}
@@ -36,30 +34,6 @@ import java.net.URL
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
-case class ClientRelationship(agents: Seq[Agent])
-
-case class Agent(
-  agentId: Option[SaAgentReference],
-  hasAgent: Boolean,
-  agentCeasedDate: Option[String]
-)
-
-object ClientRelationship {
-
-  given agentReads: Reads[Agent] = Json.reads[Agent]
-
-  given readClientRelationship: Reads[ClientRelationship] = (JsPath \ "agents")
-    .readNullable[Seq[Agent]]
-    .map(optionalAgents => ClientRelationship(optionalAgents.getOrElse(Seq.empty)))
-
-}
-
-case class RegistrationRelationshipResponse(processingDate: String)
-
-object RegistrationRelationshipResponse {
-  given reads: Reads[RegistrationRelationshipResponse] = Json.reads[RegistrationRelationshipResponse]
-}
 
 
 @Singleton

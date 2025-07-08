@@ -16,25 +16,19 @@
 
 package uk.gov.hmrc.agentservicesaccount.auth
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
-import play.api.libs.json.JsResultException
-import play.api.mvc._
 import play.api.Logger
-import uk.gov.hmrc.agentservicesaccount.controllers.ErrorResults.NoPermission
+import play.api.mvc.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.auth.core.retrieve.~
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.affinityGroup
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.credentials
-import uk.gov.hmrc.auth.core.retrieve.Credentials
+import uk.gov.hmrc.agentservicesaccount.controllers.ErrorResults.NoPermission
+import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
-import uk.gov.hmrc.domain.SaAgentReference
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, credentials}
+import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+
+import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthActions
 extends AuthorisedFunctions
@@ -55,30 +49,10 @@ with BaseController {
     enrolments: Enrolments,
     strideRoles: Seq[String]
   ): Boolean = strideRoles.exists(s => enrolments.enrolments.exists(_.key == s))
-
-  private type AuthorisedRequestWithSaRef = Request[AnyContent] => SaAgentReference => Future[Result]
-  private type AuthorisedRequestWithUserId = Request[AnyContent] => String => Future[Result]
+  
   private type AuthorisedRequestWithArn = Request[AnyContent] => Arn => Future[Result]
 
-  def AuthorisedIRSAAgent[A](body: AuthorisedRequestWithSaRef)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-    authorised(AuthProviders(GovernmentGateway))
-      .retrieve(allEnrolments) { enrol =>
-        getEnrolmentInfo(
-          enrol.enrolments,
-          "IR-SA-AGENT",
-          "IRAgentReference"
-        ) match {
-          case Some(saAgentRef) => body(request)(SaAgentReference(saAgentRef))
-          case _ => Future.successful(NoPermission)
-        }
-      }
-      .recoverWith {
-        case ex: NoActiveSession =>
-          logger.warn("NoActiveSession while trying to access check IR SA endpoint", ex)
-          Future.successful(Unauthorized)
-      }
-  }
+
   def AuthorisedWithArn[A](body: AuthorisedRequestWithArn)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
     authorised(AuthProviders(GovernmentGateway))
@@ -98,59 +72,7 @@ with BaseController {
           Future.successful(Unauthorized)
       }
   }
-
-  def AuthorisedWithUserId[A](body: AuthorisedRequestWithUserId)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-    authorised(AuthProviders(GovernmentGateway))
-      .retrieve(Retrievals.credentials) {
-        case Some(Credentials(providerId, _)) => body(request)(providerId)
-        case None => Future.successful(NoPermission)
-      }
-      .recover {
-        case ex: NoActiveSession =>
-          logger.warn("NoActiveSession while trying to access check acceptable number of clients endpoint", ex)
-          Unauthorized
-        case _: JsResultException => NoPermission
-      }
-  }
-
-  def BasicAuth[A](parser: BodyParser[A])(body: Request[A] => Future[Result])(implicit ec: ExecutionContext): Action[A] =
-    Action.async(parser) { implicit request =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-      authorised() {
-        body(request)
-      }.recoverWith {
-        case ex: NoActiveSession =>
-          logger.warn("NoActiveSession while trying to access check activeCesaRelationship endpoint", ex)
-          Future.successful(Unauthorized)
-      }
-    }
-
-  def BasicAuth[A](body: Request[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-    authorised() {
-      body(request)
-    }.recoverWith {
-      case ex: NoActiveSession =>
-        logger.warn("NoActiveSession while trying to access check activeCesaRelationship endpoint", ex)
-        Future.successful(Unauthorized)
-    }
-  }
-
-  def withAffinityGroupAgent(
-    action: Request[AnyContent] => Future[Result]
-  )(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-    authorised(AuthProviders(GovernmentGateway).and(AffinityGroup.Agent)) {
-      action(request)
-    }.recover {
-      case _: NoActiveSession => Unauthorized
-      case _: UnsupportedAffinityGroup =>
-        logger.warn("user doesn't belong to Agent affinityGroup")
-        Forbidden
-    }
-  }
-
+  
   def withAffinityGroupAgentOrStride(strideRoles: Seq[String])(
     action: Request[AnyContent] => Future[Result]
   )(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
