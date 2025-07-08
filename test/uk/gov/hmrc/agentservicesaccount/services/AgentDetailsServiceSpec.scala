@@ -82,7 +82,7 @@ class AgentDetailsServiceSpec
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
 
-      val result = await(service.verifyAgent(testArn))
+      val result = await(service.getAgentDetailsWithChecks(testArn))
 
       result mustBe EntityCheckResult(agentDetailsDesResponse,Seq(AgentIsOnRefuseToDealList))
     }
@@ -101,7 +101,7 @@ class AgentDetailsServiceSpec
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
 
-      val result = await(service.verifyAgent(testArn))
+      val result = await(service.getAgentDetailsWithChecks(testArn))
 
       result mustBe EntityCheckResult(agentDetailsDesResponse,Seq.empty[EntityCheckException])
     }
@@ -124,7 +124,7 @@ class AgentDetailsServiceSpec
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
 
-      val result = await(service.verifyAgent(testArn))
+      val result = await(service.getAgentDetailsWithChecks(testArn))
 
       result mustBe EntityCheckResult(agentDetailsDesResponse, Seq(EntityDeceasedCheckFailed))
       

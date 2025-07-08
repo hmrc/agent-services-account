@@ -79,7 +79,6 @@ with MetricTestSupport {
     new DesConnector(
       app.injector.instanceOf[AppConfig],
       app.injector.instanceOf[HttpClientV2],
-      app.injector.instanceOf[Metrics],
       cacheProvider,
       config,
       as

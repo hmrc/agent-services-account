@@ -25,6 +25,7 @@ import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckExceptio
 import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException.AgentIsOnRefuseToDealList
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException.*
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -41,14 +42,14 @@ class AgentDetailsService @Inject()(
   auditService: AuditService
 )(implicit ec: ExecutionContext){
 
-  def verifyAgent(
+  def getAgentDetailsWithChecks(
     arn: Arn
   )(using request: RequestHeader): Future[EntityCheckResult] = {
     
     for {
       agentRecord <- desConnector.getAgentRecord(arn)
       entityChecksResult <- agentRecord.uniqueTaxReference
-        .map(entityChecks(arn, _, agentRecord.isAnIndividual))
+        .map(getEntityChecks(arn, _, agentRecord.isAnIndividual))
         .getOrElse(Future.successful(Seq.empty[EntityCheckException]))
       _ <- sendEmail(agentRecord, entityChecksResult, arn:Arn)
     } yield EntityCheckResult(
@@ -57,85 +58,96 @@ class AgentDetailsService @Inject()(
     )
   }
     
-  private def entityChecks(
+  private def getEntityChecks(
     arn: Arn,
     utr: Utr,
     isAnIndividual: Option[Boolean]
   )(using request: RequestHeader): Future[Seq[EntityCheckException]] = {
-
     mongoLockService
-      .dailyLock(utr) {
-        Future
-          .sequence(checksRequired(utr, isAnIndividual))
-          .map(_.flatten)
+      .dailyLock(utr = utr) {
+        getRequiredChecks(utr, isAnIndividual)
       }
       .map {
         case Some(entityCheckExceptions) =>
-
-          val onRefusalListAgentCheckOutcomes: AgentCheckOutcome = entityCheckExceptions
-            .collectFirst {
-              case AgentIsOnRefuseToDealList =>
-                AgentCheckOutcome(
-                  agentCheckType = "onRefusalList",
-                  isSuccessful = false,
-                  failureReason = Some(AgentIsOnRefuseToDealList.failedChecksText)
-                )
-            }
-            .getOrElse(AgentCheckOutcome(
-              agentCheckType = "onRefusalList",
-              isSuccessful = true,
-              failureReason = None
-            ))
-
-          val isDeceasedAgentCheckOutcome: AgentCheckOutcome = entityCheckExceptions
-            .collectFirst {
-              case EntityDeceasedCheckFailed =>
-                AgentCheckOutcome(
-                  agentCheckType = "isDeceased",
-                  isSuccessful = false,
-                  failureReason = Some(EntityDeceasedCheckFailed.failedChecksText)
-                )
-              case x @ CitizenConnectorRequestFailed(_) =>
-                AgentCheckOutcome(
-                  agentCheckType = "isDeceased",
-                  isSuccessful = false,
-                  failureReason = Some(s"Check failed with error: ${x.code.toString}")
-                )
-            }
-            .getOrElse(AgentCheckOutcome(
-              agentCheckType = "isDeceased",
-              isSuccessful = true,
-              failureReason = None
-            ))
-
-          auditService.auditEntityChecksPerformed(
-            arn,
-            Some(utr),
-            agentCheckOutcomes = Seq(isDeceasedAgentCheckOutcome, onRefusalListAgentCheckOutcomes)
-          )
+          sendAudit(arn, utr, entityCheckExceptions)
           entityCheckExceptions
         case None => Seq.empty[EntityCheckException]
       }
   }
 
-  private def checksRequired(utr: Utr, isAnIndividual: Option[Boolean])(using request: RequestHeader): Seq[Future[Option[EntityCheckException]]] =
-  if (isAnIndividual.contains(true)) {
-    Seq(deceasedStatusCheck(SaUtr(utr.value)), refusalToDealCheck(utr))
-  }
-  else
-    Seq(refusalToDealCheck(utr))
+  private def getRequiredChecks(
+                                 utr: Utr, 
+                                 isAnIndividual: Option[Boolean]
+                               )(using request: RequestHeader): Future[Seq[EntityCheckException]] = 
+    Future.sequence {
+      if (isAnIndividual.contains(true))
+        Seq(deceasedStatusCheck(SaUtr(utr.value)), refusalToDealCheck(utr))
+      else
+        Seq(refusalToDealCheck(utr))
+    }.map(_.flatten)
+    
 
-  private def deceasedStatusCheck(saUtr: SaUtr)(using request: RequestHeader): Future[Option[EntityCheckException]] =
+  private def deceasedStatusCheck(saUtr: SaUtr)
+                                 (using request: RequestHeader): Future[Option[EntityCheckException]] =
     citizenConnector
       .getCitizenDeceasedFlag(saUtr)
 
-  private def refusalToDealCheck(utr: Utr)(using request: RequestHeader): Future[Option[RefusalCheckException]] = agentAssuranceConnector
-    .getAgentUtrChecks(utr)
-    .map(_.isRefusalToDealWith)
-    .map {
-      case true => Some(AgentIsOnRefuseToDealList)
-      case false => None
-    }
+  private def refusalToDealCheck(utr: Utr)
+                                (using request: RequestHeader): Future[Option[RefusalCheckException]] = 
+    agentAssuranceConnector
+      .getAgentUtrChecks(utr)
+      .map(_.isRefusalToDealWith)
+      .map {
+        case true => Some(AgentIsOnRefuseToDealList)
+        case false => None
+      }
+  
+  private def sendAudit(arn: Arn, utr: Utr, entityCheckExceptions:Seq[EntityCheckException])
+                       (using request: RequestHeader):Future[AuditResult] = {
+    val onRefusalListAgentCheckOutcomes: AgentCheckOutcome = entityCheckExceptions
+      .collectFirst {
+        case AgentIsOnRefuseToDealList =>
+          AgentCheckOutcome(
+            agentCheckType = "onRefusalList",
+            isSuccessful = false,
+            failureReason = Some(AgentIsOnRefuseToDealList.failedChecksText)
+          )
+      }
+      .getOrElse(AgentCheckOutcome(
+        agentCheckType = "onRefusalList",
+        isSuccessful = true,
+        failureReason = None
+      ))
+
+    val isDeceasedAgentCheckOutcome: AgentCheckOutcome = entityCheckExceptions
+      .collectFirst {
+        case EntityDeceasedCheckFailed =>
+          AgentCheckOutcome(
+            agentCheckType = "isDeceased",
+            isSuccessful = false,
+            failureReason = Some(EntityDeceasedCheckFailed.failedChecksText)
+          )
+        case x@CitizenConnectorRequestFailed(_) =>
+          AgentCheckOutcome(
+            agentCheckType = "isDeceased",
+            isSuccessful = false,
+            failureReason = Some(s"Check failed with error: ${x.code.toString}")
+          )
+      }
+      .getOrElse(AgentCheckOutcome(
+        agentCheckType = "isDeceased",
+        isSuccessful = true,
+        failureReason = None
+      ))
+
+    auditService.auditEntityChecksPerformed(
+      arn,
+      Some(utr),
+      agentCheckOutcomes = Seq(isDeceasedAgentCheckOutcome, onRefusalListAgentCheckOutcomes)
+    )
+
+  }
+  
   
   private def sendEmail(
     agentRecord: AgentDetailsDesResponse,
@@ -158,8 +170,6 @@ class AgentDetailsService @Inject()(
           dateTime = formatter.format(LocalDateTime.now())
         )
         
-
-
         mongoLockService
           .emailLock(utr) {
             emailService.sendEntityCheckNotification(entityCheckNotification)

@@ -51,14 +51,14 @@ extends BackendController(cc)
   //for agents
   def agentGetWithChecks: Action[AnyContent] = AuthorisedWithArn { implicit request =>arn =>
     agentEntityService
-      .verifyAgent(arn)
+      .getAgentDetailsWithChecks(arn)
       .map(entityCheckResult => Ok(Json.toJson(entityCheckResult.agentRecord)))
   }
 
   //clients, stride
   def clientGetWithChecks(arn:Arn): Action[AnyContent] = internalAuth.async  { implicit request =>
     agentEntityService
-      .verifyAgent(arn)
+      .getAgentDetailsWithChecks(arn)
       .map(entityCheckResult => Ok(Json.toJson(entityCheckResult.agentRecord)))
     }
   

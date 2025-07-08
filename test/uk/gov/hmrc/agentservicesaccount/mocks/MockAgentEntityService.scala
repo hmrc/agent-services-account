@@ -33,7 +33,7 @@ trait MockAgentEntityService extends MockitoSugar {
   val mockAgentEntityService: AgentDetailsService = mock[AgentDetailsService]
 
   def mockVerifyEntitySuccess(arn: Arn)(returns: EntityCheckResult): Unit = {
-    when(mockAgentEntityService.verifyAgent(meq(arn))(using any[RequestHeader]))
+    when(mockAgentEntityService.getAgentDetailsWithChecks(meq(arn))(using any[RequestHeader]))
       .thenReturn(Future.successful(returns))
   }
 }
