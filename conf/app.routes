@@ -4,7 +4,7 @@ GET         /change-of-details-request/:arn                     uk.gov.hmrc.agen
 POST        /change-of-details-request                          uk.gov.hmrc.agentservicesaccount.controllers.ChangeOfDetailsRequestController.upsert()
 DELETE      /change-of-details-request/:arn                     uk.gov.hmrc.agentservicesaccount.controllers.ChangeOfDetailsRequestController.delete(arn: String)
 
-GET         /agent-record-with-checks/arn/:arn                  uk.gov.hmrc.agentservicesaccount.controllers.AgentEntityController.clientVerifyEntity(arn:Arn)
-GET         /agent-record-with-checks                           uk.gov.hmrc.agentservicesaccount.controllers.AgentEntityController.agentVerifyEntity()
-POST        /agent/agency-details/arn/:arn                      uk.gov.hmrc.agentservicesaccount.controllers.AgentEntityController.postAgencyDetails(arn: Arn)
+GET         /agent-record-with-checks/arn/:arn                  uk.gov.hmrc.agentservicesaccount.controllers.AgentDetailsController.clientGetWithChecks(arn:Arn)
+GET         /agent-record-with-checks                           uk.gov.hmrc.agentservicesaccount.controllers.AgentDetailsController.agentGetWithChecks()
+POST        /agent/agency-details/arn/:arn                      uk.gov.hmrc.agentservicesaccount.controllers.AgentDetailsController.post(arn: Arn)
 POST        /dms-agent-callback                                 uk.gov.hmrc.agentservicesaccount.controllers.DmsNotificationController.dmsCallback()

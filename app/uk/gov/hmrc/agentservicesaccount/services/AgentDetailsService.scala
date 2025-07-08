@@ -30,17 +30,16 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 
 @Singleton
-class AgentEntityService @Inject()(
+class AgentDetailsService @Inject()(
   desConnector: DesConnector,
   citizenConnector: CitizenDetailsConnector,
   agentAssuranceConnector: AgentAssuranceConnector,
   mongoLockService: MongoLockService,
   emailService: EmailService,
   auditService: AuditService
-) (implicit ec: ExecutionContext){
+)(implicit ec: ExecutionContext){
 
   def verifyAgent(
     arn: Arn

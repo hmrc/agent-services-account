@@ -27,14 +27,13 @@ import play.api.Application
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.mvc.MultipartFormData
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
+import play.api.mvc.{AnyContentAsEmpty, MultipartFormData, Request}
+import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-
 import uk.gov.hmrc.agentservicesaccount.stubs.{DataStreamStub, DesStubs, MetricTestSupport}
 import uk.gov.hmrc.agentservicesaccount.support.{UnitSpec, WireMockSupport}
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import java.time.{LocalDateTime, ZoneId}
@@ -54,8 +53,8 @@ with MetricTestSupport {
   implicit val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
   implicit val config: Config = app.injector.instanceOf[Config]
   private implicit lazy val as: ActorSystem = ActorSystem()
-  private implicit val hc: HeaderCarrier = HeaderCarrier()
   private implicit val ec: ExecutionContext = ExecutionContext.global
+  private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
 
   val dmsConnector =
     new DmsConnector(
@@ -159,7 +158,7 @@ with MetricTestSupport {
           )
       )
 
-      dmsConnector.sendPdf(source)(hc).futureValue
+      dmsConnector.sendPdf(source).futureValue
     }
 
     "must fail when the server returns another status" in {
@@ -171,7 +170,7 @@ with MetricTestSupport {
               .withStatus(INTERNAL_SERVER_ERROR)
           )
       )
-      dmsConnector.sendPdf(source)(hc).failed.futureValue
+      dmsConnector.sendPdf(source).failed.futureValue
     }
   }
 

@@ -21,10 +21,10 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.TestSuite
-import play.api.mvc.MultipartFormData
+import play.api.mvc.{MultipartFormData, RequestHeader}
 import play.api.test.Helpers.{ACCEPTED, BAD_GATEWAY}
 import uk.gov.hmrc.agentservicesaccount.connectors.DmsConnector
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 
 import scala.concurrent.Future
 
@@ -35,21 +35,21 @@ extends MockFactory { this: TestSuite =>
 
   def mocksendPdfAccepted() = {
     (mockDmsConnector
-      .sendPdf(_: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed])(_: HeaderCarrier))
+      .sendPdf(_: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed])(using _: RequestHeader))
       .expects(*, *)
       .returning(Future.successful(HttpResponse.apply(ACCEPTED, "")))
   }
 
   def mocksendPdfUpstreamErrorResponse() = {
     (mockDmsConnector
-      .sendPdf(_: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed])(_: HeaderCarrier))
+      .sendPdf(_: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed])(using _: RequestHeader))
       .expects(*, *)
       .returning(Future.failed(UpstreamErrorResponse.apply("Error message", BAD_GATEWAY)))
   }
 
   def mocksendPdfNonFatal() = {
     (mockDmsConnector
-      .sendPdf(_: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed])(_: HeaderCarrier))
+      .sendPdf(_: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed])(using _: RequestHeader))
       .expects(*, *)
       .returning(Future.failed(new Exception("Error message")))
   }

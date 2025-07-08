@@ -18,17 +18,17 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.{AnyContentAsEmpty, Request}
+import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import play.api.{Application, Configuration}
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.UtrChecksResponse
 import uk.gov.hmrc.agentservicesaccount.stubs.{AgentAssuranceStubs, MetricTestSupport}
 import uk.gov.hmrc.agentservicesaccount.support.{UnitSpec, WireMockSupport}
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import scala.concurrent.ExecutionContext
 
@@ -38,14 +38,14 @@ class AgentAssuranceConnectorISpec
     with WireMockSupport
     with AgentAssuranceStubs
     with MetricTestSupport {
-
-  private implicit val hc: HeaderCarrier = HeaderCarrier()
+  
   private implicit val ec: ExecutionContext = ExecutionContext.global
+  private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
 
   lazy val connector = new AgentAssuranceConnector(
-    app.injector.instanceOf[HttpClientV2],
-    app.injector.instanceOf[Metrics]
-  )(ec, app.injector.instanceOf[AppConfig])
+    app.injector.instanceOf[AppConfig],
+    app.injector.instanceOf[HttpClientV2]
+  )(ec)
 
   override implicit lazy val app: Application = appBuilder.build()
 

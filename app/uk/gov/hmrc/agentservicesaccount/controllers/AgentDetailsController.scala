@@ -23,7 +23,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
-import uk.gov.hmrc.agentservicesaccount.services.{AgentEntityService, DmsService}
+import uk.gov.hmrc.agentservicesaccount.services.{AgentDetailsService, DmsService}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -34,12 +34,12 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class AgentEntityController @Inject()(
-                                       cc: ControllerComponents,
-                                       agentEntityService: AgentEntityService,
-                                       dmsService: DmsService,
-                                       val authConnector: AuthConnector,
-                                       auth: BackendAuthComponents
+class AgentDetailsController @Inject()(
+                                        cc: ControllerComponents,
+                                        agentEntityService: AgentDetailsService,
+                                        dmsService: DmsService,
+                                        val authConnector: AuthConnector,
+                                        auth: BackendAuthComponents
 )(implicit
   ec: ExecutionContext,
   appConfig: AppConfig
@@ -49,23 +49,21 @@ extends BackendController(cc)
   with Logging {
 
   //for agents
-  //TODO WG - do me renaming
-  def agentVerifyEntity: Action[AnyContent] = AuthorisedWithArn { implicit request => arn =>
+  def agentGetWithChecks: Action[AnyContent] = AuthorisedWithArn { implicit request =>arn =>
     agentEntityService
       .verifyAgent(arn)
       .map(entityCheckResult => Ok(Json.toJson(entityCheckResult.agentRecord)))
   }
 
   //clients, stride
-  def clientVerifyEntity(arn:Arn): Action[AnyContent] = internalAuth.async  { implicit request =>
+  def clientGetWithChecks(arn:Arn): Action[AnyContent] = internalAuth.async  { implicit request =>
     agentEntityService
       .verifyAgent(arn)
       .map(entityCheckResult => Ok(Json.toJson(entityCheckResult.agentRecord)))
     }
-
-  private val strideRoles = Seq(appConfig.manuallyAssuredStrideRole)
   
-  def postAgencyDetails(arn: Arn): Action[AnyContent] =
+  
+  def post(arn: Arn): Action[AnyContent] =
     withAffinityGroupAgentOrStride(strideRoles) {
       implicit request =>
         for {
@@ -82,6 +80,9 @@ extends BackendController(cc)
         }
     }
 
+  private val strideRoles = Seq(appConfig.manuallyAssuredStrideRole)
+  
+  
 
   private val predicate = Predicate.Permission(
     resource = Resource(

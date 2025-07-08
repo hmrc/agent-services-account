@@ -29,14 +29,13 @@ import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckExceptio
 import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException.AgentIsOnRefuseToDealList
 import uk.gov.hmrc.agentservicesaccount.models.agententity.{EntityCheckException, EntityCheckResult}
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 import scala.concurrent.ExecutionContext
 
-class AgentEntityServiceSpec
+class AgentDetailsServiceSpec
   extends PlaySpec
     with CleanMongoCollectionSupport
     with MockDesConnector
@@ -50,7 +49,6 @@ class AgentEntityServiceSpec
     {
 
   implicit val ac: AppConfig = mockAppConfig
-  implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val req: Request[_] = FakeRequest()
 //
@@ -58,7 +56,7 @@ class AgentEntityServiceSpec
   val mongoLockService = new MongoLockService(mongoLockRepository)
 
   val service =
-    new AgentEntityService(
+    new AgentDetailsService(
       mockDesConnector,
       mockCitizenDetailsConnector,
       mockAgentAssuranceConnector,

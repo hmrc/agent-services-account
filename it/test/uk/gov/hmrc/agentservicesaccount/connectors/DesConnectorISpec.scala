@@ -33,7 +33,6 @@ import uk.gov.hmrc.agentservicesaccount.stubs.{DataStreamStub, DesStubs, MetricT
 import uk.gov.hmrc.agentservicesaccount.support.{UnitSpec, WireMockSupport}
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter, PlainText}
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
@@ -49,12 +48,11 @@ with DesStubs
 with DataStreamStub
 with CleanMongoCollectionSupport
 with MetricTestSupport {
-
-  private implicit val hc: HeaderCarrier = HeaderCarrier()
+  
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
   
-  private implicit lazy val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
+
   private implicit lazy val config: Config = app.injector.instanceOf[Config]
   private implicit lazy val as: ActorSystem = ActorSystem()
   private implicit val crypto: Encrypter
@@ -79,6 +77,7 @@ with MetricTestSupport {
 
   lazy val desConnector =
     new DesConnector(
+      app.injector.instanceOf[AppConfig],
       app.injector.instanceOf[HttpClientV2],
       app.injector.instanceOf[Metrics],
       cacheProvider,

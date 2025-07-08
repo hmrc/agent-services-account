@@ -23,14 +23,14 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckResult
-import uk.gov.hmrc.agentservicesaccount.services.AgentEntityService
+import uk.gov.hmrc.agentservicesaccount.services.AgentDetailsService
 
 import scala.concurrent.Future
 
 trait MockAgentEntityService extends MockitoSugar {
   this: TestSuite =>
 
-  val mockAgentEntityService: AgentEntityService = mock[AgentEntityService]
+  val mockAgentEntityService: AgentDetailsService = mock[AgentDetailsService]
 
   def mockVerifyEntitySuccess(arn: Arn)(returns: EntityCheckResult): Unit = {
     when(mockAgentEntityService.verifyAgent(meq(arn))(using any[RequestHeader]))

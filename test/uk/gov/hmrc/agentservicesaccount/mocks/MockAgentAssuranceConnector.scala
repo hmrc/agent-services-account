@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.agentservicesaccount.mocks
 
-import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers.{eq => meq, any}
+import org.mockito.ArgumentMatchers.{any, eq as meq}
+import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentAssuranceConnector
 import uk.gov.hmrc.agentservicesaccount.models.UtrChecksResponse
-import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
@@ -32,7 +32,7 @@ trait MockAgentAssuranceConnector extends MockitoSugar { this: TestSuite =>
   val mockAgentAssuranceConnector: AgentAssuranceConnector = mock[AgentAssuranceConnector]
 
   def mockGetAgentUtrChecks(utr: Utr)(response: UtrChecksResponse): Unit = {
-    when(mockAgentAssuranceConnector.getAgentUtrChecks(meq(utr))(any[HeaderCarrier]))
+    when(mockAgentAssuranceConnector.getAgentUtrChecks(meq(utr))(using any[RequestHeader]))
       .thenReturn(Future.successful(response))
   }
 }

@@ -65,15 +65,13 @@ object RegistrationRelationshipResponse {
 
 @Singleton
 class DesConnector @Inject() (
+  appConfig: AppConfig,
   httpV2: HttpClientV2,
   metrics: Metrics,
   agentCacheProvider: CacheProvider,
   override val configuration: Config,
   override val actorSystem: ActorSystem
-)(using
-  appConfig: AppConfig,
-  ec: ExecutionContext
-)
+)(using ec: ExecutionContext)
 extends BaseConnector
 with Logging {
 

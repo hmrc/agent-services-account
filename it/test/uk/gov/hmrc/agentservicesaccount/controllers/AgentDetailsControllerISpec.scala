@@ -39,7 +39,7 @@ import scala.concurrent.Await
 import scala.util.{Failure, Success, Try}
 
 
-class AgentEntityControllerISpec
+class AgentDetailsControllerISpec
   extends PlaySpec
     with AgentAuthStubs
     with GuiceOneServerPerSuite

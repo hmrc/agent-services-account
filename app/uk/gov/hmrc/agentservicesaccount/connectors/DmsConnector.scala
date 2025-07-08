@@ -22,15 +22,15 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import play.api.http.Status.ACCEPTED
-
-import play.api.mvc.MultipartFormData
+import play.api.libs.ws.WSBodyWritables.bodyWritableOf_Multipart
+import play.api.mvc.{MultipartFormData, RequestHeader}
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, StringContextOps}
+import uk.gov.hmrc.http.{HeaderNames, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.libs.ws.WSBodyWritables.bodyWritableOf_Multipart
 
 
 
@@ -48,7 +48,7 @@ extends BaseConnector {
 
   def sendPdf(
     body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed]
-  )(implicit hc: HeaderCarrier): Future[Unit] =
+  )(using request: RequestHeader): Future[Unit] =
     retryFor[Unit]("DMS submission")(retryCondition) {
       httpClient
         .post(url"${appConfig.dmsSubmissionUrl}")

@@ -17,12 +17,14 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import org.scalatestplus.play.PlaySpec
+import play.api.mvc.Request
+import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.helpers.ChangeDesiDetailsPayloads
 import uk.gov.hmrc.agentservicesaccount.mocks.*
 import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsResponse, DmsSubmissionReference}
-import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{InternalServerException, UpstreamErrorResponse}
 
 import java.time.{Instant, LocalDateTime, ZoneId}
 import java.util.Base64
@@ -36,7 +38,7 @@ with MockAppConfig {
   val html = "<html><head></head><body></body></html>"
   val now: Instant = Instant.now
   implicit val appConfig: AppConfig = mockAppConfig
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val req: Request[_] = FakeRequest()
 
   val service = new DmsService(mockDmsConnector, appConfig)
 
@@ -63,7 +65,7 @@ with MockAppConfig {
         Some(encoded),
         timestamp,
         DmsSubmissionReference("DmsSubmissionReference")
-      )(hc))
+      ))
 
       result mustBe DmsResponse(timestamp, "")
     }
@@ -90,7 +92,7 @@ with MockAppConfig {
         Some(encoded),
         timestamp,
         DmsSubmissionReference("DmsSubmissionReference")
-      )(hc))
+      ))
 
       result mustBe DmsResponse(timestamp, "")
     }

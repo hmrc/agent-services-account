@@ -16,36 +16,30 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import play.api.Logging
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.*
-import uk.gov.hmrc.agentservicesaccount.utils.HttpAPIMonitor
+import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AgentAssuranceConnector @Inject() (http: HttpClientV2, val metrics: Metrics)(
-    implicit val ec: ExecutionContext,
-    appConfig: AppConfig
-) extends HttpAPIMonitor
-    with Logging {
+class AgentAssuranceConnector @Inject() ( appConfig: AppConfig,
+                                          http: HttpClientV2)(implicit val ec: ExecutionContext) {
 
   val baseUrl = appConfig.agentAssuranceBaseUrl
 
-  def getAgentUtrChecks(utr: Utr)(implicit hc: HeaderCarrier): Future[UtrChecksResponse] = {
+  def getAgentUtrChecks(utr: Utr)(using request: RequestHeader): Future[UtrChecksResponse] = {
     val url = new URL(s"$baseUrl/agent-assurance/restricted-collection-check/utr/${utr.value}?nameRequired=false")
-    monitor(s"ConsumedAPI-Get-AgentAssurance-restricted-collection-check") {
       http
         .get(url)
         .execute[UtrChecksResponse]
-    }
   }
 }
   

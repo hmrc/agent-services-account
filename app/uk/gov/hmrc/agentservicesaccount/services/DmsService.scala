@@ -19,22 +19,22 @@ package uk.gov.hmrc.agentservicesaccount.services
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import play.api.mvc.MultipartFormData
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
+import play.api.mvc.{MultipartFormData, RequestHeader}
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.DmsConnector
 import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsResponse, DmsSubmissionReference}
 import uk.gov.hmrc.agentservicesaccount.utils.PdfGenerator.buildPdf
-import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{InternalServerException, UpstreamErrorResponse}
 
 import java.io.ByteArrayOutputStream
-import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class DmsService @Inject()(
@@ -46,9 +46,7 @@ class DmsService @Inject()(
     base64EncodedDmsSubmissionHtml: Option[String],
     now: Instant,
     submissionReference: DmsSubmissionReference
-  )(
-    implicit hc: HeaderCarrier
-  ): Future[DmsResponse] =
+  )(using request: RequestHeader): Future[DmsResponse] =
     for {
       pdf <- createPdf(base64EncodedDmsSubmissionHtml)
       body <- createBody(
@@ -56,7 +54,7 @@ class DmsService @Inject()(
         now,
         submissionReference
       )
-      response <- sendPdf(body, now)(hc)
+      response <- sendPdf(body, now)
     } yield response
 
   private def createPdf(
@@ -125,7 +123,7 @@ class DmsService @Inject()(
   def sendPdf(
     body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed],
     now: Instant
-  )(implicit hc: HeaderCarrier): Future[DmsResponse] = dmsConnector
+  )(using request: RequestHeader): Future[DmsResponse] = dmsConnector
     .sendPdf(body)
     .map(_ => DmsResponse(now, ""))
     .recover {

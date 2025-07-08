@@ -18,9 +18,9 @@ package uk.gov.hmrc.agentservicesaccount.mocks
 
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.TestSuite
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsResponse, DmsSubmissionReference}
 import uk.gov.hmrc.agentservicesaccount.services.DmsService
-import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Instant
 import scala.concurrent.Future
@@ -36,7 +36,7 @@ extends MockFactory { this: TestSuite =>
         _: Option[String],
         _: Instant,
         _: DmsSubmissionReference
-      )(_: HeaderCarrier))
+      )(using _: RequestHeader))
       .expects(*, *, *, *)
       .returning(Future.successful(DmsResponse(Instant.now(), "")))
 

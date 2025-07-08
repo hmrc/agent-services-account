@@ -34,7 +34,7 @@ import uk.gov.hmrc.internalauth.client.test.BackendAuthComponentsStub
 
 import scala.concurrent.ExecutionContext
 
-class AgentEntityControllerSpec
+class AgentDetailsControllerSpec
 extends PlaySpec
 with DefaultAwaitTimeout
 with GuiceOneAppPerTest
@@ -53,7 +53,7 @@ with MockFactory {
   val stubBackendAuthComponents: BackendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
 
   val controller =
-    new AgentEntityController(
+    new AgentDetailsController(
       stubControllerComponents(),
       mockAgentEntityService,
       mockDmsService,
@@ -69,7 +69,7 @@ with MockFactory {
         mockVerifyEntitySuccess(testArn)(EntityCheckResult(testAgentDetailsDesResponse, Seq.empty[EntityCheckException]))
 
         val result = controller
-          .agentVerifyEntity
+          .agentGetWithChecks
           .apply(
             FakeRequest(GET, "/agent-record-with-checks")
               .withHeaders(HeaderNames.authorisation -> "Some auth token")
@@ -94,7 +94,7 @@ with MockFactory {
       )
 
       val result = controller
-        .agentVerifyEntity
+        .agentGetWithChecks
         .apply(
           FakeRequest(GET, "/agent-record-with-checks")
             .withHeaders(HeaderNames.authorisation -> "Some auth token")
@@ -114,7 +114,7 @@ with MockFactory {
         mockVerifyEntitySuccess(testArn)(EntityCheckResult(testAgentDetailsDesResponse, Seq.empty[EntityCheckException]))
 
         val result = controller
-          .clientVerifyEntity(testArn)
+          .clientGetWithChecks(testArn)
           .apply(
             FakeRequest(POST, s"/agent-record-with-checks/arn/$testArn")
               .withHeaders(HeaderNames.authorisation -> "Some auth token", "Content-Type" -> "application/json")
@@ -132,7 +132,7 @@ with MockFactory {
         mockVerifyEntitySuccess(testArn)(EntityCheckResult(agentDetailsDesResponse, Seq.empty[EntityCheckException]))
 
         val result = controller
-          .clientVerifyEntity(testArn)
+          .clientGetWithChecks(testArn)
           .apply(
             FakeRequest(GET, s"/agent-record-with-checks/arn/$testArn\"")
               .withHeaders(HeaderNames.authorisation -> "Some auth token", "Content-Type" -> "application/json")
