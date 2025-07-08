@@ -26,7 +26,6 @@ import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
 import play.api.libs.ws.{BodyWritable, WSClient, WSResponse}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
-import uk.gov.hmrc.agentservicesaccount.helpers.InstantClockTestSupport
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.stubs.*
 import uk.gov.hmrc.agentservicesaccount.support.WireMockSupport
@@ -45,7 +44,6 @@ class AgentDetailsControllerISpec
     with GuiceOneServerPerSuite
     with WireMockSupport
     with CleanMongoCollectionSupport
-with InstantClockTestSupport
 with DesStubs
 with InternalAuthStub
 with CitizenDetailsStubs

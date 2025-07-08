@@ -21,7 +21,6 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.helpers.InstantClockTestSupport
 import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.*
 import uk.gov.hmrc.agentservicesaccount.mocks.*
 import uk.gov.hmrc.agentservicesaccount.models.UtrChecksResponse
@@ -40,12 +39,10 @@ class AgentDetailsServiceSpec
     with CleanMongoCollectionSupport
     with MockDesConnector
     with MockCitizenDetailsConnector
-    with InstantClockTestSupport
     with MockAppConfig
     with MockEmailService
     with MockAgentAssuranceConnector
-    with MockAuditService 
-//    with MockMongoLockService 
+    with MockAuditService
     {
 
   implicit val ac: AppConfig = mockAppConfig

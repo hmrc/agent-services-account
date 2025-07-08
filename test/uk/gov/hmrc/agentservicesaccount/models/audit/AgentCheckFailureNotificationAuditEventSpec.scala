@@ -16,19 +16,22 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.audit
 
+
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentservicesaccount.helpers.InstantClockTestSupport
+import java.time.format.DateTimeFormatter
 
-import java.time.LocalDateTime
 
-class AgentCheckFailureNotificationAuditEventSpec extends AnyWordSpec:
+class AgentCheckFailureNotificationAuditEventSpec extends AnyWordSpec with InstantClockTestSupport:
 
   val testArn = Arn("AARN1234567")
   val testUtr = "1234567890"
   val testEmail = "agent@example.com"
-  val testDate = LocalDateTime.of(2024, 7, 1, 14, 30)
+  val testDate = localDateTime
+  val expectedFormatted = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
   val testEmailData = EmailData(
     failedCheck = Seq("Deceased", "RefusedToDeal"),
     dateChecked = testDate
@@ -50,7 +53,7 @@ class AgentCheckFailureNotificationAuditEventSpec extends AnyWordSpec:
       (json \ "utr").as[String] mustBe "1234567890"
       (json \ "email").as[String] mustBe "agent@example.com"
       (json \ "emailData" \ "failedCheck").as[Seq[String]] must contain theSameElementsAs Seq("Deceased", "RefusedToDeal")
-      (json \ "emailData" \ "dateChecked").as[String] mustBe "2024-07-01T14:30:00"
+      (json \ "emailData" \ "dateChecked").as[String] mustBe expectedFormatted
     }
 
     "have auditType value 'AgentCheckFailureNotificationSent'" in {

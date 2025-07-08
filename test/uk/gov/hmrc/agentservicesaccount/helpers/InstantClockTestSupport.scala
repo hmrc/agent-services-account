@@ -20,7 +20,7 @@ import java.time.*
 
 trait InstantClockTestSupport /*extends AnyFeatureSpec with GuiceOneServerPerSuite*/ {
 
-  lazy val localDateTime: LocalDateTime = LocalDateTime.now()
+  lazy val localDateTime: LocalDateTime = LocalDateTime.now().withNano(0)
   lazy val instant: Instant = localDateTime.toInstant(ZoneOffset.UTC)
   lazy val frozenInstant: Instant = instant
 
