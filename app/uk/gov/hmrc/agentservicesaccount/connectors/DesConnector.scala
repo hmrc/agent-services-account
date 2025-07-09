@@ -28,7 +28,7 @@ import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderNames, HttpReads}
+import uk.gov.hmrc.http.{HeaderNames, HttpReads, StringContextOps}
 
 import java.net.URL
 import java.util.UUID
@@ -56,7 +56,7 @@ with Logging {
   
   // API #1170 (API#4) Get Agent Record
   def getAgentRecord(arn: Arn)(using request: RequestHeader): Future[AgentDetailsDesResponse] = {
-    val url = new URL(s"$baseUrl/registration/personal-details/arn/${arn.value}")
+    val url = url"$baseUrl/registration/personal-details/arn/${arn.value}"
     agentCacheProvider.agentDetailsCache(arn.value) {
       getWithDesHeadersWithRetry[AgentDetailsDesResponse]("GetAgentRecordCached", url)
     }

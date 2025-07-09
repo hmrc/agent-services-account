@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.auth
 
-import play.api.Logger
+import play.api.Logging
 import play.api.mvc.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.controllers.ErrorResults.NoPermission
@@ -25,19 +25,16 @@ import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, credentials}
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.{Inject, Singleton}
 
-trait AuthActions
-extends AuthorisedFunctions
-with BaseController {
-  me: Results =>
-
-  private val logger = Logger(this.getClass)
-
-  override def authConnector: AuthConnector
+@Singleton
+class AuthActions @Inject() (val authConnector: AuthConnector, cc: ControllerComponents)(implicit ec: ExecutionContext)
+  extends BackendController(cc)
+    with AuthorisedFunctions
+    with Logging {
 
   private def getEnrolmentInfo(
     enrolment: Set[Enrolment],
@@ -53,8 +50,7 @@ with BaseController {
   private type AuthorisedRequestWithArn = Request[AnyContent] => Arn => Future[Result]
 
 
-  def AuthorisedWithArn[A](body: AuthorisedRequestWithArn)(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+  def AuthorisedWithArn[A](body: AuthorisedRequestWithArn): Action[AnyContent] = Action.async { implicit request =>
     authorised(AuthProviders(GovernmentGateway))
       .retrieve(allEnrolments) { enrol =>
         getEnrolmentInfo(
@@ -75,8 +71,7 @@ with BaseController {
   
   def withAffinityGroupAgentOrStride(strideRoles: Seq[String])(
     action: Request[AnyContent] => Future[Result]
-  )(implicit ec: ExecutionContext): Action[AnyContent] = Action.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+  ): Action[AnyContent] = Action.async { implicit request =>
     authorised().retrieve(allEnrolments.and(affinityGroup).and(credentials)) {
       case enrolments ~ affinityGroup ~ optCreds =>
         optCreds

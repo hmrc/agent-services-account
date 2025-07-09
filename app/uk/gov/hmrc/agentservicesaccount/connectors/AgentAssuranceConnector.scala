@@ -25,7 +25,6 @@ import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 
-import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,7 +35,7 @@ class AgentAssuranceConnector @Inject() ( appConfig: AppConfig,
   val baseUrl = appConfig.agentAssuranceBaseUrl
 
   def getAgentUtrChecks(utr: Utr)(using request: RequestHeader): Future[UtrChecksResponse] = {
-    val url = new URL(s"$baseUrl/agent-assurance/restricted-collection-check/utr/${utr.value}?nameRequired=false")
+    val url = url"$baseUrl/agent-assurance/restricted-collection-check/utr/${utr.value}?nameRequired=false"
       http
         .get(url)
         .execute[UtrChecksResponse]

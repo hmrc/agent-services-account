@@ -25,6 +25,7 @@ import play.api.libs.json.Json
 import play.api.test.*
 import play.api.test.Helpers.*
 import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
+import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.*
 import uk.gov.hmrc.agentservicesaccount.mocks.*
 import uk.gov.hmrc.agentservicesaccount.models.agententity.{EntityCheckException, EntityCheckResult}
@@ -51,13 +52,15 @@ with MockFactory {
   implicit val mat: Materializer = Materializer(as)
   
   val stubBackendAuthComponents: BackendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
+  
+  val mockAuthActions: AuthActions = new AuthActions(mockAuthConnector, stubControllerComponents())
 
   val controller =
     new AgentDetailsController(
       stubControllerComponents(),
       mockAgentEntityService,
       mockDmsService,
-      mockAuthConnector,
+      mockAuthActions,
       stubBackendAuthComponents
     )(ec, mockAppConfig)
 

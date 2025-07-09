@@ -20,8 +20,7 @@ sealed trait EmailCheckExceptions {
   def failedChecksText: String
 }
 
-sealed trait EntityCheckException 
-  extends Product with Serializable
+sealed trait EntityCheckException
 
 sealed trait DeceasedCheckException extends EntityCheckException
 

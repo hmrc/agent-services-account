@@ -24,7 +24,6 @@ import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
 import uk.gov.hmrc.agentservicesaccount.services.{AgentDetailsService, DmsService}
-import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -38,18 +37,17 @@ class AgentDetailsController @Inject()(
                                         cc: ControllerComponents,
                                         agentEntityService: AgentDetailsService,
                                         dmsService: DmsService,
-                                        val authConnector: AuthConnector,
+                                        authActions: AuthActions,
                                         auth: BackendAuthComponents
 )(implicit
   ec: ExecutionContext,
   appConfig: AppConfig
 )
-extends BackendController(cc) 
-  with AuthActions
+extends BackendController(cc)
   with Logging {
 
   //for agents
-  def agentGetWithChecks: Action[AnyContent] = AuthorisedWithArn { implicit request =>arn =>
+  def agentGetWithChecks: Action[AnyContent] = authActions.AuthorisedWithArn { implicit request =>arn =>
     agentEntityService
       .getAgentDetailsWithChecks(arn)
       .map(entityCheckResult => Ok(Json.toJson(entityCheckResult.agentRecord)))
@@ -64,7 +62,7 @@ extends BackendController(cc)
   
   
   def post(arn: Arn): Action[AnyContent] =
-    withAffinityGroupAgentOrStride(strideRoles) {
+    authActions.withAffinityGroupAgentOrStride(strideRoles) {
       implicit request =>
         for {
           dmsResponse <- dmsService.submitToDms(

@@ -69,7 +69,9 @@ with Logging {
     httpClient
       .post(url"${appConfig.internalAuthBaseUrl}/test-only/token")(HeaderCarrier())
       .withBody(
-        Json.parse(s"""
+        //language=JSON
+        Json.parse(
+          s"""
                       |{
                       | "token": "${appConfig.internalAuthToken}",
                       | "principal": "${appConfig.appName}",
@@ -90,6 +92,7 @@ with Logging {
           Future.successful(Done)
         }
         else {
+          logger.warn("Unable to initialise internal-auth token")
           Future.failed(new RuntimeException("Unable to initialise internal-auth token"))
         }
       }
