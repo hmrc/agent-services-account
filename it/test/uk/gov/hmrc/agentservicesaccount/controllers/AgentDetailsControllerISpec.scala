@@ -17,58 +17,47 @@
 package uk.gov.hmrc.agentservicesaccount.controllers
 
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
-import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import play.api.Application
 import play.api.http.Status.*
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
 import play.api.libs.ws.{BodyWritable, WSClient, WSResponse}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.stubs.*
-import uk.gov.hmrc.agentservicesaccount.support.WireMockSupport
+import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.Await
 import scala.util.{Failure, Success, Try}
 
 
 class AgentDetailsControllerISpec
-  extends PlaySpec
+  extends ComponentSpecHelper
     with AgentAuthStubs
-    with GuiceOneServerPerSuite
-    with WireMockSupport
-    with CleanMongoCollectionSupport
-with DesStubs
-with InternalAuthStub
-with CitizenDetailsStubs
-  with AgentAssuranceStubs
-  with DmsSubmissionStubs
-with EmailStub {
+    with DesStubs
+    with InternalAuthStub
+    with CitizenDetailsStubs
+    with AgentAssuranceStubs
+    with DmsSubmissionStubs
+    with EmailStub {
 
-  override implicit lazy val app: Application = appBuilder.build()
 
-  protected def appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
-    .configure(
-      "microservice.services.auth.host" -> wireMockHost,
-      "microservice.services.auth.port" -> wireMockPort,
-      "microservice.services.des.host" -> wireMockHost,
-      "microservice.services.des.port" -> wireMockPort,
-      "microservice.services.agent-assurance.host" -> wireMockHost,
-      "microservice.services.agent-assurance.port" -> wireMockPort,
-      "microservice.services.citizen-details.host" -> wireMockHost,
-      "microservice.services.citizen-details.port" -> wireMockPort,
-      "microservice.services.internal-auth.port" -> wireMockPort,
-      "microservice.services.internal-auth.host" -> wireMockHost,
-      "microservice.services.email.port" -> wireMockPort,
-      "microservice.services.email.host" -> wireMockHost,
-      "microservice.services.dms-submission.host" -> wireMockHost,
-      "microservice.services.dms-submission.port" -> wireMockPort,
+  override def extraConfig: Map[String, Any] = Map (
+      "microservice.services.auth.host" -> mockHost,
+      "microservice.services.auth.port" -> mockPort,
+      "microservice.services.des.host" -> mockHost,
+      "microservice.services.des.port" -> mockPort,
+      "microservice.services.agent-assurance.host" -> mockHost,
+      "microservice.services.agent-assurance.port" -> mockPort,
+      "microservice.services.citizen-details.host" -> mockHost,
+      "microservice.services.citizen-details.port" -> mockPort,
+      "microservice.services.internal-auth.port" -> mockPort,
+      "microservice.services.internal-auth.host" -> mockHost,
+      "microservice.services.email.port" -> mockPort,
+      "microservice.services.email.host" -> mockHost,
+      "microservice.services.dms-submission.host" -> mockHost,
+      "microservice.services.dms-submission.port" -> mockPort,
       "auditing.enabled" -> false,
       "stride.roles.agent-services-account" -> "maintain_agent_manually_assure",
       "internal-auth-token-enabled-on-start" -> false,
@@ -77,8 +66,6 @@ with EmailStub {
       "agent.entity.cache.expires" -> "1 seconds",
       "agent.entity-check.lock.expires" -> "1 seconds",
       "agent.entity-check.email.lock.expires" -> "1 seconds"
-
-
   )
 
   val testArn = Arn("AARN0000002")
@@ -152,9 +139,8 @@ with EmailStub {
   }
 
 
-
   private val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy h:mma")
-  private val dateTime = formatter.format(LocalDateTime.now())
+  private val dateTime = formatter.format(localDateTime)
 
   private  def emailInformation(arn: Arn, utr:Utr, failedChecks: List[String]) =     EmailInformation(
     to = Seq("test@example.com"),
@@ -189,8 +175,8 @@ with EmailStub {
 
       val response: WSResponse  = doClientGetRequest(testArn)
 
-      response.json mustBe expectedAgentRecordJson(Some(testUtr), suspensionStatus = true, isAnIndividual = true)
-      response.status mustBe OK
+      response.json shouldBe expectedAgentRecordJson(Some(testUtr), suspensionStatus = true, isAnIndividual = true)
+      response.status shouldBe OK
 
     }
 
@@ -204,8 +190,8 @@ with EmailStub {
 
         val response: WSResponse = doClientGetRequest(testArn)
 
-        response.json mustBe expectedAgentRecordJson(Some(testUtr), suspensionStatus = true, isAnIndividual = true)
-        response.status mustBe OK
+        response.json shouldBe expectedAgentRecordJson(Some(testUtr), suspensionStatus = true, isAnIndividual = true)
+        response.status shouldBe OK
         verifyEmailRequestWasSent(1)
       }
 
@@ -217,8 +203,8 @@ with EmailStub {
 
       val response = doClientGetRequest(testArn)
 
-      response.status mustBe OK
-      response.json mustBe expectedAgentRecordJson(None, suspensionStatus = true, isAnIndividual = true)
+      response.status shouldBe OK
+      response.json shouldBe expectedAgentRecordJson(None, suspensionStatus = true, isAnIndividual = true)
 
   }
 
@@ -230,7 +216,7 @@ with EmailStub {
         10.seconds
       )
 
-      response.status mustBe UNAUTHORIZED
+      response.status shouldBe UNAUTHORIZED
     }
 
     "return 404 when DES fails" in {
@@ -239,7 +225,7 @@ with EmailStub {
 
       val response = doClientGetRequest(testArn)
 
-      response.status mustBe NOT_FOUND
+      response.status shouldBe NOT_FOUND
     }
   }
 
@@ -252,8 +238,8 @@ with EmailStub {
 
       val response = doAgentGetRequest()
 
-      response.status mustBe OK
-      response.json mustBe expectedAgentRecordJson(Some(testUtr1), suspensionStatus = false, isAnIndividual = false)
+      response.status shouldBe OK
+      response.json shouldBe expectedAgentRecordJson(Some(testUtr1), suspensionStatus = false, isAnIndividual = false)
 
       verifyEmailRequestWasSent(0)
     }
@@ -269,8 +255,8 @@ with EmailStub {
 
         val response = doAgentGetRequest()
 
-        response.status mustBe OK
-        response.json mustBe expectedAgentRecordJson(Some(testUtr1), suspensionStatus = false, isAnIndividual = false)
+        response.status shouldBe OK
+        response.json shouldBe expectedAgentRecordJson(Some(testUtr1), suspensionStatus = false, isAnIndividual = false)
 
         verifyEmailRequestWasSent(1)
       }
@@ -285,14 +271,14 @@ with EmailStub {
       val html = "<html><head></head><body></body></html>"
       val encodedHtmlStr = java.util.Base64.getEncoder.encodeToString(html.getBytes())
       val response = doPOSTRequest(testArn, encodedHtmlStr)
-      response.status mustBe CREATED
+      response.status shouldBe CREATED
     }
 
     "return internal server error when payload is not encoded" in {
       isLoggedInAsStride("stride")
 
       val response = doPOSTRequest(testArn, s"""{"a":"b"}""")
-      response.status mustBe INTERNAL_SERVER_ERROR
+      response.status shouldBe INTERNAL_SERVER_ERROR
       response.body.contains("build PDF failed with error:")
     }
 
@@ -300,7 +286,7 @@ with EmailStub {
       isLoggedInAsStride("stride")
 
       val response = doPOSTRequest(testArn, "")
-      response.status mustBe INTERNAL_SERVER_ERROR
+      response.status shouldBe INTERNAL_SERVER_ERROR
       response.body.contains("base64 encoding failed with field not provided")
     }
   }

@@ -16,36 +16,27 @@
 
 package uk.gov.hmrc.agentservicesaccount.controllers
 
-import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import org.scalatestplus.play.PlaySpec
-import play.api.Application
 import play.api.http.Status.{BAD_REQUEST, OK, UNAUTHORIZED}
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
+import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
 import play.api.libs.ws.{WSClient, WSResponse}
 import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsNotification, SubmissionItemStatus}
-import uk.gov.hmrc.agentservicesaccount.support.WireMockSupport
 import uk.gov.hmrc.agentservicesaccount.stubs.InternalAuthStub
-import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
-
+import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 
 import scala.concurrent.Await
 import scala.concurrent.duration.*
 
 class DmsNotificationControllerISpec
-  extends PlaySpec
-    with GuiceOneServerPerSuite
-    with WireMockSupport
+  extends ComponentSpecHelper
     with InternalAuthStub {
 
-  override lazy val app: Application = new GuiceApplicationBuilder()
-    .configure(
-      "microservice.services.internal-auth.host" -> wireMockHost,
-      "microservice.services.internal-auth.port" -> wireMockPort,
+  override def extraConfig: Map[String, Any] = Map(
+      "microservice.services.internal-auth.host" -> mockHost,
+      "microservice.services.internal-auth.port" -> mockPort,
       "internal-auth-token-enabled-on-start" -> false,
       "auditing.enabled" -> false
     )
-    .build()
 
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
@@ -68,19 +59,19 @@ class DmsNotificationControllerISpec
       val json = Json.stringify(Json.toJson(DmsNotification("test123", SubmissionItemStatus.Submitted, None)))
       val response = post(json)
 
-      response.status mustBe OK
+      response.status shouldBe OK
     }
 
     "return 400 BAD_REQUEST for invalid JSON" in {
       stubInternalAuthorised()
 
       val response = post("""{"invalid":"payload"}""")
-      response.status mustBe BAD_REQUEST
+      response.status shouldBe BAD_REQUEST
     }
 
     "return 401 UNAUTHORIZED if no internal auth header present" in {
       val response = post("""{}""", withAuth = false)
-      response.status mustBe UNAUTHORIZED
+      response.status shouldBe UNAUTHORIZED
     }
   }
 }

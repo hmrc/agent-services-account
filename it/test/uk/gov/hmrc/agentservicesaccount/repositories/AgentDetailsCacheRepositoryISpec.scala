@@ -17,39 +17,29 @@
 package uk.gov.hmrc.agentservicesaccount.repositories
 
 import com.codahale.metrics.MetricRegistry
-import org.scalatest.concurrent.Eventually
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpecLike
-import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import play.api.{Application, Configuration}
-import play.api.inject.guice.GuiceApplicationBuilder
+import org.mongodb.scala.ObservableFuture
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import play.api.Configuration
 import play.api.libs.json.{JsValue, Json}
-import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress}
 import uk.gov.hmrc.agentmtdidentifiers.model.{SuspensionDetails, Utr}
-import uk.gov.hmrc.crypto.{Crypted, Decrypter, Encrypter, PlainText}
+import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress}
+import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
+import uk.gov.hmrc.crypto.{Crypted, Decrypter, Encrypter, PlainText}
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
 import uk.gov.hmrc.mongo.cache.CacheItem
-import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
-import org.mongodb.scala.ObservableFuture
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import org.scalatest.concurrent.ScalaFutures
 
 
 class AgentDetailsCacheRepositoryISpec
-extends AnyWordSpecLike
-with Matchers
-with GuiceOneServerPerSuite
-with CleanMongoCollectionSupport
-with Eventually
-  with ScalaFutures {
+  extends ComponentSpecHelper
+    with Eventually
+    with ScalaFutures {
 
-
-  override implicit lazy val app: Application = appBuilder.build()
-  protected def appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder().configure(
+  override def extraConfig: Map[String, Any] = Map(
     "agent.entity.cache.expires" -> "5 minutes",
     "agent.entity.cache.enabled" -> true
   )

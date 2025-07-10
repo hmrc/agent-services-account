@@ -17,46 +17,37 @@
 package uk.gov.hmrc.agentservicesaccount.connectors
 
 
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.UtrChecksResponse
-import uk.gov.hmrc.agentservicesaccount.stubs.{AgentAssuranceStubs, MetricTestSupport}
-import uk.gov.hmrc.agentservicesaccount.support.{UnitSpec, WireMockSupport}
+import uk.gov.hmrc.agentservicesaccount.stubs.AgentAssuranceStubs
+import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.ExecutionContext
 
 class AgentAssuranceConnectorISpec
-  extends UnitSpec
-    with GuiceOneAppPerSuite
-    with WireMockSupport
-    with AgentAssuranceStubs
-    with MetricTestSupport {
+  extends ComponentSpecHelper
+    with AgentAssuranceStubs {
   
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
+
+  override def extraConfig: Map[String, Any] = Map(
+    "microservice.services.agent-assurance.host" -> mockHost,
+    "microservice.services.agent-assurance.port" -> mockPort,
+    "auditing.enabled" -> false,
+    "http-verbs.retries.intervals" -> List("1ms")
+  )
+
 
   lazy val connector = new AgentAssuranceConnector(
     app.injector.instanceOf[AppConfig],
     app.injector.instanceOf[HttpClientV2]
   )(ec)
-
-  override implicit lazy val app: Application = appBuilder.build()
-
-  private def appBuilder: GuiceApplicationBuilder =
-    new GuiceApplicationBuilder()
-      .configure(
-        "microservice.services.agent-assurance.host" -> wireMockHost,
-        "microservice.services.agent-assurance.port" -> wireMockPort,
-        "auditing.enabled" -> false,
-        "http-verbs.retries.intervals" -> List("1ms")
-      )
 
   val utr = Utr("1234567890")
 

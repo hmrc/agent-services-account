@@ -16,42 +16,30 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.typesafe.config.Config
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
-import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR}
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
 import play.api.mvc.{AnyContentAsEmpty, MultipartFormData, Request}
 import play.api.test.FakeRequest
-import play.api.test.Helpers.*
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.stubs.{DataStreamStub, DesStubs, MetricTestSupport}
-import uk.gov.hmrc.agentservicesaccount.support.{UnitSpec, WireMockSupport}
+import uk.gov.hmrc.agentservicesaccount.stubs.{DataStreamStub, DesStubs, DmsSubmissionStubs}
+import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import java.time.{LocalDateTime, ZoneId}
 import scala.concurrent.ExecutionContext
 
-class DmsConnectorISpec
-extends UnitSpec
-with GuiceOneAppPerSuite
-with WireMockSupport
-with DesStubs
-with DataStreamStub
-with MetricTestSupport {
-
-  override implicit lazy val app: Application = appBuilder
-    .build()
-
+class DmsConnectorISpec 
+  extends ComponentSpecHelper 
+    with DesStubs
+    with DataStreamStub
+    with DmsSubmissionStubs {
+  
   implicit val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
-  implicit val config: Config = app.injector.instanceOf[Config]
+  implicit val configuration: Config = app.injector.instanceOf[Config]
   private implicit lazy val as: ActorSystem = ActorSystem()
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
@@ -60,17 +48,16 @@ with MetricTestSupport {
     new DmsConnector(
       app.injector.instanceOf[HttpClientV2],
       appConfig,
-      config,
+      configuration,
       as
     )
 
-  protected def appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
-    .configure(
+  override def extraConfig: Map[String, Any] = Map(
       "internal-auth-token-enabled-on-start" -> false,
-      "microservice.services.internal-auth.host" -> wireMockHost,
-      "microservice.services.internal-auth.port" -> wireMockPort,
-      "microservice.services.dms-submission.port" -> wireMockPort,
-      "microservice.services.dms-submission.host" -> wireMockHost,
+      "microservice.services.internal-auth.host" -> mockHost,
+      "microservice.services.internal-auth.port" -> mockPort,
+      "microservice.services.dms-submission.port" -> mockPort,
+      "microservice.services.dms-submission.host" -> mockHost,
       "microservice.services.dms-submission.contact-details-submission.callbackEndpoint" -> "http://localhost/callback",
       "microservice.services.dms-submission.contact-details-submission.classificationType" -> "classificationType",
       "microservice.services.dms-submission.contact-details-submission.source" -> "source",
@@ -81,7 +68,6 @@ with MetricTestSupport {
       "http-verbs.retries.intervals" -> List("1ms"),
       "auditing.enabled" -> false
     )
-//    .bindings(bind[DmsConnector].toInstance(dmsConnector))
 
   "DmsConnector sendPdf" should {
 
@@ -125,51 +111,12 @@ with MetricTestSupport {
     )
 
     "must return Done when the server returns ACCEPTED" in {
-
-      stubFor(
-        post(urlEqualTo("/dms-submission/submit"))
-          .withHeader(AUTHORIZATION, equalTo("authKey"))
-          .withHeader(USER_AGENT, equalTo("agent-services-account"))
-          .withMultipartRequestBody(
-            aMultipart().withName("submissionReference").withBody(equalTo("submissionReference"))
-          )
-          .withMultipartRequestBody(aMultipart().withName("callbackUrl").withBody(equalTo("http://localhost/callback")))
-          .withMultipartRequestBody(aMultipart().withName("metadata.source").withBody(equalTo("source")))
-          .withMultipartRequestBody(
-            aMultipart().withName("metadata.timeOfReceipt").withBody(equalTo("2022-03-02T12:30:45Z"))
-          )
-          .withMultipartRequestBody(aMultipart().withName("metadata.formId").withBody(equalTo("formId")))
-          .withMultipartRequestBody(aMultipart().withName("metadata.customerId").withBody(equalTo("customerId")))
-          .withMultipartRequestBody(
-            aMultipart().withName("metadata.classificationType").withBody(equalTo("classificationType"))
-          )
-          .withMultipartRequestBody(aMultipart().withName("metadata.businessArea").withBody(equalTo("businessArea")))
-          .withMultipartRequestBody(
-            aMultipart()
-              .withName("form")
-              .withBody(equalTo("SomePdfBytes"))
-              .withHeader("Content-Disposition", containing("""filename="form.pdf""""))
-              .withHeader("Content-Type", equalTo("application/pdf"))
-          )
-          .willReturn(
-            aResponse()
-              .withStatus(ACCEPTED)
-              .withBody(Json.stringify(Json.obj("id" -> "foobar")))
-          )
-      )
-
+      givenDmsFullSubmissionSuccess
       dmsConnector.sendPdf(source).futureValue
     }
 
     "must fail when the server returns another status" in {
-
-      stubFor(
-        post(urlEqualTo("/dms-submission/submit"))
-          .willReturn(
-            aResponse()
-              .withStatus(INTERNAL_SERVER_ERROR)
-          )
-      )
+      givenDmsSubmission5xx
       dmsConnector.sendPdf(source).failed.futureValue
     }
   }

@@ -16,31 +16,33 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import play.api.{Application}
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException
-import uk.gov.hmrc.agentservicesaccount.stubs.{CitizenDetailsStubs, MetricTestSupport}
-import uk.gov.hmrc.agentservicesaccount.support.{UnitSpec, WireMockSupport}
+import uk.gov.hmrc.agentservicesaccount.stubs.CitizenDetailsStubs
+import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.ExecutionContext
 
 class CitizenDetailsConnectorISpec
-  extends UnitSpec
-    with GuiceOneAppPerSuite
-    with WireMockSupport
-    with CitizenDetailsStubs
-    with MetricTestSupport {
-
+  extends ComponentSpecHelper
+    with CitizenDetailsStubs {
 
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
+
+  override def extraConfig: Map[String, Any] = Map(
+    "microservice.services.citizen-details.host" -> mockHost,
+    "microservice.services.citizen-details.port" -> mockPort,
+    "auditing.enabled" -> false,
+    "http-verbs.retries.intervals" -> List("1ms")
+  )
+
+
 
   lazy val connector = new CitizenDetailsConnector(
     app.injector.instanceOf[AppConfig],
@@ -50,17 +52,6 @@ class CitizenDetailsConnectorISpec
   val saUtrAlive = SaUtr("1234567890")
   val saUtrDeceased = SaUtr("9876543210")
   val saUtrError = SaUtr("9999999999")
-
-  override implicit lazy val app: Application = appBuilder.build()
-
-  private def appBuilder: GuiceApplicationBuilder =
-    new GuiceApplicationBuilder()
-      .configure(
-        "microservice.services.citizen-details.host" -> wireMockHost,
-        "microservice.services.citizen-details.port" -> wireMockPort,
-        "auditing.enabled" -> false,
-        "http-verbs.retries.intervals" -> List("1ms")
-      )
 
   "CitizenDetailsConnector.getCitizenDeceasedFlag" should {
     "return None when citizen is alive" in {

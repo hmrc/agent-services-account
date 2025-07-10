@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.agentservicesaccount.utils
 
+import org.scalatest.concurrent.Futures.{PatienceConfig, scaled}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
@@ -27,6 +29,8 @@ import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 import play.api.test.DefaultAwaitTimeout
 import play.api.test.Helpers.*
+import uk.gov.hmrc.agentservicesaccount.helpers.InstantClockTestSupport
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 trait ComponentSpecHelper
   extends AnyWordSpec
@@ -36,12 +40,16 @@ trait ComponentSpecHelper
     with WiremockHelper
     with BeforeAndAfterAll
     with BeforeAndAfterEach
+    with InstantClockTestSupport
+    with CleanMongoCollectionSupport
     with GuiceOneServerPerSuite:
 
-  def extraConfig(): Map[String, String] = Map.empty
+  def extraConfig: Map[String, Any] = Map.empty
 
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(3, Seconds)), interval = scaled(Span(300, Millis)))
+  
   override lazy val app: Application = new GuiceApplicationBuilder()
-    .configure(config ++ extraConfig())
+    .configure(config ++ extraConfig)
     .configure("play.http.router" -> "testOnlyDoNotUseInAppConf.Routes")
     .build()
 

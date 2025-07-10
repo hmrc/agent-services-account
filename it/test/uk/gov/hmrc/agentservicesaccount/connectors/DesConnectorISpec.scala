@@ -18,42 +18,54 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.Configuration
 import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import play.api.{Application, Configuration}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, SuspensionDetails, Utr}
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress}
 import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
-import uk.gov.hmrc.agentservicesaccount.stubs.{DataStreamStub, DesStubs, MetricTestSupport}
-import uk.gov.hmrc.agentservicesaccount.support.{UnitSpec, WireMockSupport}
+import uk.gov.hmrc.agentservicesaccount.stubs.{DataStreamStub, DesStubs}
+import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter, PlainText}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
-import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import scala.concurrent.ExecutionContext
 
 class DesConnectorISpec
-extends UnitSpec
-with GuiceOneAppPerSuite
-with WireMockSupport
+extends ComponentSpecHelper
 with DesStubs
-with DataStreamStub
-with CleanMongoCollectionSupport
-with MetricTestSupport {
+with DataStreamStub {
   
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
-  
 
-  private implicit lazy val config: Config = app.injector.instanceOf[Config]
+
+  override def extraConfig: Map[String, Any] = Map(
+    "microservice.services.auth.host" -> mockHost,
+    "microservice.services.auth.port" -> mockPort,
+    "microservice.services.des.host" -> mockHost,
+    "microservice.services.des.port" -> mockPort,
+    "microservice.services.des.environment" -> "test",
+    "microservice.services.des.authorization-token" -> "secret",
+    "microservice.services.enrolment-store-proxy.host" -> mockHost,
+    "microservice.services.enrolment-store-proxy.port" -> mockPort,
+    "auditing.consumer.baseUri.host" -> mockHost,
+    "auditing.consumer.baseUri.port" -> mockPort,
+    "internal-auth-token-enabled-on-start" -> false,
+    "http-verbs.retries.intervals" -> List("1ms"),
+    "agent.entity.cache.enabled" -> true,
+    "agent.entity.cache.expires" -> "1 second",
+    "auditing.enabled" -> false,
+    "rate-limiter.business-names.max-calls-per-second" -> 10
+  )
+
+  private implicit lazy val configuration: Config = app.injector.instanceOf[Config]
   private implicit lazy val as: ActorSystem = ActorSystem()
   private implicit val crypto: Encrypter
     with Decrypter = aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
@@ -80,32 +92,9 @@ with MetricTestSupport {
       app.injector.instanceOf[AppConfig],
       app.injector.instanceOf[HttpClientV2],
       cacheProvider,
-      config,
+      configuration,
       as
     )
-
-  override implicit lazy val app: Application = appBuilder.build()
-
-  protected def appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
-    .configure(
-      "microservice.services.auth.host" -> wireMockHost,
-      "microservice.services.auth.port" -> wireMockPort,
-      "microservice.services.des.host" -> wireMockHost,
-      "microservice.services.des.port" -> wireMockPort,
-      "microservice.services.des.environment" -> "test",
-      "microservice.services.des.authorization-token" -> "secret",
-      "microservice.services.enrolment-store-proxy.host" -> wireMockHost,
-      "microservice.services.enrolment-store-proxy.port" -> wireMockPort,
-      "auditing.consumer.baseUri.host" -> wireMockHost,
-      "auditing.consumer.baseUri.port" -> wireMockPort,
-      "internal-auth-token-enabled-on-start" -> false,
-      "http-verbs.retries.intervals" -> List("1ms"),
-      "agent.entity.cache.enabled" -> true,
-      "agent.entity.cache.expires" -> "1 second",
-      "auditing.enabled" -> false,
-      "rate-limiter.business-names.max-calls-per-second" -> 10
-    )
-//    .bindings(bind[DesConnector].toInstance(desConnector))
 
   val agentDetailsDesResponse = AgentDetailsDesResponse(
     Some(Utr("0123456789")),

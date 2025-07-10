@@ -16,49 +16,39 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.{AnyContentAsEmpty, Request}
+import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.stubs.{DataStreamStub, EmailStub}
-import uk.gov.hmrc.agentservicesaccount.support.{UnitSpec, WireMockSupport}
+import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.play.bootstrap.metrics.Metrics
-import play.api.mvc.{AnyContentAsEmpty, Request}
-import play.api.test.FakeRequest
 
 import scala.concurrent.ExecutionContext
 
 class EmailConnectorISpec
-extends UnitSpec
-with GuiceOneAppPerSuite
-with WireMockSupport
-with DataStreamStub
-with EmailStub {
+  extends ComponentSpecHelper
+    with DataStreamStub
+    with EmailStub {
 
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
 
   lazy implicit val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
   lazy val httpClient: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
-  lazy val metrics: Metrics = app.injector.instanceOf[Metrics]
   lazy val connector: EmailConnector =
     new EmailConnector(
       appConfig,
       httpClient
     )
 
-  protected def appBuilder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
-    .configure(
-      "microservice.services.email.host" -> wireMockHost,
-      "microservice.services.email.port" -> wireMockPort,
+  override def extraConfig: Map[String, Any] = Map(
+      "microservice.services.email.host" -> mockHost,
+      "microservice.services.email.port" -> mockPort,
       "agent-maintainer-email" -> "test@example.com",
       "auditing.enabled" -> false
     )
-
-  override implicit lazy val app: Application = appBuilder.build()
 
   val emailInfo: EmailInformation = EmailInformation(
     to = Seq("abc@xyz.com"),
