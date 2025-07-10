@@ -22,13 +22,13 @@ import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendHeaderCarrierProvider
 
-import javax.inject.Inject
+
 
 /** I'm repeating a pattern which was brought originally by play-framework and putting some more data which can be derived from a request
  *
  * Use it to provide HeaderCarrier, Lang, or Messages
  */
-class RequestSupport @Inject() () {
+class RequestSupport () {
   given myHc(using request: Request[_]): HeaderCarrier = RequestSupport.myHc
 }
 
