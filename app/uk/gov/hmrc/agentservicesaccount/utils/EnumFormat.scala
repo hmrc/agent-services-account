@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,58 @@
 
 package uk.gov.hmrc.agentservicesaccount.utils
 
-import enumeratum.Enum
-import enumeratum.EnumEntry
 import play.api.libs.json.*
 
-object EnumFormat {
+import scala.reflect.ClassTag
 
-  @SuppressWarnings(
-    Array(
-      "org.wartremover.warts.Product",
-      "org.wartremover.warts.Serializable"
+object EnumFormat:
+
+  /**
+   * Creates a Format for Scala 3 enums by automatically retrieving all enum values.
+   *
+   * @tparam E The enum type
+   * @return A Format for the enum type
+   */
+  def enumFormat[E <: scala.reflect.Enum](using ct: ClassTag[E]): Format[E] =
+    
+    // Get the enum's companion object
+    val enumClass = ct.runtimeClass
+    val companionField = try enumClass.getField("MODULE$") catch case _ => null
+    val companionObj = if companionField != null then companionField.get(null) else null
+
+    // Call the values() method on the companion object to get all enum values
+    val valuesMethod = enumClass.getMethod("values")
+    val enumValues = valuesMethod.invoke(companionObj).asInstanceOf[Array[E]]
+
+    // Create the Format using the retrieved enum values
+    enumFormatWithValues(enumValues)
+
+    /**
+     * Creates a Format for Scala 3 enums with explicitly provided enum values.
+     *
+     * @param enumValues The enum values to use for serialization/deserialization
+     * @tparam E The enum type
+     * @return A Format for the enum type
+     */
+  private def enumFormatWithValues[E <: reflect.Enum](enumValues: Iterable[E])(using ct: ClassTag[E]): Format[E] =
+    val enumName = ct.runtimeClass.getSimpleName
+
+    Format(
+      Reads { json =>
+        json.validate[String].flatMap { str =>
+          enumValues
+            .find(_.toString == str)
+            .fold[JsResult[E]](JsError(s"Unknown value for enum $enumName: '$str'"))(JsSuccess(_))
+        }
+      },
+      Writes(e => JsString(e.toString))
     )
-  ) // TODO: delete that and use enumeratum-play-json instead of it
-  def apply[T <: EnumEntry](e: Enum[T]): Format[T] = Format(
-    Reads {
-      case JsString(value) =>
-        e.withNameOption(value)
-          .map[JsResult[T]](JsSuccess(_))
-          .getOrElse(JsError(s"Unknown ${e.getClass.getSimpleName} value: $value"))
-      case _ => JsError("Can only parse String")
-    },
-    Writes(v => JsString(v.entryName))
-  )
-}
+
+  /**
+   * Extension method to create a Format for all values of an enum.
+   *
+   * @tparam E The enum type
+   */
+  extension [E <: reflect.Enum](values: Array[E])
+    def jsonFormat(using ClassTag[E]): Format[E] = enumFormatWithValues(values)
+

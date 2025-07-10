@@ -16,33 +16,11 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.dms
 
-import enumeratum.{Enum, EnumEntry}
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentservicesaccount.utils.EnumFormat
 
-sealed abstract class SubmissionItemStatus
-extends EnumEntry
+enum SubmissionItemStatus:
+  case Completed, Failed, Forwarded, Processed, Submitted
 
-object SubmissionItemStatus
-extends Enum[SubmissionItemStatus] {
-
-  implicit val format: Format[SubmissionItemStatus] = EnumFormat(SubmissionItemStatus)
-
-  case object Completed
-  extends SubmissionItemStatus
-
-  case object Failed
-  extends SubmissionItemStatus
-
-  case object Forwarded
-  extends SubmissionItemStatus
-
-  case object Processed
-  extends SubmissionItemStatus
-
-  case object Submitted
-  extends SubmissionItemStatus
-
-  override def values: IndexedSeq[SubmissionItemStatus] = findValues
-
-}
+object SubmissionItemStatus:
+  implicit val format: Format[SubmissionItemStatus] = EnumFormat.enumFormat

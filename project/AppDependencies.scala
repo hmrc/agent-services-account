@@ -13,7 +13,6 @@ object AppDependencies {
     "uk.gov.hmrc"             %% "crypto-json-play-30"          % "8.2.0",
     "uk.gov.hmrc"             %% "internal-auth-client-play-30" % "4.0.0",
     "com.openhtmltopdf"       % "openhtmltopdf-pdfbox"          % openHtmlToPdfVersion,
-    "com.beachape"            %% "enumeratum-play-json"         % "1.9.0"
   )
 
   val test = Seq(
