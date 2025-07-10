@@ -21,10 +21,11 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.agententity.VerifyEntityRequest
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 
 
-class VerifyEntityRequestSpec extends AnyWordSpec:
+class VerifyEntityRequestSpec extends UnitSpec:
 
   val testArn = Arn("AARN1234567")
   val testRequest = VerifyEntityRequest(identifier = testArn)

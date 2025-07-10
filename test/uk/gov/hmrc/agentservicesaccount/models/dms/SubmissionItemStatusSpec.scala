@@ -19,8 +19,9 @@ package uk.gov.hmrc.agentservicesaccount.models.dms
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class SubmissionItemStatusSpec extends AnyWordSpec:
+class SubmissionItemStatusSpec extends UnitSpec:
 
   "SubmissionItemStatus" should {
     "serialize to JSON correctly" in {

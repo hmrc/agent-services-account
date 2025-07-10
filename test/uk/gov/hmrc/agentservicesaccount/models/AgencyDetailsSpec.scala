@@ -19,9 +19,10 @@ package uk.gov.hmrc.agentservicesaccount.models
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.{Crypted, Decrypter, Encrypter, PlainBytes, PlainContent, PlainText}
 
-class AgencyDetailsSpec extends AnyWordSpec:
+class AgencyDetailsSpec extends UnitSpec:
 
   given fakeCrypto: Encrypter with Decrypter with
     override def encrypt(plain: PlainContent): Crypted = plain match {

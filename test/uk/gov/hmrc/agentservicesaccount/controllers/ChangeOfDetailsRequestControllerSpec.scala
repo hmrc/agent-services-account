@@ -18,13 +18,11 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
-
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.when
 import play.api.test.FakeRequest
-import play.api.test.Helpers.await
-import play.api.test.Helpers.stubControllerComponents
+import play.api.test.Helpers.{await, stubControllerComponents}
 import uk.gov.hmrc.agentservicesaccount.assets.TestConstants.testChangeOfDetailsRequest
 import uk.gov.hmrc.agentservicesaccount.services.ChangeOfDetailsRequestService
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec

@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Request
 import play.api.test.FakeRequest
-import play.api.test.Helpers.*
+import play.api.test.Helpers.await
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.helpers.ChangeDesiDetailsPayloads
 import uk.gov.hmrc.agentservicesaccount.mocks.*
 import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsResponse, DmsSubmissionReference}
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.{InternalServerException, UpstreamErrorResponse}
 
 import java.time.{Instant, LocalDateTime, ZoneId}
@@ -31,7 +31,7 @@ import java.util.Base64
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class DmsServiceSpec
-extends PlaySpec
+extends UnitSpec
 with MockDmsConnector
 with MockAppConfig {
 
@@ -61,13 +61,13 @@ with MockAppConfig {
 
       mocksendPdfAccepted()
 
-      val result = await(service.submitToDms(
+      val result = service.submitToDms(
         Some(encoded),
         timestamp,
         DmsSubmissionReference("DmsSubmissionReference")
-      ))
+      ).futureValue
 
-      result mustBe DmsResponse(timestamp, "")
+      result shouldBe DmsResponse(timestamp, "")
     }
 
     "return correct value when the submission is successful" in {
@@ -88,13 +88,13 @@ with MockAppConfig {
 
       mocksendPdfAccepted()
 
-      val result = await(service.submitToDms(
+      val result = service.submitToDms(
         Some(encoded),
         timestamp,
         DmsSubmissionReference("DmsSubmissionReference")
-      ))
+      ).futureValue
 
-      result mustBe DmsResponse(timestamp, "")
+      result shouldBe DmsResponse(timestamp, "")
     }
 
     "return upstream error if submission fails" in {

@@ -19,8 +19,9 @@ package uk.gov.hmrc.agentservicesaccount.models
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class UtrChecksResponseSpec extends AnyWordSpec:
+class UtrChecksResponseSpec extends UnitSpec:
 
   val testResponse = UtrChecksResponse(
     isManuallyAssured = true,

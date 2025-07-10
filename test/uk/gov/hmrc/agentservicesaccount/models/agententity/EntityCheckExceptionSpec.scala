@@ -18,8 +18,9 @@ package uk.gov.hmrc.agentservicesaccount.models.agententity
 
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class EntityCheckExceptionSpec extends AnyWordSpec:
+class EntityCheckExceptionSpec extends UnitSpec:
 
   "EntityCheckException" should {
 

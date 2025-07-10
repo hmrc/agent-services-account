@@ -19,8 +19,9 @@ package uk.gov.hmrc.agentservicesaccount.models.dms
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class DmsSubmissionReferenceSpec extends AnyWordSpec:
+class DmsSubmissionReferenceSpec extends UnitSpec:
 
   val testRef = DmsSubmissionReference("ABC123XYZ789")
 

@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.Materializer
 import org.scalamock.scalatest.MockFactory
-import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import play.api.libs.json.Json
 import play.api.test.*
@@ -29,6 +28,7 @@ import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.*
 import uk.gov.hmrc.agentservicesaccount.mocks.*
 import uk.gov.hmrc.agentservicesaccount.models.agententity.{EntityCheckException, EntityCheckResult}
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderNames
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.internalauth.client.test.BackendAuthComponentsStub
@@ -36,8 +36,7 @@ import uk.gov.hmrc.internalauth.client.test.BackendAuthComponentsStub
 import scala.concurrent.ExecutionContext
 
 class AgentDetailsControllerSpec
-extends PlaySpec
-with DefaultAwaitTimeout
+extends UnitSpec
 with GuiceOneAppPerTest
 with MockAppConfig
 with MockAuthConnector
@@ -78,8 +77,8 @@ with MockFactory {
               .withHeaders(HeaderNames.authorisation -> "Some auth token")
           )
 
-        status(result) mustBe OK
-        contentAsJson(result) mustBe Json.toJson(testAgentDetailsDesResponse)
+        status(result) shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson(testAgentDetailsDesResponse)
 
       }
     }
@@ -103,8 +102,8 @@ with MockFactory {
             .withHeaders(HeaderNames.authorisation -> "Some auth token")
         )
 
-      status(result) mustBe OK
-      contentAsJson(result) mustBe Json.toJson(agentDetailsDesResponse)
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(agentDetailsDesResponse)
 
     }
 
@@ -123,8 +122,8 @@ with MockFactory {
               .withHeaders(HeaderNames.authorisation -> "Some auth token", "Content-Type" -> "application/json")
           )
 
-        status(result) mustBe OK
-        contentAsJson(result) mustBe Json.toJson(testAgentDetailsDesResponse)
+        status(result) shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson(testAgentDetailsDesResponse)
 
       }
 
@@ -141,8 +140,8 @@ with MockFactory {
               .withHeaders(HeaderNames.authorisation -> "Some auth token", "Content-Type" -> "application/json")
           )
 
-        status(result) mustBe OK
-        contentAsJson(result) mustBe Json.toJson(agentDetailsDesResponse)
+        status(result) shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson(agentDetailsDesResponse)
 
       }
     }

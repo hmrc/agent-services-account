@@ -18,23 +18,22 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.PlaySpec
 import play.api.http.Status.{BAD_REQUEST, OK}
 import play.api.libs.json.Json
-import play.api.test.{DefaultAwaitTimeout, FakeRequest}
+import play.api.test.FakeRequest
 import play.api.test.Helpers.{POST, status, stubControllerComponents}
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
 import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsNotification, SubmissionItemStatus}
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderNames
-import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, Predicate, Retrieval}
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
+import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, Predicate, Retrieval}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class DmsNotificationControllerSpec
-  extends PlaySpec
-    with DefaultAwaitTimeout
+  extends UnitSpec
     with MockitoSugar
     with MockAppConfig {
 
@@ -72,7 +71,7 @@ class DmsNotificationControllerSpec
           .withBody(Json.toJson(dmsNotification))
 
         val result = controller.dmsCallback()(request)
-        status(result) mustBe OK
+        status(result) shouldBe OK
       }
     }
 
@@ -90,7 +89,7 @@ class DmsNotificationControllerSpec
           .withBody(Json.obj())
 
         val result = controller.dmsCallback()(request)
-        status(result) mustBe BAD_REQUEST
+        status(result) shouldBe BAD_REQUEST
       }
     }
 

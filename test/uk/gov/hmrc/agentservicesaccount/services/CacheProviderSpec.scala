@@ -17,13 +17,12 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatest.matchers.must.Matchers
-import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class CacheProviderSpec extends AnyWordSpec with Matchers with MockitoSugar {
+class CacheProviderSpec extends UnitSpec with MockitoSugar {
 
   "CacheProvider" should {
 
@@ -33,8 +32,8 @@ class CacheProviderSpec extends AnyWordSpec with Matchers with MockitoSugar {
 
       val provider = new CacheProvider(mockCacheRepo, config)
 
-      provider.cacheEnabled mustBe true
-      provider.agentDetailsCache mustBe mockCacheRepo
+      provider.cacheEnabled shouldBe true
+      provider.agentDetailsCache shouldBe mockCacheRepo
     }
 
     "use DoNotCache when caching is disabled" in {
@@ -43,8 +42,8 @@ class CacheProviderSpec extends AnyWordSpec with Matchers with MockitoSugar {
 
       val provider = new CacheProvider(mockCacheRepo, config)
 
-      provider.cacheEnabled mustBe false
-      provider.agentDetailsCache mustBe a[DoNotCache[_]]
+      provider.cacheEnabled shouldBe false
+      provider.agentDetailsCache shouldBe a[DoNotCache[_]]
     }
 
   }

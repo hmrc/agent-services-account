@@ -16,9 +16,12 @@
 
 package uk.gov.hmrc.agentservicesaccount.utils
 
+import org.scalatest.OptionValues
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.WsScalaTestClient
 import play.api.test.DefaultAwaitTimeout
 
-trait UnitSpec extends AnyWordSpec with should.Matchers with DefaultAwaitTimeout with MockitoSugar
+trait UnitSpec extends AnyWordSpec with should.Matchers with DefaultAwaitTimeout with MockitoSugar with ScalaFutures with OptionValues with WsScalaTestClient

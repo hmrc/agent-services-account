@@ -22,10 +22,12 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.helpers.InstantClockTestSupport
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
+
 import java.time.format.DateTimeFormatter
 
 
-class AgentCheckFailureNotificationAuditEventSpec extends AnyWordSpec with InstantClockTestSupport:
+class AgentCheckFailureNotificationAuditEventSpec extends UnitSpec with InstantClockTestSupport:
 
   val testArn = Arn("AARN1234567")
   val testUtr = "1234567890"

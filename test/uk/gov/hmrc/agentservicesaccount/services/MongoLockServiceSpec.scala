@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import org.scalatestplus.play.PlaySpec
-import play.api.test.Helpers.*
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
-import uk.gov.hmrc.agentmtdidentifiers.model.Utr
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
@@ -29,7 +28,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class MongoLockServiceSpec
-extends PlaySpec
+extends UnitSpec
 with CleanMongoCollectionSupport
 with MockAppConfig {
 
@@ -43,19 +42,19 @@ with MockAppConfig {
 
   "MongoLockServiceSpec" should {
     "return Some(value) when not locked" in {
-      await(service.dailyLock(utr1)(Future.successful(()))) mustBe Some(())
+      service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe Some(())
     }
     "return None when locked" in {
-      await(service.dailyLock(utr1)(Future.successful(()))) mustBe Some(())
-      await(service.dailyLock(utr1)(Future.successful(()))) mustBe None
+      service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe Some(())
+      service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe None
     }
 
     "return Some(value) after TTL 1 second when locked" in {
-      await(service.dailyLock(utr1)(Future.successful(()))) mustBe Some(())
+      service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe Some(())
       Thread.sleep(500)
-      await(service.dailyLock(utr1)(Future.successful(()))) mustBe None
+      service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe None
       Thread.sleep(600)
-      await(service.dailyLock(utr1)(Future.successful(()))) mustBe Some(())
+      service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe Some(())
     }
 
   }

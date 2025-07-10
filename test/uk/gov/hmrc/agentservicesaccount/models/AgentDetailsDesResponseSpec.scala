@@ -20,9 +20,10 @@ import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.{SuspensionDetails, Utr}
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.*
 
-class AgentDetailsDesResponseSpec extends AnyWordSpec:
+class AgentDetailsDesResponseSpec extends UnitSpec:
 
   // Fake crypto for encryption tests
   given fakeCrypto: Encrypter with Decrypter with

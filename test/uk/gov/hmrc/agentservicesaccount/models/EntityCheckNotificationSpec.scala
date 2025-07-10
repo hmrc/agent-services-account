@@ -20,8 +20,9 @@ import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class EntityCheckNotificationSpec extends AnyWordSpec:
+class EntityCheckNotificationSpec extends UnitSpec:
 
   val testArn = Arn("AARN1234567")
   val testNotification = EntityCheckNotification(

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import org.scalatestplus.play.PlaySpec
 import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.{testArn, testUtr}
 import uk.gov.hmrc.agentservicesaccount.mocks.{MockAppConfig, MockAuditConnector}
 import uk.gov.hmrc.agentservicesaccount.models.{AgentCheckOutcome, EntityCheckNotification}
@@ -28,9 +27,10 @@ import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext
 import play.api.test.FakeRequest
 import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 class AuditServiceSpec
-extends PlaySpec
+extends UnitSpec
 with MockAppConfig
 with MockAuditConnector {
 

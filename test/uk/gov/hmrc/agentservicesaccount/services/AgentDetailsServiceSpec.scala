@@ -15,10 +15,8 @@
  */
 
 package uk.gov.hmrc.agentservicesaccount.services
-import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Request
 import play.api.test.FakeRequest
-import play.api.test.Helpers.*
 import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.*
@@ -27,6 +25,7 @@ import uk.gov.hmrc.agentservicesaccount.models.UtrChecksResponse
 import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException.EntityDeceasedCheckFailed
 import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException.AgentIsOnRefuseToDealList
 import uk.gov.hmrc.agentservicesaccount.models.agententity.{EntityCheckException, EntityCheckResult}
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
@@ -35,7 +34,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import scala.concurrent.ExecutionContext
 
 class AgentDetailsServiceSpec
-  extends PlaySpec
+  extends UnitSpec
     with CleanMongoCollectionSupport
     with MockDesConnector
     with MockCitizenDetailsConnector
@@ -79,9 +78,9 @@ class AgentDetailsServiceSpec
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
 
-      val result = await(service.getAgentDetailsWithChecks(testArn))
+      val result = service.getAgentDetailsWithChecks(testArn).futureValue
 
-      result mustBe EntityCheckResult(agentDetailsDesResponse,Seq(AgentIsOnRefuseToDealList))
+      result shouldBe EntityCheckResult(agentDetailsDesResponse,Seq(AgentIsOnRefuseToDealList))
     }
 
     "return None when the agent is not suspended" in {
@@ -98,9 +97,9 @@ class AgentDetailsServiceSpec
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
 
-      val result = await(service.getAgentDetailsWithChecks(testArn))
+      val result = service.getAgentDetailsWithChecks(testArn).futureValue
 
-      result mustBe EntityCheckResult(agentDetailsDesResponse,Seq.empty[EntityCheckException])
+      result shouldBe EntityCheckResult(agentDetailsDesResponse,Seq.empty[EntityCheckException])
     }
     
     "return Some(SuspensionDetails) and do entityChecks and sent email with deceased failed" in {
@@ -121,9 +120,9 @@ class AgentDetailsServiceSpec
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
 
-      val result = await(service.getAgentDetailsWithChecks(testArn))
+      val result = service.getAgentDetailsWithChecks(testArn).futureValue
 
-      result mustBe EntityCheckResult(agentDetailsDesResponse, Seq(EntityDeceasedCheckFailed))
+      result shouldBe EntityCheckResult(agentDetailsDesResponse, Seq(EntityDeceasedCheckFailed))
       
     }
   }

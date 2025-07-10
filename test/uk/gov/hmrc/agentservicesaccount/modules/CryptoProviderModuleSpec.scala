@@ -17,9 +17,9 @@
 package uk.gov.hmrc.agentservicesaccount.modules
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.{Crypted, PlainBytes, PlainText}
 
 import java.nio.charset.StandardCharsets
@@ -27,8 +27,7 @@ import java.util.Base64
 
 
 class CryptoProviderModuleSpec
-extends AnyWordSpec
-with Matchers {
+extends UnitSpec {
 
   def configuration(fieldLevelEncryptionEnabled: Boolean) = Configuration(
     ConfigFactory.parseString(s"""fieldLevelEncryption {

@@ -16,21 +16,18 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatestplus.play.PlaySpec
 import play.api.mvc.RequestHeader
-import play.api.test.{DefaultAwaitTimeout, FakeRequest}
+import play.api.test.FakeRequest
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.mocks.{MockAppConfig, MockEmailConnector}
 import uk.gov.hmrc.agentservicesaccount.models.{EmailInformation, EntityCheckNotification}
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 import scala.concurrent.ExecutionContext
 
 
 class EmailServiceSpec
-extends PlaySpec
-with DefaultAwaitTimeout
-  with ScalaFutures
+extends UnitSpec
 with MockEmailConnector
 with MockAppConfig {
   
@@ -62,7 +59,7 @@ with MockAppConfig {
         )
       )
 
-      service.sendEntityCheckNotification(entityChecks).futureValue mustBe ()
+      service.sendEntityCheckNotification(entityChecks).futureValue shouldBe ()
     }
   }
 
