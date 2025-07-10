@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
+import org.scalatest.time.{Millis, Seconds, Span}
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
@@ -33,6 +34,10 @@ extends UnitSpec
 with CleanMongoCollectionSupport
 with MockAppConfig {
 
+  override implicit val patienceConfig: PatienceConfig =
+    PatienceConfig(timeout = scaled(Span(3, Seconds)), interval = scaled(Span(300, Millis)))
+
+  
   val mongoLockRepository = new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
   implicit val ac: AppConfig = mockAppConfig
 
