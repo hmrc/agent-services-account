@@ -34,9 +34,6 @@ trait MockAppConfig extends MockitoSugar { this: TestSuite =>
   val mockConfig: Configuration = mock[Configuration]
 
   // Stub Configuration
-  when(mockConfig.get[Seq[String]](meq("internalServiceHostPatterns"))(any()))
-    .thenReturn(Seq("^.*\\.service$", "^.*\\.mdtp$", "^localhost$"))
-
   when(mockConfig.get[String](meq("agent-maintainer-email"))(any()))
     .thenReturn("test@example.com")
 

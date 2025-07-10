@@ -69,15 +69,13 @@ with Logging {
     x: Reads[A]
   ): Future[A] = {
 
-    val isInternalHost = appConfig.internalHostPatterns.exists(_.pattern.matcher(url.getHost).matches())
 
     retryFor[A](s"$apiName connector get $url")(retryCondition) {
       httpV2
         .get(url)
         .setHeader(desHeaders(
           authorizationToken,
-          environment,
-          isInternalHost
+          environment
         ): _*)
         .executeAndDeserialise[A]
     }
@@ -92,18 +90,14 @@ with Logging {
 
   private def desHeaders(
     authToken: String,
-    env: String,
-    isInternalHost: Boolean
+    env: String
   )(using request: RequestHeader): Seq[(String, String)] = {
 
     val additionalHeaders =
-      if (isInternalHost)
-        Seq.empty
-      else
-        Seq(
-          HeaderNames.authorisation -> s"Bearer $authToken",
-          HeaderNames.xRequestId -> myHc.requestId.map(_.value).getOrElse(UUID.randomUUID().toString)
-        ) ++ myHc.sessionId.fold(Seq.empty[(String, String)])(x => Seq(HeaderNames.xSessionId -> x.value))
+      Seq(
+        HeaderNames.authorisation -> s"Bearer $authToken",
+        HeaderNames.xRequestId -> myHc.requestId.map(_.value).getOrElse(UUID.randomUUID().toString)
+      ) ++ myHc.sessionId.fold(Seq.empty[(String, String)])(x => Seq(HeaderNames.xSessionId -> x.value))
     val commonHeaders = Seq(Environment -> env, CorrelationId -> UUID.randomUUID().toString)
     commonHeaders ++ additionalHeaders
   }

@@ -22,7 +22,6 @@ import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.duration.Duration
-import scala.util.matching.Regex
 
 @Singleton
 class AppConfig @Inject() (
@@ -37,7 +36,6 @@ class AppConfig @Inject() (
   val desAuthToken: String = servicesConfig.getString("microservice.services.des.authorization-token")
   val desEnv: String = servicesConfig.getString("microservice.services.des.environment")
 
-  val internalHostPatterns: Seq[Regex] = config.get[Seq[String]]("internalServiceHostPatterns").map(_.r)
   val entityChecksLockExpires: Duration = servicesConfig.getDuration("agent.entity-check.lock.expires")
   val entityChecksEmailLockExpires: Duration = servicesConfig.getDuration("agent.entity-check.email.lock.expires")
   val emailBaseUrl: String = baseUrl("email")
