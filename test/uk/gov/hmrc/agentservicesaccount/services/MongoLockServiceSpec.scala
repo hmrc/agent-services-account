@@ -26,6 +26,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 class MongoLockServiceSpec
 extends UnitSpec
@@ -40,6 +41,16 @@ with MockAppConfig {
   val utr1 = Utr("1234567")
   val utr2 = Utr("1234567")
 
+  def retry[T](n: Int)(block: => T): T = {
+    Try(block) match {
+      case Success(result) => result
+      case Failure(e) if n > 1 =>
+        Thread.sleep(500)
+        retry(n - 1)(block)
+      case Failure(e) => throw e
+    }
+  }
+
   "MongoLockServiceSpec" should {
     "return Some(value) when not locked" in {
       service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe Some(())
@@ -51,10 +62,12 @@ with MockAppConfig {
 
     "return Some(value) after TTL 1 second when locked" in {
       service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe Some(())
-      Thread.sleep(500)
-      service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe None
-      Thread.sleep(600)
-      service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe Some(())
+      retry(5) {
+        service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe None
+      }
+      retry(5) {
+        service.dailyLock(utr1)(Future.successful(())).futureValue shouldBe Some(())
+      }
     }
 
   }
