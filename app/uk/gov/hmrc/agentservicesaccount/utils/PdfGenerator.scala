@@ -19,23 +19,27 @@ package uk.gov.hmrc.agentservicesaccount.utils
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
 
 import java.io.ByteArrayOutputStream
+import scala.util.Using
 
 object PdfGenerator {
   def buildPdf(html: String): ByteArrayOutputStream = {
     val os = new ByteArrayOutputStream()
-    val builder = new PdfRendererBuilder
-    val renderer = builder
-      .useFont(() => getClass.getResourceAsStream("/pdf/arial.ttf"), "Arial")
-      .usePdfUaAccessbility(true)
-      .usePdfAConformance(PdfRendererBuilder.PdfAConformance.PDFA_3_U)
-      .withHtmlContent(html, null)
-      .withProducer("HMRC")
-      .useFastMode
-      .toStream(os)
-      .buildPdfRenderer()
-    renderer.createPDF()
-    renderer.close()
 
-    os
+    // Using ensures the font stream is closed automatically
+    Using(getClass.getResourceAsStream("/pdf/arial.ttf")) { fontStream =>
+      val builder = new PdfRendererBuilder()
+      val renderer = builder
+        .useFont(() => fontStream, "Arial")
+        .usePdfUaAccessbility(true)
+        .usePdfAConformance(PdfRendererBuilder.PdfAConformance.PDFA_3_U)
+        .withHtmlContent(html, null)
+        .withProducer("HMRC")
+        .useFastMode
+        .toStream(os)
+        .buildPdfRenderer()
+      renderer.createPDF()
+      renderer.close()
+      os
+    }.getOrElse(throw new RuntimeException("Failed to load font or generate PDF"))
   }
 }
