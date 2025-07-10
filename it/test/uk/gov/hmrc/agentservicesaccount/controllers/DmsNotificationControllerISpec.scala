@@ -24,8 +24,6 @@ import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsNotification, SubmissionI
 import uk.gov.hmrc.agentservicesaccount.stubs.InternalAuthStub
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 
-import scala.concurrent.Await
-import scala.concurrent.duration.*
 
 class DmsNotificationControllerISpec
   extends ComponentSpecHelper
@@ -48,7 +46,7 @@ class DmsNotificationControllerISpec
 
     val request = wsClient.url(url).withHttpHeaders(headers *)
 
-    Await.result(request.post(payload), 5.seconds)
+    request.post(payload).futureValue
   }
 
   "POST /agent-services-account/dms-notification/callback" should {

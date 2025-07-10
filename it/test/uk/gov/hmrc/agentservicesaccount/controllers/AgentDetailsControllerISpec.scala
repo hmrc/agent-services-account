@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentservicesaccount.controllers
 
-import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import play.api.http.Status.*
 import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
@@ -28,7 +27,6 @@ import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.domain.SaUtr
 
 import java.time.format.DateTimeFormatter
-import scala.concurrent.Await
 import scala.util.{Failure, Success, Try}
 
 
@@ -82,29 +80,26 @@ class AgentDetailsControllerISpec
 
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
-  def doClientGetRequest(arn: Arn): WSResponse = Await.result(
+  def doClientGetRequest(arn: Arn): WSResponse =
     wsClient
       .url(clientUrl(arn))
       .withHttpHeaders("Authorization" -> "internal auth token")
-      .get(),
-    15.seconds
-  )
+      .get()
+      .futureValue
 
-  def doAgentGetRequest() = Await.result(
+  def doAgentGetRequest() =
     wsClient
       .url(agentUrl)
       .withHttpHeaders("Authorization" -> "Bearer XYZ")
-      .get(),
-    15.seconds
-  )
+      .get()
+      .futureValue
 
-  def doPOSTRequest[T](arn: Arn, body: T)(implicit wr: BodyWritable[T]) = Await.result(
+  def doPOSTRequest[T](arn: Arn, body: T)(implicit wr: BodyWritable[T]) =
     wsClient
       .url(postUrl(arn))
       .withHttpHeaders("Authorization" -> "Bearer XYZ")
-      .post(body),
-    15.seconds
-  )
+      .post(body)
+      .futureValue
 
   def expectedAgentRecordJson(utr: Option[Utr], suspensionStatus: Boolean, isAnIndividual: Boolean): JsValue = {
     val baseFields: Seq[(String, JsValue)] = Seq(
@@ -209,12 +204,11 @@ class AgentDetailsControllerISpec
   }
 
     "return 401 when internal auth is not provided for clientVerifyEntity" in {
-      val response = Await.result(
+      val response =
         wsClient
           .url(clientUrl(testArn))
-          .get(), // no auth header
-        10.seconds
-      )
+          .get()
+          .futureValue
 
       response.status shouldBe UNAUTHORIZED
     }

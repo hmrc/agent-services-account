@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
-import play.api.test.Helpers.*
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.stubs.{DataStreamStub, EmailStub}
@@ -61,7 +60,7 @@ class EmailConnectorISpec
     "return Unit when the email service responds" in {
       givenEmailSent(emailInfo)
 
-      val result: Unit = await(connector.sendEmail(emailInfo))
+      val result: Unit = connector.sendEmail(emailInfo).futureValue
 
       result shouldBe (())
     }
@@ -69,7 +68,7 @@ class EmailConnectorISpec
     "not throw an Exception when the email service throws an Exception" in {
       givenEmailReturns500
 
-      val result: Unit = await(connector.sendEmail(emailInfo))
+      val result: Unit = connector.sendEmail(emailInfo).futureValue
 
       result shouldBe (())
     }

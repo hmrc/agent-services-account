@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
-import play.api.test.Helpers.*
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException
 import uk.gov.hmrc.agentservicesaccount.stubs.CitizenDetailsStubs
@@ -57,28 +56,28 @@ class CitizenDetailsConnectorISpec
     "return None when citizen is alive" in {
       givenCitizenIsAlive(saUtrAlive)
 
-      val result = await(connector.getCitizenDeceasedFlag(saUtrAlive))
+      val result = connector.getCitizenDeceasedFlag(saUtrAlive).futureValue
       result shouldBe None
     }
 
     "return Some(DeceasedCheckException.EntityDeceasedCheckFailed) when citizen is deceased" in {
       givenCitizenIsDeceased(saUtrDeceased)
 
-      val result = await(connector.getCitizenDeceasedFlag(saUtrDeceased))
+      val result = connector.getCitizenDeceasedFlag(saUtrDeceased).futureValue
       result shouldBe Some(DeceasedCheckException.EntityDeceasedCheckFailed)
     }
 
     "return Some(DeceasedCheckException.CitizenConnectorRequestFailed) when upstream error (e.g. 500)" in {
       givenCitizenDetailsReturnsError(saUtrError, 500)
 
-      val result = await(connector.getCitizenDeceasedFlag(saUtrError))
+      val result = connector.getCitizenDeceasedFlag(saUtrError).futureValue
       result shouldBe Some(DeceasedCheckException.CitizenConnectorRequestFailed(500))
     }
 
     "return Some(DeceasedCheckException.CitizenConnectorRequestFailed) for 404 response" in {
       givenCitizenDetailsReturnsError(saUtrError, 404)
 
-      val result = await(connector.getCitizenDeceasedFlag(saUtrError))
+      val result = connector.getCitizenDeceasedFlag(saUtrError).futureValue
       result shouldBe Some(DeceasedCheckException.CitizenConnectorRequestFailed(404))
     }
   }

@@ -55,7 +55,7 @@ class AgentAssuranceConnectorISpec
     "return successful UtrChecksResponse when agent passes checks" in {
       givenAgentUtrCheckWithRefusalToDealWithTrue(utr)
 
-      val result = await(connector.getAgentUtrChecks(utr))
+      val result = connector.getAgentUtrChecks(utr).futureValue
 
       result shouldBe UtrChecksResponse(
         isManuallyAssured = false,
@@ -67,7 +67,7 @@ class AgentAssuranceConnectorISpec
     "return UtrChecksResponse with false values when agent fails checks" in {
       givenAgentUtrCheckWithRefusalToDealWithFalse(utr)
 
-      val result = await(connector.getAgentUtrChecks(utr))
+      val result = connector.getAgentUtrChecks(utr).futureValue
 
       result shouldBe UtrChecksResponse(
         isManuallyAssured = false,

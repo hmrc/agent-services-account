@@ -154,7 +154,7 @@ with DataStreamStub {
     "return agency details for a given ARN" in {
       givenDESGetAgentRecord(Arn(arn.value), Some(Utr("0123456789")))
 
-      await(desConnector.getAgentRecord(arn)) shouldBe agentDetailsDesResponse
+      desConnector.getAgentRecord(arn).futureValue shouldBe agentDetailsDesResponse
 
     }
   }
@@ -162,18 +162,18 @@ with DataStreamStub {
     "return agency details cached for a given ARN and save record to cache" in {
       givenDESGetAgentRecord(Arn(arn.value), Some(Utr("0123456789")))
 
-      await(desConnector.getAgentRecord(arn)) shouldBe agentDetailsDesResponse
+      desConnector.getAgentRecord(arn).futureValue shouldBe agentDetailsDesResponse
       Thread.sleep(500)
-      await(agentDataCache.getFromCache(cacheId = encryptKey(arn.value))) shouldBe Some(agentDetailsDesResponse)
+      agentDataCache.getFromCache(cacheId = encryptKey(arn.value)).futureValue shouldBe Some(agentDetailsDesResponse)
       verifyDESGetAgentRecord(arn, 1)
 
     }
 
     "return agency details cached for a given ARN,  second from cache" in {
       givenDESGetAgentRecord(Arn(arn.value), Some(Utr("0123456789")))
-      await(desConnector.getAgentRecord(arn)) shouldBe agentDetailsDesResponse
+      desConnector.getAgentRecord(arn).futureValue shouldBe agentDetailsDesResponse
       Thread.sleep(500)
-      await(desConnector.getAgentRecord(arn)) shouldBe agentDetailsDesResponse
+      desConnector.getAgentRecord(arn).futureValue shouldBe agentDetailsDesResponse
       verifyDESGetAgentRecord(arn, 1)
     }
 
@@ -181,21 +181,21 @@ with DataStreamStub {
       givenDESGetAgentRecord(Arn(arn.value), Some(Utr("0123456789")))
       givenDESGetAgentRecord(Arn(arn2.value), Some(Utr("0123456788")))
 
-      await(desConnector.getAgentRecord(arn)) shouldBe agentDetailsDesResponse
-      await(desConnector.getAgentRecord(arn2)) shouldBe agentDetailsDesResponse2
+      desConnector.getAgentRecord(arn).futureValue shouldBe agentDetailsDesResponse
+      desConnector.getAgentRecord(arn2).futureValue shouldBe agentDetailsDesResponse2
       Thread.sleep(500)
-      await(agentDataCache.getFromCache(cacheId = encryptKey(arn.value))) shouldBe Some(agentDetailsDesResponse)
-      await(agentDataCache.getFromCache(cacheId = encryptKey(arn2.value))) shouldBe Some(agentDetailsDesResponse2)
+      agentDataCache.getFromCache(cacheId = encryptKey(arn.value)).futureValue shouldBe Some(agentDetailsDesResponse)
+      agentDataCache.getFromCache(cacheId = encryptKey(arn2.value)).futureValue shouldBe Some(agentDetailsDesResponse2)
     }
 
     "return agency details cached for a given ARN,  second from cache for two agents" in {
       givenDESGetAgentRecord(Arn(arn.value), Some(Utr("0123456789")))
       givenDESGetAgentRecord(Arn(arn2.value), Some(Utr("0123456788")))
-      await(desConnector.getAgentRecord(arn)) shouldBe agentDetailsDesResponse
-      await(desConnector.getAgentRecord(arn2)) shouldBe agentDetailsDesResponse2
+      desConnector.getAgentRecord(arn).futureValue shouldBe agentDetailsDesResponse
+      desConnector.getAgentRecord(arn2).futureValue shouldBe agentDetailsDesResponse2
       Thread.sleep(500)
-      await(desConnector.getAgentRecord(arn)) shouldBe agentDetailsDesResponse
-      await(desConnector.getAgentRecord(arn2)) shouldBe agentDetailsDesResponse2
+      desConnector.getAgentRecord(arn).futureValue shouldBe agentDetailsDesResponse
+      desConnector.getAgentRecord(arn2).futureValue shouldBe agentDetailsDesResponse2
       verifyDESGetAgentRecord(arn, 1)
       verifyDESGetAgentRecord(arn2, 1)
     }
