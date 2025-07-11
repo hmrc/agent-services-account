@@ -17,7 +17,6 @@
 package uk.gov.hmrc.agentservicesaccount.controllers
 
 import play.api.libs.json.Json
-import play.api.test.Helpers.*
 import uk.gov.hmrc.agentservicesaccount.assets.TestConstants.{testChangeOfDetailsRequest, testTimeSubmitted}
 import uk.gov.hmrc.agentservicesaccount.models.ChangeOfDetailsRequest
 import uk.gov.hmrc.agentservicesaccount.repositories.ChangeOfDetailsRequestRepository
@@ -28,13 +27,13 @@ class ChangeOfDetailsRequestControllerISpec extends ComponentSpecHelper:
   lazy val repository: ChangeOfDetailsRequestRepository = app.injector.instanceOf[ChangeOfDetailsRequestRepository]
 
   override def beforeEach(): Unit =
-    await(repository.collection.drop().head())
+    repository.collection.drop().head().futureValue
     super.beforeEach()
 
   "GET /change-of-details-request/:arn" should :
     "return 200 with the change of details request" when :
       "a matching record is available in the DB" in :
-        await(repository.upsert(testChangeOfDetailsRequest))
+        repository.upsert(testChangeOfDetailsRequest).futureValue
 
         val response = get(s"/change-of-details-request/AARN1234567")
 
@@ -55,7 +54,7 @@ class ChangeOfDetailsRequestControllerISpec extends ComponentSpecHelper:
         response.status shouldBe 204
 
       "the record is successfully updated in the DB" in :
-        await(repository.upsert(testChangeOfDetailsRequest))
+        repository.upsert(testChangeOfDetailsRequest).futureValue
 
         val response = post("/change-of-details-request")(Json.obj("arn" -> "AARN1234567", "timeSubmitted" -> testTimeSubmitted.plusSeconds(30)))
 
@@ -64,7 +63,7 @@ class ChangeOfDetailsRequestControllerISpec extends ComponentSpecHelper:
   "DELETE /change-of-details-request/:arn" should :
     "return 204" when :
       "the record is successfully deleted from the DB" in :
-        await(repository.upsert(testChangeOfDetailsRequest))
+        repository.upsert(testChangeOfDetailsRequest).futureValue
 
         val response = delete(s"/change-of-details-request/AARN1234567")
 

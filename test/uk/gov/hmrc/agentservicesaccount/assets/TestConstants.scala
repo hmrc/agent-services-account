@@ -17,8 +17,24 @@
 package uk.gov.hmrc.agentservicesaccount.assets
 
 import java.time.Instant
-
-import uk.gov.hmrc.agentservicesaccount.models.ChangeOfDetailsRequest
+import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, BusinessAddress, ChangeOfDetailsRequest}
 
 object TestConstants:
+
   val testChangeOfDetailsRequest: ChangeOfDetailsRequest = ChangeOfDetailsRequest("AARN1234567", Instant.now())
+
+  val testBusinessAddress = BusinessAddress(
+    addressLine1 = "10 Example St",
+    addressLine2 = Some("Line 2"),
+    addressLine3 = Some("Line 3"),
+    addressLine4 = Some("Line 4"),
+    postalCode = Some("AA1 1AA"),
+    countryCode = "GB"
+  )
+
+  val testAgencyDetails = AgencyDetails(
+    agencyName = Some("Test Agency"),
+    agencyEmail = Some("test@example.com"),
+    agencyTelephone = Some("1234567890"),
+    agencyAddress = Some(testBusinessAddress)
+  )

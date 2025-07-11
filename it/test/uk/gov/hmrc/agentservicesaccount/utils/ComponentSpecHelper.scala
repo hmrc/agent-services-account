@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.agentservicesaccount.utils
 
+import org.scalatest.concurrent.Futures.{PatienceConfig, scaled}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
@@ -25,23 +27,26 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Writes
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
-import play.api.test.DefaultAwaitTimeout
-import play.api.test.Helpers.*
+import uk.gov.hmrc.agentservicesaccount.helpers.InstantClockTestSupport
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 trait ComponentSpecHelper
   extends AnyWordSpec
     with Matchers
-    with DefaultAwaitTimeout
     with CustomMatchers
     with WiremockHelper
     with BeforeAndAfterAll
     with BeforeAndAfterEach
+    with InstantClockTestSupport
+    with CleanMongoCollectionSupport
     with GuiceOneServerPerSuite:
 
-  def extraConfig(): Map[String, String] = Map.empty
+  def extraConfig: Map[String, Any] = Map.empty
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(3, Seconds)), interval = scaled(Span(300, Millis)))
 
   override lazy val app: Application = new GuiceApplicationBuilder()
-    .configure(config ++ extraConfig())
+    .configure(config ++ extraConfig)
     .configure("play.http.router" -> "testOnlyDoNotUseInAppConf.Routes")
     .build()
 
@@ -71,24 +76,24 @@ trait ComponentSpecHelper
     super.beforeEach()
 
   def get[T](uri: String): WSResponse =
-    await(buildClient(uri).withHttpHeaders("Authorization" -> "Bearer 123").get())
+    buildClient(uri).withHttpHeaders("Authorization" -> "Bearer 123").get().futureValue
 
   def post[T](uri: String)(body: T)(implicit writes: Writes[T]): WSResponse =
-    await(
+
       buildClient(uri)
         .withHttpHeaders("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
         .post(writes.writes(body).toString())
-    )
+        .futureValue
+
 
   def put[T](uri: String)(body: T)(implicit writes: Writes[T]): WSResponse =
-    await(
       buildClient(uri)
         .withHttpHeaders("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
         .put(writes.writes(body).toString())
-    )
+        .futureValue
 
   def delete[T](uri: String): WSResponse =
-    await(buildClient(uri).withHttpHeaders("Authorization" -> "Bearer 123").delete())
+    buildClient(uri).withHttpHeaders("Authorization" -> "Bearer 123").delete().futureValue
 
   val baseUrl: String = "/agent-services-account"
 

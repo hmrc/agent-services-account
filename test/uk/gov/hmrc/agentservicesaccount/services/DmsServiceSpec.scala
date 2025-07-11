@@ -1,0 +1,153 @@
+/*
+ * Copyright 2024 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.agentservicesaccount.services
+
+import play.api.mvc.Request
+import play.api.test.FakeRequest
+import play.api.test.Helpers.await
+import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.helpers.ChangeDesiDetailsPayloads
+import uk.gov.hmrc.agentservicesaccount.mocks.*
+import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsResponse, DmsSubmissionReference}
+import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
+import uk.gov.hmrc.http.{InternalServerException, UpstreamErrorResponse}
+
+import java.time.{Instant, LocalDateTime, ZoneId}
+import java.util.Base64
+import scala.concurrent.ExecutionContext.Implicits.global
+
+class DmsServiceSpec
+extends UnitSpec
+with MockDmsConnector
+with MockAppConfig {
+
+  val html = "<html><head></head><body></body></html>"
+  val now: Instant = Instant.now
+  implicit val appConfig: AppConfig = mockAppConfig
+  implicit val req: Request[_] = FakeRequest()
+
+  val service = new DmsService(mockDmsConnector, appConfig)
+
+  "submitToDms" should {
+    "handle escaped special chars in desi details changes" in {
+      val encoded = Base64.getEncoder.encodeToString(ChangeDesiDetailsPayloads.specialChars.getBytes)
+
+      val timestamp =
+        LocalDateTime
+          .of(
+            2022,
+            3,
+            2,
+            12,
+            30,
+            45
+          )
+          .atZone(ZoneId.of("UTC"))
+          .toInstant
+
+      mocksendPdfAccepted()
+
+      val result = service.submitToDms(
+        Some(encoded),
+        timestamp,
+        DmsSubmissionReference("DmsSubmissionReference")
+      ).futureValue
+
+      result shouldBe DmsResponse(timestamp, "")
+    }
+
+    "return correct value when the submission is successful" in {
+      val encoded = Base64.getEncoder.encodeToString(html.getBytes)
+
+      val timestamp =
+        LocalDateTime
+          .of(
+            2022,
+            3,
+            2,
+            12,
+            30,
+            45
+          )
+          .atZone(ZoneId.of("UTC"))
+          .toInstant
+
+      mocksendPdfAccepted()
+
+      val result = service.submitToDms(
+        Some(encoded),
+        timestamp,
+        DmsSubmissionReference("DmsSubmissionReference")
+      ).futureValue
+
+      result shouldBe DmsResponse(timestamp, "")
+    }
+
+    "return upstream error if submission fails" in {
+      val encoded = Base64.getEncoder.encodeToString(html.getBytes)
+
+      val timestamp =
+        LocalDateTime
+          .of(
+            2022,
+            3,
+            2,
+            12,
+            30,
+            45
+          )
+          .atZone(ZoneId.of("UTC"))
+          .toInstant
+
+      mocksendPdfUpstreamErrorResponse()
+
+      an[UpstreamErrorResponse] mustBe thrownBy {
+        await(service.submitToDms(
+          Some(encoded),
+          timestamp,
+          DmsSubmissionReference("DmsSubmissionReference")
+        ))
+      }
+
+    }
+
+    "return upstream error if submission fails with NonFatal code" in {
+      val encoded = Base64.getEncoder.encodeToString(html.getBytes)
+      mocksendPdfNonFatal()
+
+      an[InternalServerException] mustBe thrownBy {
+        await(service.submitToDms(
+          Some(encoded),
+          now,
+          DmsSubmissionReference("DmsSubmissionReference")
+        ))
+      }
+    }
+
+    "return upstream error if no data to submit" in {
+
+      an[InternalServerException] mustBe thrownBy {
+        await(service.submitToDms(
+          None,
+          now,
+          DmsSubmissionReference("DmsSubmissionReference")
+        ))
+      }
+    }
+  }
+
+}
