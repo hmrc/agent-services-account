@@ -20,10 +20,11 @@ lazy val microservice = Project("agent-services-account", file("."))
     ),
     // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
     // suppress warnings in generated routes files
-    Test / parallelExecution := false,
+//    Test / parallelExecution := false,
     scalacOptions += "-Wconf:src=routes/.*:s"
   )
   .settings(CodeCoverageSettings.settings)
+  .disablePlugins(JUnitXmlReportPlugin)
 
 lazy val it = project
   .enablePlugins(PlayScala)
