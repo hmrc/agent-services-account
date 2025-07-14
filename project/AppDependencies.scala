@@ -2,7 +2,7 @@ import sbt._
 
 object AppDependencies {
 
-  private val bootstrapVersion = "9.13.0"
+  private val bootstrapVersion = "9.16.0"
   private val hmrcMongoVersion = "2.6.0"
   private val openHtmlToPdfVersion = "1.0.10"
 
@@ -18,7 +18,7 @@ object AppDependencies {
   val test = Seq(
     "uk.gov.hmrc"             %% "bootstrap-test-play-30"     % bootstrapVersion            % Test,
     "uk.gov.hmrc.mongo"       %% "hmrc-mongo-test-play-30"    % hmrcMongoVersion            % Test,
-    "org.scalamock"           %% "scalamock"                  % "7.3.2"                     % Test,
+    "org.scalamock"           %% "scalamock"                  % "7.4.0"                     % Test,
   )
 
   val it = Seq.empty
