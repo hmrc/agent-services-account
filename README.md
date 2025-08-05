@@ -9,6 +9,11 @@ This is a backend microservice to store all pertinent data for Agent Services Ac
 
     sbt test it/test
 
+### Automated testing
+This service is tested by the following automated test repositories:
+- [agent-services-account-ui-tests](https://github.com/hmrc/agent-services-account-ui-tests)
+- [agent-services-performance-tests](https://github.com/hmrc/agent-services-account-performance-tests)
+
 ## Running the app locally
 
     sm2 --start AGENT_ONBOARDING
