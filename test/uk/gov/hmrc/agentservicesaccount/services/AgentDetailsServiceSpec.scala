@@ -15,6 +15,7 @@
  */
 
 package uk.gov.hmrc.agentservicesaccount.services
+import org.scalatest.concurrent.IntegrationPatience
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
@@ -42,6 +43,7 @@ class AgentDetailsServiceSpec
     with MockEmailService
     with MockAgentAssuranceConnector
     with MockAuditService
+    with IntegrationPatience
     {
 
   implicit val ac: AppConfig = mockAppConfig
