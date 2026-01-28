@@ -8,3 +8,5 @@ GET         /agent-record-with-checks/arn/:arn                  uk.gov.hmrc.agen
 GET         /agent-record-with-checks                           uk.gov.hmrc.agentservicesaccount.controllers.AgentDetailsController.agentGetWithChecks()
 POST        /agent/agency-details/arn/:arn                      uk.gov.hmrc.agentservicesaccount.controllers.AgentDetailsController.post(arn: Arn)
 POST        /dms-agent-callback                                 uk.gov.hmrc.agentservicesaccount.controllers.DmsNotificationController.dmsCallback()
+
+POST        /legacy-subscription-request/:regime                uk.gov.hmrc.agentservicesaccount.controllers.LegacySubscriptionController.startSubscription(regime: LegacyRegime)

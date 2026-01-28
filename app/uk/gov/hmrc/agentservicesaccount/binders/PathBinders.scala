@@ -18,14 +18,15 @@ package uk.gov.hmrc.agentservicesaccount.binders
 
 import play.api.mvc.PathBindable
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentservicesaccount.models.LegacyRegime
 
 object PathBinders {
 
   implicit val arnBinder: PathBindable[Arn] =
     new PathBindable[Arn] {
       override def bind(
-        key: String,
-        value: String
+          key: String,
+          value: String
       ): Either[String, Arn] = {
         if (Arn.isValid(value)) {
           Right(Arn(value))
@@ -35,8 +36,25 @@ object PathBinders {
       }
 
       override def unbind(
-        key: String,
-        arn: Arn
+          key: String,
+          arn: Arn
       ): String = arn.value
+    }
+
+  implicit val legacyRegimeBinder: PathBindable[LegacyRegime] =
+    new PathBindable[LegacyRegime] {
+      override def bind(
+          key: String,
+          value: String
+      ): Either[String, LegacyRegime] =
+        LegacyRegime.values
+          .find(_.toString == value)
+          .map(Right(_))
+          .getOrElse(Left(s"Invalid legacy regime: $value"))
+
+      override def unbind(
+          key: String,
+          legacyRegime: LegacyRegime
+      ): String = legacyRegime.toString
     }
 }

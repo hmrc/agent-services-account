@@ -43,7 +43,7 @@ with Logging {
 
   def sendEmail(emailInformation: EmailInformation)(using request: RequestHeader): Future[Unit] = {
     httpClient
-      .post(url"${appConfig.emailBaseUrl}/hmrc/email")(using myHc)
+      .post(url"${appConfig.emailBaseUrl}/hmrc/email")(using hc)
       .withBody(Json.toJson(emailInformation))
       .execute[HttpResponse]
       .map { response =>

@@ -16,34 +16,22 @@
 
 package uk.gov.hmrc.agentservicesaccount.utils
 
-import play.api.mvc.Request
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendHeaderCarrierProvider
 
+import javax.inject.Inject
 
+class RequestSupport @Inject():
+  given hc(using request: RequestHeader): HeaderCarrier = RequestSupport.hc
 
-/** I'm repeating a pattern which was brought originally by play-framework and putting some more data which can be derived from a request
- *
- * Use it to provide HeaderCarrier, Lang, or Messages
- */
-class RequestSupport () {
-  given myHc(using request: Request[_]): HeaderCarrier = RequestSupport.myHc
-}
+object RequestSupport:
 
-object RequestSupport {
+  given hc(using request: RequestHeader): HeaderCarrier = HcProvider.headerCarrier
 
-  given myHc(using request: RequestHeader): HeaderCarrier = HcProvider.headerCarrier
-
-  /** This is because we want to give responsibility of creation of HeaderCarrier to the platform code. If they refactor how hc is created our code will pick it
-   * up automatically.
-   */
   private object HcProvider
-    extends BackendHeaderCarrierProvider {
-    def headerCarrier(implicit request: RequestHeader): HeaderCarrier = hc(request)
-  }
+  extends BackendHeaderCarrierProvider:
+    def headerCarrier(using request: RequestHeader): HeaderCarrier = this.hc(request)
 
   val thereIsNoRequest: RequestHeader = NoRequest
-
-}

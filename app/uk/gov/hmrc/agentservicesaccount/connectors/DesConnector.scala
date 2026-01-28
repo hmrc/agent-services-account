@@ -96,8 +96,8 @@ with Logging {
     val additionalHeaders =
       Seq(
         HeaderNames.authorisation -> s"Bearer $authToken",
-        HeaderNames.xRequestId -> myHc.requestId.map(_.value).getOrElse(UUID.randomUUID().toString)
-      ) ++ myHc.sessionId.fold(Seq.empty[(String, String)])(x => Seq(HeaderNames.xSessionId -> x.value))
+        HeaderNames.xRequestId -> hc.requestId.map(_.value).getOrElse(UUID.randomUUID().toString)
+      ) ++ hc.sessionId.fold(Seq.empty[(String, String)])(x => Seq(HeaderNames.xSessionId -> x.value))
     val commonHeaders = Seq(Environment -> env, CorrelationId -> UUID.randomUUID().toString)
     commonHeaders ++ additionalHeaders
   }

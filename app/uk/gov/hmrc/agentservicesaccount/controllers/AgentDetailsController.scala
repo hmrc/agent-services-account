@@ -47,7 +47,7 @@ extends BackendController(cc)
   with Logging {
 
   //for agents
-  def agentGetWithChecks: Action[AnyContent] = authActions.AuthorisedWithArn { implicit request =>arn =>
+  def agentGetWithChecks: Action[AnyContent] = authActions.authorisedWithArn { implicit request =>arn =>
     agentEntityService
       .getAgentDetailsWithChecks(arn)
       .map(entityCheckResult => Ok(Json.toJson(entityCheckResult.agentRecord)))

@@ -71,7 +71,7 @@ class AuditService @Inject()(appConfig: AppConfig,
           auditType = a.auditType,
           eventId = UUID.randomUUID().toString,
           detail = Json.toJson(a),
-          tags = myHc.toAuditTags()
+          tags = hc.toAuditTags()
         )
       )
   }
