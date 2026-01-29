@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
-import uk.gov.hmrc.domain.{SimpleObjectReads, SimpleObjectWrites}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
 case class AgentReference(value: String)
+extends AnyVal
 
 object AgentReference:
-  implicit val reads: SimpleObjectReads[AgentReference] = new SimpleObjectReads[AgentReference]("value", AgentReference.apply)
-  implicit val writes: SimpleObjectWrites[AgentReference] = new SimpleObjectWrites[AgentReference](_.value)
+  implicit val format: Format[AgentReference] = Json.valueFormat[AgentReference]
