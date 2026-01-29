@@ -8,11 +8,10 @@ object AppDependencies {
 
   val compile = Seq(
     "uk.gov.hmrc"            %% "bootstrap-backend-play-30"         % bootstrapVersion,
-    "uk.gov.hmrc.mongo"      %% "hmrc-mongo-play-30"                % hmrcMongoVersion,
     "uk.gov.hmrc.mongo"      %% "hmrc-mongo-work-item-repo-play-30" % hmrcMongoVersion,
     "uk.gov.hmrc"            %% "agent-mtd-identifiers"             % "3.0.0",
     "uk.gov.hmrc"            %% "crypto-json-play-30"               % "8.4.0",
-    "uk.gov.hmrc"            %% "internal-auth-client-play-30"      % "4.1.0",
+    "uk.gov.hmrc"            %% "internal-auth-client-play-30"      % "4.3.0",
     "io.github.openhtmltopdf" % "openhtmltopdf-pdfbox"              % openHtmlToPdfVersion,
   )
 
