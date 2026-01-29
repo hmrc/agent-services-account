@@ -50,7 +50,7 @@ class AuthActions @Inject() (val authConnector: AuthConnector, cc: ControllerCom
   private type AuthorisedRequestWithArn = Request[AnyContent] => Arn => Future[Result]
 
 
-  def AuthorisedWithArn[A](body: AuthorisedRequestWithArn): Action[AnyContent] = Action.async { implicit request =>
+  def authorisedWithArn[A](body: AuthorisedRequestWithArn): Action[AnyContent] = Action.async { implicit request =>
     authorised(AuthProviders(GovernmentGateway))
       .retrieve(allEnrolments) { enrol =>
         getEnrolmentInfo(

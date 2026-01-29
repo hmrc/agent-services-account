@@ -16,30 +16,34 @@
 
 package uk.gov.hmrc.agentservicesaccount.utils
 
-import org.scalatest.concurrent.Futures.{PatienceConfig, scaled}
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.{Millis, Seconds, Span}
+import org.scalatest.time.Millis
+import org.scalatest.time.Seconds
+import org.scalatest.time.Span
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Writes
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
-import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSRequest
+import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.agentservicesaccount.helpers.InstantClockTestSupport
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 trait ComponentSpecHelper
-  extends AnyWordSpec
-    with Matchers
-    with CustomMatchers
-    with WiremockHelper
-    with BeforeAndAfterAll
-    with BeforeAndAfterEach
-    with InstantClockTestSupport
-    with CleanMongoCollectionSupport
-    with GuiceOneServerPerSuite:
+extends AnyWordSpec
+with Matchers
+with CustomMatchers
+with WiremockHelper
+with BeforeAndAfterAll
+with BeforeAndAfterEach
+with InstantClockTestSupport
+with CleanMongoCollectionSupport
+with GuiceOneServerPerSuite:
 
   def extraConfig: Map[String, Any] = Map.empty
 
@@ -57,8 +61,13 @@ trait ComponentSpecHelper
   def config: Map[String, String] = Map(
     "auditing.enabled" -> "false",
     "play.filters.csrf.header.bypassHeaders.Csrf-Token" -> "nocheck",
+    "stubs-compatibility-mode" -> "false",
     "auditing.consumer.baseUri.host" -> mockHost,
-    "auditing.consumer.baseUri.port" -> mockPort
+    "auditing.consumer.baseUri.port" -> mockPort,
+    "microservice.services.auth.host" -> mockHost,
+    "microservice.services.auth.port" -> mockPort,
+    "microservice.services.agent-epaye-registration.host" -> mockHost,
+    "microservice.services.agent-epaye-registration.port" -> mockPort
   )
 
   implicit val ws: WSClient = app.injector.instanceOf[WSClient]
@@ -75,27 +84,23 @@ trait ComponentSpecHelper
     resetWiremock()
     super.beforeEach()
 
-  def get[T](uri: String): WSResponse =
-    buildClient(uri).withHttpHeaders("Authorization" -> "Bearer 123").get().futureValue
+  def get[T](uri: String): WSResponse = buildClient(uri).withHttpHeaders("Authorization" -> "Bearer 123").get().futureValue
 
   def post[T](uri: String)(body: T)(implicit writes: Writes[T]): WSResponse =
 
-      buildClient(uri)
-        .withHttpHeaders("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
-        .post(writes.writes(body).toString())
-        .futureValue
-
+    buildClient(uri)
+      .withHttpHeaders("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
+      .post(writes.writes(body).toString())
+      .futureValue
 
   def put[T](uri: String)(body: T)(implicit writes: Writes[T]): WSResponse =
-      buildClient(uri)
-        .withHttpHeaders("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
-        .put(writes.writes(body).toString())
-        .futureValue
+    buildClient(uri)
+      .withHttpHeaders("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
+      .put(writes.writes(body).toString())
+      .futureValue
 
-  def delete[T](uri: String): WSResponse =
-    buildClient(uri).withHttpHeaders("Authorization" -> "Bearer 123").delete().futureValue
+  def delete[T](uri: String): WSResponse = buildClient(uri).withHttpHeaders("Authorization" -> "Bearer 123").delete().futureValue
 
   val baseUrl: String = "/agent-services-account"
 
-  private def buildClient(path: String): WSRequest =
-    ws.url(s"http://localhost:$port$baseUrl$path").withFollowRedirects(false)
+  private def buildClient(path: String): WSRequest = ws.url(s"http://localhost:$port$baseUrl$path").withFollowRedirects(false)
