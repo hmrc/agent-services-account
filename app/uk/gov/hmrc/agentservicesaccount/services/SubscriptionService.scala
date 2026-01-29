@@ -18,18 +18,15 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import javax.inject.Inject
 import javax.inject.Singleton
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import org.apache.pekko.Done
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
-import uk.gov.hmrc.agentservicesaccount.models.LegacyRegime.PAYE
-import uk.gov.hmrc.agentservicesaccount.models.PayeSubscriptionRequest
-import uk.gov.hmrc.agentservicesaccount.models.SubscriptionWorkItem
+import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 

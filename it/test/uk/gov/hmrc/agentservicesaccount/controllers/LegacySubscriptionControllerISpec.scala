@@ -17,8 +17,8 @@
 package uk.gov.hmrc.agentservicesaccount.controllers
 
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.{Address, CtSubscriptionRequest, PayeSubscriptionRequest, SaSubscriptionRequest, SubscriptionRequest, SubscriptionWorkItem}
-import uk.gov.hmrc.agentservicesaccount.models.LegacyRegime.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.stubs.AgentAuthStubs
 import uk.gov.hmrc.agentservicesaccount.stubs.AgentEpayeRegistrationStubs
@@ -41,7 +41,7 @@ with AgentAuthStubs:
   val testPhoneNumber = "1234567890"
   val testEmail = "test@email.com"
   val testPostCode = "A11 11A"
-  val testAddress = Address(
+  val testAddress = SubscriptionAddress(
     line1 = "Line 1",
     line2 = "Line 2",
     line3 = Some("Line 3"),
@@ -49,7 +49,7 @@ with AgentAuthStubs:
     postCode = Some(testPostCode)
   )
 
-  val testAgentReference = "AB1234"
+  val testAgentReference = AgentReference("AB1234")
 
   "POST /legacy-subscription-request/:regime" should:
     "return 200 after successfully calling OPRA and creating a new work item for PAYE regime" in:

@@ -27,7 +27,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
@@ -43,7 +43,7 @@ class AgentEpayeRegistrationConnector @Inject() (
 
   val baseUrl: String = appConfig.agentEpayeRegistrationBaseUrl
 
-  def register(subscriptionRequest: PayeSubscriptionRequest)(using request: RequestHeader): Future[String] = {
+  def register(subscriptionRequest: PayeSubscriptionRequest)(using request: RequestHeader): Future[AgentReference] = {
     val url = url"$baseUrl/agent-epaye-registration/registrations"
 
     http
@@ -52,7 +52,7 @@ class AgentEpayeRegistrationConnector @Inject() (
       .execute[HttpResponse]
       .map { response =>
         response.status match {
-          case OK => (response.json \ "agentReference").as[String]
+          case OK => (response.json \ "agentReference").as[AgentReference]
           case status =>
             throw UpstreamErrorResponse(
               s"Unexpected response from Agent Epaye Registration: ${response.body}",

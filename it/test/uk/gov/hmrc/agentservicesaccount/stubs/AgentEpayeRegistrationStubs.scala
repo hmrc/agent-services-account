@@ -22,12 +22,12 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentmtdidentifiers.model.Utr
-import uk.gov.hmrc.agentservicesaccount.models.PayeSubscriptionRequest
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
+import uk.gov.hmrc.agentservicesaccount.models.subscription.PayeSubscriptionRequest
 
 trait AgentEpayeRegistrationStubs {
 
-  def givenEpayeRegisterCallSucceeds(request: PayeSubscriptionRequest)(agentReference: String): Unit = stubFor(
+  def givenEpayeRegisterCallSucceeds(request: PayeSubscriptionRequest)(agentReference: AgentReference): Unit = stubFor(
     post(urlEqualTo("/agent-epaye-registration/registrations"))
       .withRequestBody(equalToJson(
         Json.toJson(request)(PayeSubscriptionRequest.registerWrites).toString

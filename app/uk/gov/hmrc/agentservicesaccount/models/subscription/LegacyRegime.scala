@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentservicesaccount.models
+package uk.gov.hmrc.agentservicesaccount.models.subscription
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentservicesaccount.utils.EnumFormat

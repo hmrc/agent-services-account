@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentservicesaccount.models
+package uk.gov.hmrc.agentservicesaccount.models.subscription
 
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
-import play.api.libs.json.Format
-import play.api.libs.json.Json
-import play.api.libs.json.Reads
-import play.api.libs.json.Writes
-import play.api.libs.json.__
+import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.crypto.json.JsonEncryption.stringEncrypterDecrypter
-import uk.gov.hmrc.crypto.Decrypter
-import uk.gov.hmrc.crypto.Encrypter
 
 case class SubscriptionWorkItem(
   arn: Arn,
   subscriptionRequest: SubscriptionRequest,
   regime: LegacyRegime,
-  agentReference: Option[String],
+  agentReference: Option[AgentReference],
   sessionId: Option[String] = None // Only required for local testing against stubs. Always set to None for QA/Prod
 )
 
@@ -44,7 +39,7 @@ object SubscriptionWorkItem:
         Json.parse(string).as[SubscriptionRequest](SubscriptionRequest.reads(regime))
       ) and
       Reads.pure(regime) and
-      (__ \ "agentReference").readNullable[String] and
+      (__ \ "agentReference").readNullable[AgentReference] and
       (__ \ "sessionId").readNullable[String]
     )(SubscriptionWorkItem.apply)
   }
@@ -55,7 +50,7 @@ object SubscriptionWorkItem:
         Json.toJson(subscriptionRequest).toString
       ) and
       (__ \ "regime").write[LegacyRegime] and
-      (__ \ "agentReference").writeNullable[String] and
+      (__ \ "agentReference").writeNullable[AgentReference] and
       (__ \ "sessionId").writeNullable[String]
     )(o => Tuple.fromProductTyped(o))
 

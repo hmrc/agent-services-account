@@ -18,14 +18,16 @@ package uk.gov.hmrc.agentservicesaccount.repositories
 
 import java.time.Duration
 import java.time.Instant
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.Inject
+import javax.inject.Named
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import com.typesafe.config.Config
-import org.mongodb.scala.MongoCollection
-import uk.gov.hmrc.agentservicesaccount.models.SubscriptionWorkItem
+import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
-import uk.gov.hmrc.mongo.workitem.{WorkItem, WorkItemFields, WorkItemRepository}
+import uk.gov.hmrc.mongo.workitem.WorkItemFields
+import uk.gov.hmrc.mongo.workitem.WorkItemRepository
 import uk.gov.hmrc.mongo.MongoComponent
 
 @Singleton

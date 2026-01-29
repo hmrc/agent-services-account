@@ -30,11 +30,7 @@ import play.api.mvc.ControllerComponents
 import play.api.Logging
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.CtSubscriptionRequest
-import uk.gov.hmrc.agentservicesaccount.models.LegacyRegime
-import uk.gov.hmrc.agentservicesaccount.models.PayeSubscriptionRequest
-import uk.gov.hmrc.agentservicesaccount.models.SaSubscriptionRequest
-import uk.gov.hmrc.agentservicesaccount.models.SubscriptionRequest
+import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.services.SubscriptionService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 

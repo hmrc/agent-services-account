@@ -15,7 +15,7 @@ lazy val microservice = Project("agent-services-account", file("."))
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     routesImport ++= Seq(
       "uk.gov.hmrc.agentservicesaccount.binders.PathBinders._",
-      "uk.gov.hmrc.agentservicesaccount.models.LegacyRegime",
+      "uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime",
       "uk.gov.hmrc.agentmtdidentifiers.model.Arn"
     ),
     // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html

@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentservicesaccount.binders
 
 import play.api.mvc.PathBindable
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 
 object PathBinders {
 

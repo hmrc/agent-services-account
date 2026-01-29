@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentservicesaccount.models
+package uk.gov.hmrc.agentservicesaccount.models.subscription
 
-import play.api.libs.json.Format
-import play.api.libs.json.JsError
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.Json
-import play.api.libs.json.Reads
-import play.api.libs.json.Writes
-import uk.gov.hmrc.agentservicesaccount.models.LegacyRegime.CT
-import uk.gov.hmrc.agentservicesaccount.models.LegacyRegime.PAYE
-import uk.gov.hmrc.agentservicesaccount.models.LegacyRegime.SA
+import play.api.libs.json.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
 
 sealed trait SubscriptionRequest:
 
@@ -32,7 +25,7 @@ sealed trait SubscriptionRequest:
   val contactName: String
   val phoneNumber: Option[String]
   val emailAddress: Option[String]
-  val address: Address
+  val address: SubscriptionAddress
   val isAbroad: Boolean
 
 object SubscriptionRequest:
@@ -60,14 +53,14 @@ case class PayeSubscriptionRequest(
   contactName: String,
   phoneNumber: Option[String],
   emailAddress: Option[String],
-  address: Address
+  address: SubscriptionAddress
 )
 extends SubscriptionRequest:
   val isAbroad: Boolean = false // Unused value for PAYE as postcode is always required
 
 object PayeSubscriptionRequest:
   val registerWrites: Writes[PayeSubscriptionRequest] =
-    given Writes[Address] = Address.payeRegistrationWrites
+    given Writes[SubscriptionAddress] = SubscriptionAddress.payeRegistrationWrites
     Writes { request =>
       Json.obj(
         "agentName" -> request.agentName,
@@ -83,7 +76,7 @@ case class SaSubscriptionRequest(
   contactName: String,
   phoneNumber: Option[String],
   emailAddress: Option[String],
-  address: Address,
+  address: SubscriptionAddress,
   isAbroad: Boolean
 )
 extends SubscriptionRequest
@@ -93,28 +86,7 @@ case class CtSubscriptionRequest(
   contactName: String,
   phoneNumber: Option[String],
   emailAddress: Option[String],
-  address: Address,
+  address: SubscriptionAddress,
   isAbroad: Boolean
 )
 extends SubscriptionRequest
-
-case class Address(
-  line1: String,
-  line2: String,
-  line3: Option[String],
-  line4: Option[String],
-  postCode: Option[String]
-)
-
-object Address:
-
-  given format: Format[Address] = Json.format[Address]
-  val payeRegistrationWrites: Writes[Address] = Writes { address =>
-    Json.obj(
-      "addressLine1" -> address.line1,
-      "addressLine2" -> address.line2,
-      "addressLine3" -> address.line3,
-      "addressLine4" -> address.line4,
-      "postCode" -> address.postCode
-    )
-  }

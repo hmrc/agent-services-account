@@ -20,17 +20,9 @@ import org.scalatest.exceptions.TestFailedException
 import play.api.mvc.AnyContentAsEmpty
 import play.api.mvc.Request
 import play.api.test.FakeRequest
-import play.api.test.Helpers.*
-import uk.gov.hmrc.agentmtdidentifiers.model.Utr
-import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.Address
-import uk.gov.hmrc.agentservicesaccount.models.PayeSubscriptionRequest
-import uk.gov.hmrc.agentservicesaccount.models.UtrChecksResponse
-import uk.gov.hmrc.agentservicesaccount.stubs.AgentAssuranceStubs
+import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.stubs.AgentEpayeRegistrationStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
-import uk.gov.hmrc.http.UpstreamErrorResponse
-import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.ExecutionContext
 
@@ -48,7 +40,7 @@ with AgentEpayeRegistrationStubs {
     contactName = "John Agent",
     phoneNumber = Some("1234567890"),
     emailAddress = Some("test@email.com"),
-    address = Address(
+    address = SubscriptionAddress(
       line1 = "Line 1",
       line2 = "Line 2",
       line3 = Some("Line 3"),
@@ -56,7 +48,7 @@ with AgentEpayeRegistrationStubs {
       postCode = Some("A11 11A")
     )
   )
-  val testAgentReference = "AB1234"
+  val testAgentReference = AgentReference("AB1234")
 
   "register" should {
     "return agent reference on a successful response" in {
