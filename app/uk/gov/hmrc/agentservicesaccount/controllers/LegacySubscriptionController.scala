@@ -54,3 +54,23 @@ with Logging:
         case _ => Future.successful(BadRequest("Missing subscription request JSON"))
       }
   }
+
+  def roboticsCallback(): Action[SubscriptionCallback] =
+    Action.async(parse.json[SubscriptionCallback]) { implicit request =>
+      val correlationId = request.headers.get("correlationId")
+
+      correlationId match {
+        case Some(id) =>
+          legacySubscriptionService.handleRoboticsCallback(request.body, id).map {
+            case true => NoContent
+            case false =>
+              val msg = s"Did not find a work item with correlationId: $id"
+              logger.error(s"[roboticsCallback] $msg")
+              NotFound(msg)
+          }
+        case None =>
+          val msg = "Missing correlationId header in robotics callback request"
+          logger.error(s"[roboticsCallback] $msg")
+          Future.successful(BadRequest(msg))
+      }
+    }

@@ -59,3 +59,6 @@ class SubscriptionService @Inject() (
       )
       .map(_ => Done)
   }
+
+  def handleRoboticsCallback(callback: SubscriptionCallback, correlationId: String): Future[Boolean] =
+    subscriptionWorkItemRepository.addAgentReference(callback.agentId, correlationId)

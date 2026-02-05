@@ -22,13 +22,21 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import com.typesafe.config.Config
+import org.mongodb.scala.MongoCollection
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.Updates
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
+import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.mongo.workitem.WorkItemFields
 import uk.gov.hmrc.mongo.workitem.WorkItemRepository
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.Codecs
 
 @Singleton
 class SubscriptionWorkItemRepository @Inject() (
@@ -45,8 +53,21 @@ extends WorkItemRepository[SubscriptionWorkItem](
   workItemFields = WorkItemFields.default
 ):
 
+  lazy val coll: MongoCollection[WorkItem[SubscriptionWorkItem]] = collection // necessary to avoid IntelliJ "Cannot resolve symbol 'collection'" error
+
   override lazy val requiresTtlIndex = false
 
   override def now(): Instant = Instant.now()
 
   override def inProgressRetryAfter: Duration = config.getDuration("work-item-repository.subscriptions.retry-in-progress-after")
+
+  def addAgentReference(
+    agentReference: AgentReference,
+    correlationId: String
+  ): Future[Boolean] = {
+    coll.updateOne(
+      Filters.equal("item.correlationId", correlationId),
+      Updates.set("item.agentReference", Codecs.toBson[AgentReference](agentReference))
+    ).toFuture()
+      .map(_.getModifiedCount > 0)
+  }

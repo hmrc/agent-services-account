@@ -16,9 +16,13 @@
 
 package uk.gov.hmrc.agentservicesaccount.controllers
 
+import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.success
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.Operation.CREATE
+import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.CESA
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.stubs.AgentAuthStubs
 import uk.gov.hmrc.agentservicesaccount.stubs.AgentEpayeRegistrationStubs
@@ -74,7 +78,7 @@ with AgentAuthStubs:
       val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testSubscriptionRequest)
 
       response.status shouldBe 200
-      repository.collection.find().headOption().futureValue.map(_.item) shouldBe Some(expected)
+      repository.coll.find().headOption().futureValue.map(_.item) shouldBe Some(expected)
 
     "throw error after a failed OPRA call without creating a new work item for PAYE regime" in:
       isLoggedInAsASAgent(testArn)
@@ -91,7 +95,7 @@ with AgentAuthStubs:
       val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testSubscriptionRequest)
 
       response.status shouldBe 400
-      repository.collection.find().headOption().futureValue.flatMap(_.item.agentReference) shouldBe None
+      repository.coll.find().headOption().futureValue.flatMap(_.item.agentReference) shouldBe None
 
     "return 501 for SA regime" in:
       isLoggedInAsASAgent(testArn)
@@ -120,3 +124,73 @@ with AgentAuthStubs:
       val response = post(s"/legacy-subscription-request/$CT")(testSubscriptionRequest)
 
       response.status shouldBe 501
+
+  "POST /robotics/callback" should:
+    "return 204 when a work item is successfully updated with the new agentReference" in:
+      val correlationId = "test-correlation-id"
+      val testCallbackRequest = SubscriptionCallback(
+        targetSystem = CESA,
+        operationRequired = CREATE,
+        agentId = testAgentReference,
+        status = success,
+        requestMessage = "test-message"
+      )
+      val testSubscriptionRequest = SaSubscriptionRequest(
+        agentName = testAgentName,
+        contactName = testContactName,
+        phoneNumber = Some(testPhoneNumber),
+        emailAddress = Some(testEmail),
+        address = testAddress,
+        isAbroad = false
+      )
+      repository.pushNew(SubscriptionWorkItem(
+        testArn,
+        testSubscriptionRequest,
+        SA,
+        None,
+        Some(correlationId)
+      )).futureValue
+      val expected = SubscriptionWorkItem(
+        testArn,
+        testSubscriptionRequest,
+        SA,
+        Some(testAgentReference),
+        Some(correlationId)
+      )
+
+      val response = post(s"/robotics/callback")(testCallbackRequest, extraHeaders = Seq("correlationId" -> correlationId))
+
+      response.status shouldBe 204
+      repository.coll.find().headOption().futureValue.map(_.item) shouldBe Some(expected)
+
+    "return 404 when no work item is found for the given correlationId" in:
+      val correlationId = "test-correlation-id"
+      val testCallbackRequest = SubscriptionCallback(
+        targetSystem = CESA,
+        operationRequired = CREATE,
+        agentId = testAgentReference,
+        status = success,
+        requestMessage = "test-message"
+      )
+
+      val response = post(s"/robotics/callback")(testCallbackRequest, extraHeaders = Seq("correlationId" -> correlationId))
+
+      response.status shouldBe 404
+
+    "return 400 when the correlationId header is missing" in:
+      val testCallbackRequest = SubscriptionCallback(
+        targetSystem = CESA,
+        operationRequired = CREATE,
+        agentId = testAgentReference,
+        status = success,
+        requestMessage = "test-message"
+      )
+
+      val response = post(s"/robotics/callback")(testCallbackRequest)
+
+      response.status shouldBe 400
+
+    "return 400 when the payload is invalid" in:
+      val response = post(s"/robotics/callback")(Json.obj("invalid" -> "payload"))
+
+      response.status shouldBe 400
