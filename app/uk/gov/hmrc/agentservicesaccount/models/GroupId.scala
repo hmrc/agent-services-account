@@ -14,28 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentservicesaccount.models.subscription
+package uk.gov.hmrc.agentservicesaccount.models
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.agentservicesaccount.utils.EnumFormat
+import play.api.libs.json.Json
 
-enum LegacyRegime:
+case class GroupId(value: String)
+extends AnyVal
 
-  case PAYE, SA, CT
-
-  val enrolmentKey: String =
-    this match {
-      case PAYE => "IR-PAYE-AGENT"
-      case SA => "IR-SA-AGENT"
-      case CT => "IR-CT-AGENT"
-    }
-
-  val mappingKey: String =
-    this match {
-      case PAYE => "paye"
-      case SA => "sa"
-      case CT => "ct"
-    }
-
-object LegacyRegime:
-  implicit val format: Format[LegacyRegime] = EnumFormat.enumFormat
+object GroupId:
+  implicit val format: Format[GroupId] = Json.valueFormat[GroupId]

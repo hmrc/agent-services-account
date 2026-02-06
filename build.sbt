@@ -14,7 +14,8 @@ lazy val microservice = Project("agent-services-account", file("."))
     organization := "uk.gov.hmrc",
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     routesImport ++= Seq(
-      "uk.gov.hmrc.agentservicesaccount.binders.PathBinders._",
+      "uk.gov.hmrc.agentservicesaccount.binders.PathBinders.*",
+      "uk.gov.hmrc.agentservicesaccount.binders.QueryBinders.*",
       "uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime",
       "uk.gov.hmrc.agentmtdidentifiers.model.Arn"
     ),

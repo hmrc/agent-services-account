@@ -18,24 +18,19 @@ package uk.gov.hmrc.agentservicesaccount.models.subscription
 
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentservicesaccount.utils.EnumFormat
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 
-enum LegacyRegime:
+enum SubscriptionStatus:
+  case SubscriptionInProgress, SubscriptionCompleted, SubscriptionFailed, SubscriptionMapped, SubscriptionOnAgency, NotSubscribed
 
-  case PAYE, SA, CT
+object SubscriptionStatus:
 
-  val enrolmentKey: String =
-    this match {
-      case PAYE => "IR-PAYE-AGENT"
-      case SA => "IR-SA-AGENT"
-      case CT => "IR-CT-AGENT"
+  implicit val format: Format[SubscriptionStatus] = EnumFormat.enumFormat
+
+  def fromProcessingStatus(processingStatus: ProcessingStatus): SubscriptionStatus =
+    processingStatus match {
+      case Succeeded => SubscriptionCompleted
+      case ToDo | InProgress | Failed => SubscriptionInProgress // Failed included as that status implies it is retryable
+      case _ => SubscriptionFailed
     }
-
-  val mappingKey: String =
-    this match {
-      case PAYE => "paye"
-      case SA => "sa"
-      case CT => "ct"
-    }
-
-object LegacyRegime:
-  implicit val format: Format[LegacyRegime] = EnumFormat.enumFormat

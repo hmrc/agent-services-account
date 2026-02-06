@@ -26,10 +26,16 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.MappingConnector
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.NotSubscribed
+import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.SubscriptionMapped
+import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.SubscriptionOnAgency
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 
@@ -37,6 +43,8 @@ import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 class SubscriptionService @Inject() (
   agentEpayeRegistrationConnector: AgentEpayeRegistrationConnector,
   subscriptionWorkItemRepository: SubscriptionWorkItemRepository,
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
+  mappingConnector: MappingConnector,
   appConfig: AppConfig
 )(implicit ec: ExecutionContext)
 extends Logging:
@@ -74,3 +82,42 @@ extends Logging:
         logger.error(s"[handleRoboticsCallback] Robotics callback for correlationId $correlationId returned failed status, reason: '${callback.requestMessage}', marking work item as permanently failed")
         subscriptionWorkItemRepository.markAsPermanentlyFailed(correlationId)
     }
+
+  def getSubscriptionInfo(
+    arn: Arn,
+    groupId: GroupId,
+    regimes: Seq[LegacyRegime]
+  )(implicit requestHeader: RequestHeader): Future[Seq[SubscriptionInfo]] = Future.sequence(regimes.map { regime =>
+    subscriptionWorkItemRepository.findByArnAndRegime(arn, regime).flatMap {
+      case Some(workItem) =>
+        Future.successful(
+          SubscriptionInfo(
+            regime = regime,
+            subscriptionStatus = SubscriptionStatus.fromProcessingStatus(workItem.status)
+          )
+        )
+      case None =>
+        enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).flatMap {
+          case enrolments if enrolments.exists(e => e.service == regime.enrolmentKey && e.state == "Activated") =>
+            Future.successful(
+              SubscriptionInfo(
+                regime = regime,
+                subscriptionStatus = SubscriptionOnAgency
+              )
+            )
+          case _ =>
+            mappingConnector.getMappingsFor(arn, regime).map {
+              case mappings if mappings.nonEmpty =>
+                SubscriptionInfo(
+                  regime = regime,
+                  subscriptionStatus = SubscriptionMapped
+                )
+              case _ =>
+                SubscriptionInfo(
+                  regime = regime,
+                  subscriptionStatus = NotSubscribed
+                )
+            }
+        }
+    }
+  })

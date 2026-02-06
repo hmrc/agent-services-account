@@ -76,7 +76,7 @@ with Logging {
         .setHeader(desHeaders(
           authorizationToken,
           environment
-        ): _*)
+        )*)
         .executeAndDeserialise[A]
     }
   }
