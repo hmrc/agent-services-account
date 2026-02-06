@@ -20,7 +20,12 @@ import play.api.libs.json.Format
 import uk.gov.hmrc.agentservicesaccount.utils.EnumFormat
 
 enum CallbackStatus:
-  case success, failure
+  case CallbackSuccess, CallbackFailure
+
+  override def toString: String = this match {
+    case CallbackSuccess => "success"
+    case CallbackFailure => "failure"
+  }
 
 object CallbackStatus:
   implicit val format: Format[CallbackStatus] = EnumFormat.enumFormat

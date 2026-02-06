@@ -32,11 +32,10 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
-import uk.gov.hmrc.mongo.workitem.WorkItem
-import uk.gov.hmrc.mongo.workitem.WorkItemFields
-import uk.gov.hmrc.mongo.workitem.WorkItemRepository
+import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem, WorkItemFields, WorkItemRepository}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 
 @Singleton
 class SubscriptionWorkItemRepository @Inject() (
@@ -52,10 +51,11 @@ extends WorkItemRepository[SubscriptionWorkItem](
   itemFormat = SubscriptionWorkItem.mongoFormat,
   workItemFields = WorkItemFields.default
 ):
-
+  // TODO set up unique ARN index (potentially needs to be partial index to avoid indexing permanently failed items),
+  //  will need a custom method to wrap pushNew and handle duplicate errors caused by the index
   lazy val coll: MongoCollection[WorkItem[SubscriptionWorkItem]] = collection // necessary to avoid IntelliJ "Cannot resolve symbol 'collection'" error
 
-  override lazy val requiresTtlIndex = false
+  override lazy val requiresTtlIndex = false // TODO do we need a TTL to clean up permanently failed items?
 
   override def now(): Instant = Instant.now()
 
@@ -68,6 +68,14 @@ extends WorkItemRepository[SubscriptionWorkItem](
     coll.updateOne(
       Filters.equal("item.correlationId", correlationId),
       Updates.set("item.agentReference", Codecs.toBson[AgentReference](agentReference))
+    ).toFuture()
+      .map(_.getModifiedCount > 0)
+  }
+
+  def markAsPermanentlyFailed(correlationId: String): Future[Boolean] = {
+    coll.updateOne(
+      Filters.equal("item.correlationId", correlationId),
+      Updates.set("status", PermanentlyFailed)
     ).toFuture()
       .map(_.getModifiedCount > 0)
   }

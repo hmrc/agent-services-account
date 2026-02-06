@@ -17,8 +17,8 @@
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
 import play.api.libs.json.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.failure
-import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.success
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
 import uk.gov.hmrc.agentservicesaccount.models.subscription.Operation.CREATE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.Operation.UPDATE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.CESA
@@ -32,7 +32,7 @@ extends UnitSpec:
     targetSystem = CESA,
     operationRequired = CREATE,
     agentId = AgentReference("ABC123"),
-    status = success,
+    status = CallbackSuccess,
     requestMessage = "test-message"
   )
 
@@ -40,7 +40,7 @@ extends UnitSpec:
     targetSystem = COTAX,
     operationRequired = UPDATE,
     agentId = AgentReference("ABC123"),
-    status = failure,
+    status = CallbackFailure,
     requestMessage = "test-message"
   )
 

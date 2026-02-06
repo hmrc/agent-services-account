@@ -19,14 +19,17 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.success
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.Operation.CREATE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.CESA
+import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.COTAX
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.stubs.AgentAuthStubs
 import uk.gov.hmrc.agentservicesaccount.stubs.AgentEpayeRegistrationStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 
 class LegacySubscriptionControllerISpec
 extends ComponentSpecHelper
@@ -36,7 +39,7 @@ with AgentAuthStubs:
   lazy val repository: SubscriptionWorkItemRepository = app.injector.instanceOf[SubscriptionWorkItemRepository]
 
   override def beforeEach(): Unit =
-    repository.collection.drop().head().futureValue
+    repository.coll.drop().head().futureValue
     super.beforeEach()
 
   val testArn = Arn("AARN0000001")
@@ -126,13 +129,13 @@ with AgentAuthStubs:
       response.status shouldBe 501
 
   "POST /robotics/callback" should:
-    "return 204 when a work item is successfully updated with the new agentReference" in:
+    "return 204 when a work item is successfully updated with the new agentReference from a successful callback" in:
       val correlationId = "test-correlation-id"
       val testCallbackRequest = SubscriptionCallback(
         targetSystem = CESA,
         operationRequired = CREATE,
         agentId = testAgentReference,
-        status = success,
+        status = CallbackSuccess,
         requestMessage = "test-message"
       )
       val testSubscriptionRequest = SaSubscriptionRequest(
@@ -163,13 +166,43 @@ with AgentAuthStubs:
       response.status shouldBe 204
       repository.coll.find().headOption().futureValue.map(_.item) shouldBe Some(expected)
 
+    "return 204 when a work item is successfully set to permanently failed state from a failed callback" in:
+      val correlationId = "test-correlation-id"
+      val testCallbackRequest = SubscriptionCallback(
+        targetSystem = COTAX,
+        operationRequired = CREATE,
+        agentId = AgentReference(""),
+        status = CallbackFailure,
+        requestMessage = "test-message"
+      )
+      val testSubscriptionRequest = CtSubscriptionRequest(
+        agentName = testAgentName,
+        contactName = testContactName,
+        phoneNumber = Some(testPhoneNumber),
+        emailAddress = Some(testEmail),
+        address = testAddress,
+        isAbroad = false
+      )
+      repository.pushNew(SubscriptionWorkItem(
+        testArn,
+        testSubscriptionRequest,
+        CT,
+        None,
+        Some(correlationId)
+      )).futureValue
+
+      val response = post(s"/robotics/callback")(testCallbackRequest, extraHeaders = Seq("correlationId" -> correlationId))
+
+      response.status shouldBe 204
+      repository.coll.find().headOption().futureValue.map(_.status) shouldBe Some(PermanentlyFailed)
+
     "return 404 when no work item is found for the given correlationId" in:
       val correlationId = "test-correlation-id"
       val testCallbackRequest = SubscriptionCallback(
         targetSystem = CESA,
         operationRequired = CREATE,
         agentId = testAgentReference,
-        status = success,
+        status = CallbackSuccess,
         requestMessage = "test-message"
       )
 
@@ -182,7 +215,7 @@ with AgentAuthStubs:
         targetSystem = CESA,
         operationRequired = CREATE,
         agentId = testAgentReference,
-        status = success,
+        status = CallbackSuccess,
         requestMessage = "test-message"
       )
 
