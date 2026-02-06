@@ -62,12 +62,25 @@ with GuiceOneServerPerSuite:
     "auditing.enabled" -> "false",
     "play.filters.csrf.header.bypassHeaders.Csrf-Token" -> "nocheck",
     "stubs-compatibility-mode" -> "false",
+    "internal-auth-token-enabled-on-start" -> "false",
     "auditing.consumer.baseUri.host" -> mockHost,
     "auditing.consumer.baseUri.port" -> mockPort,
     "microservice.services.auth.host" -> mockHost,
     "microservice.services.auth.port" -> mockPort,
+    "microservice.services.internal-auth.host" -> mockHost,
+    "microservice.services.internal-auth.port" -> mockPort,
     "microservice.services.agent-epaye-registration.host" -> mockHost,
-    "microservice.services.agent-epaye-registration.port" -> mockPort
+    "microservice.services.agent-epaye-registration.port" -> mockPort,
+    "microservice.services.des.host" -> mockHost,
+    "microservice.services.des.port" -> mockPort,
+    "microservice.services.agent-assurance.host" -> mockHost,
+    "microservice.services.agent-assurance.port" -> mockPort,
+    "microservice.services.citizen-details.host" -> mockHost,
+    "microservice.services.citizen-details.port" -> mockPort,
+    "microservice.services.email.port" -> mockPort,
+    "microservice.services.email.host" -> mockHost,
+    "microservice.services.dms-submission.host" -> mockHost,
+    "microservice.services.dms-submission.port" -> mockPort
   )
 
   implicit val ws: WSClient = app.injector.instanceOf[WSClient]
@@ -84,23 +97,55 @@ with GuiceOneServerPerSuite:
     resetWiremock()
     super.beforeEach()
 
-  def get[T](uri: String): WSResponse = buildClient(uri).withHttpHeaders("Authorization" -> "Bearer 123").get().futureValue
+  def get[T](
+    uri: String,
+    defaultHeaders: Seq[(String, String)] = Seq("Authorization" -> "Bearer 123")
+  ): WSResponse = buildClient(uri).withHttpHeaders(defaultHeaders*).get().futureValue
 
-  def post[T](uri: String)(body: T)(implicit writes: Writes[T]): WSResponse =
-
+  def post[T](
+    uri: String,
+    defaultHeaders: Seq[(String, String)] = Seq("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
+  )(
+    body: T,
+    extraHeaders: Seq[(String, String)] = Nil
+  )(implicit writes: Writes[T]): WSResponse =
     buildClient(uri)
-      .withHttpHeaders("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
+      .withHttpHeaders(defaultHeaders*)
+      .addHttpHeaders(extraHeaders*)
       .post(writes.writes(body).toString())
       .futureValue
 
-  def put[T](uri: String)(body: T)(implicit writes: Writes[T]): WSResponse =
+  def postRaw(
+    uri: String,
+    defaultHeaders: Seq[(String, String)] = Seq("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
+  )(
+    body: String,
+    extraHeaders: Seq[(String, String)] = Nil
+  ): WSResponse =
     buildClient(uri)
-      .withHttpHeaders("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
+      .withHttpHeaders(defaultHeaders*)
+      .addHttpHeaders(extraHeaders*)
+      .post(body)
+      .futureValue
+
+  def put[T](
+    uri: String,
+    defaultHeaders: Seq[(String, String)] = Seq("Content-Type" -> "application/json", "Authorization" -> "Bearer 123")
+  )(
+    body: T,
+    extraHeaders: Seq[(String, String)] = Nil
+  )(implicit writes: Writes[T]): WSResponse =
+    buildClient(uri)
+      .withHttpHeaders(defaultHeaders*)
+      .addHttpHeaders(extraHeaders*)
       .put(writes.writes(body).toString())
       .futureValue
 
-  def delete[T](uri: String): WSResponse = buildClient(uri).withHttpHeaders("Authorization" -> "Bearer 123").delete().futureValue
+  def delete[T](
+    uri: String,
+    defaultHeaders: Seq[(String, String)] = Seq("Authorization" -> "Bearer 123")
+  ): WSResponse = buildClient(uri).withHttpHeaders(defaultHeaders*).delete().futureValue
 
   val baseUrl: String = "/agent-services-account"
 
-  private def buildClient(path: String): WSRequest = ws.url(s"http://localhost:$port$baseUrl$path").withFollowRedirects(false)
+  def buildClient(path: String): WSRequest = ws.url(s"http://localhost:$port$baseUrl$path").withFollowRedirects(false)

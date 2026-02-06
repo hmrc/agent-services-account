@@ -19,51 +19,39 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 import play.api.http.Status.*
 import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
-import play.api.libs.ws.{BodyWritable, WSClient, WSResponse}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSResponse
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.stubs.*
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.domain.SaUtr
 
 import java.time.format.DateTimeFormatter
-import scala.util.{Failure, Success, Try}
-
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class AgentDetailsControllerISpec
-  extends ComponentSpecHelper
-    with AgentAuthStubs
-    with DesStubs
-    with InternalAuthStub
-    with CitizenDetailsStubs
-    with AgentAssuranceStubs
-    with DmsSubmissionStubs
-    with EmailStub {
+extends ComponentSpecHelper
+with AgentAuthStubs
+with DesStubs
+with InternalAuthStub
+with CitizenDetailsStubs
+with AgentAssuranceStubs
+with DmsSubmissionStubs
+with EmailStub {
 
-
-  override def extraConfig: Map[String, Any] = Map (
-      "microservice.services.auth.host" -> mockHost,
-      "microservice.services.auth.port" -> mockPort,
-      "microservice.services.des.host" -> mockHost,
-      "microservice.services.des.port" -> mockPort,
-      "microservice.services.agent-assurance.host" -> mockHost,
-      "microservice.services.agent-assurance.port" -> mockPort,
-      "microservice.services.citizen-details.host" -> mockHost,
-      "microservice.services.citizen-details.port" -> mockPort,
-      "microservice.services.internal-auth.port" -> mockPort,
-      "microservice.services.internal-auth.host" -> mockHost,
-      "microservice.services.email.port" -> mockPort,
-      "microservice.services.email.host" -> mockHost,
-      "microservice.services.dms-submission.host" -> mockHost,
-      "microservice.services.dms-submission.port" -> mockPort,
-      "auditing.enabled" -> false,
-      "stride.roles.agent-services-account" -> "maintain_agent_manually_assure",
-      "internal-auth-token-enabled-on-start" -> false,
-      "http-verbs.retries.intervals" -> List("1ms"),
-      "agent.entity.cache.enabled" -> false, //test are not ready for cache enabled
-      "agent.entity.cache.expires" -> "1 seconds",
-      "agent.entity-check.lock.expires" -> "1 seconds",
-      "agent.entity-check.email.lock.expires" -> "1 seconds"
+  override def extraConfig: Map[String, Any] = Map(
+    "auditing.enabled" -> false,
+    "stride.roles.agent-services-account" -> "maintain_agent_manually_assure",
+    "internal-auth-token-enabled-on-start" -> false,
+    "http-verbs.retries.intervals" -> List("1ms"),
+    "agent.entity.cache.enabled" -> false, // test are not ready for cache enabled
+    "agent.entity.cache.expires" -> "1 seconds",
+    "agent.entity-check.lock.expires" -> "1 seconds",
+    "agent.entity-check.email.lock.expires" -> "1 seconds"
   )
 
   val testArn = Arn("AARN0000002")
@@ -73,35 +61,17 @@ class AgentDetailsControllerISpec
   val testUtr1: Utr = Utr("7000000003")
   val testSaUtr1: SaUtr = SaUtr(testUtr1.value)
 
-
-  def clientUrl(arn: Arn) = s"http://localhost:$port/agent-services-account/agent-record-with-checks/arn/${arn.value}"
-  val agentUrl = s"http://localhost:$port/agent-services-account/agent-record-with-checks"
-  def postUrl(arn:Arn) = s"http://localhost:$port/agent-services-account/agent/agency-details/arn/${arn.value}"
+  def clientUrl(arn: Arn) = s"/agent-record-with-checks/arn/${arn.value}"
+  val agentUrl = s"/agent-record-with-checks"
+  def postUrl(arn: Arn) = s"/agent/agency-details/arn/${arn.value}"
 
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
-  def doClientGetRequest(arn: Arn): WSResponse =
-    wsClient
-      .url(clientUrl(arn))
-      .withHttpHeaders("Authorization" -> "internal auth token")
-      .get()
-      .futureValue
-
-  def doAgentGetRequest() =
-    wsClient
-      .url(agentUrl)
-      .withHttpHeaders("Authorization" -> "Bearer XYZ")
-      .get()
-      .futureValue
-
-  def doPOSTRequest[T](arn: Arn, body: T)(implicit wr: BodyWritable[T]) =
-    wsClient
-      .url(postUrl(arn))
-      .withHttpHeaders("Authorization" -> "Bearer XYZ")
-      .post(body)
-      .futureValue
-
-  def expectedAgentRecordJson(utr: Option[Utr], suspensionStatus: Boolean, isAnIndividual: Boolean): JsValue = {
+  def expectedAgentRecordJson(
+    utr: Option[Utr],
+    suspensionStatus: Boolean,
+    isAnIndividual: Boolean
+  ): JsValue = {
     val baseFields: Seq[(String, JsValue)] = Seq(
       "agencyDetails" -> Json.obj(
         "agencyName" -> "ABC Accountants",
@@ -124,7 +94,7 @@ class AgentDetailsControllerISpec
           )
         else
           Json.obj("suspensionStatus" -> suspensionStatus)
-        ),
+      ),
       "isAnIndividual" -> JsBoolean(isAnIndividual)
     )
 
@@ -133,11 +103,14 @@ class AgentDetailsControllerISpec
     JsObject(utrField.toSeq ++ baseFields)
   }
 
-
   private val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy h:mma")
   private val dateTime = formatter.format(localDateTime)
 
-  private  def emailInformation(arn: Arn, utr:Utr, failedChecks: List[String]) =     EmailInformation(
+  private def emailInformation(
+    arn: Arn,
+    utr: Utr,
+    failedChecks: List[String]
+  ) = EmailInformation(
     to = Seq("test@example.com"),
     templateId = "entity_check_notification",
     parameters = Map(
@@ -168,9 +141,13 @@ class AgentDetailsControllerISpec
       givenCitizenIsAlive(testSaUtr)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
 
-      val response: WSResponse  = doClientGetRequest(testArn)
+      val response: WSResponse = get(clientUrl(testArn))
 
-      response.json shouldBe expectedAgentRecordJson(Some(testUtr), suspensionStatus = true, isAnIndividual = true)
+      response.json shouldBe expectedAgentRecordJson(
+        Some(testUtr),
+        suspensionStatus = true,
+        isAnIndividual = true
+      )
       response.status shouldBe OK
 
     }
@@ -181,11 +158,19 @@ class AgentDetailsControllerISpec
         givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
         givenCitizenIsDeceased(testSaUtr)
         givenAgentUtrCheckWithRefusalToDealWithTrue(testUtr)
-        givenEmailSent(emailInformation(testArn, testUtr, List("Agent is deceased", "Agent is on the 'Refuse To Deal With' list")))
+        givenEmailSent(emailInformation(
+          testArn,
+          testUtr,
+          List("Agent is deceased", "Agent is on the 'Refuse To Deal With' list")
+        ))
 
-        val response: WSResponse = doClientGetRequest(testArn)
+        val response: WSResponse = get(clientUrl(testArn))
 
-        response.json shouldBe expectedAgentRecordJson(Some(testUtr), suspensionStatus = true, isAnIndividual = true)
+        response.json shouldBe expectedAgentRecordJson(
+          Some(testUtr),
+          suspensionStatus = true,
+          isAnIndividual = true
+        )
         response.status shouldBe OK
         verifyEmailRequestWasSent(1)
       }
@@ -196,19 +181,19 @@ class AgentDetailsControllerISpec
       stubInternalAuthorised()
       givenDESGetAgentRecordSuspendedAgent(testArn, None)
 
-      val response = doClientGetRequest(testArn)
+      val response = get(clientUrl(testArn))
 
       response.status shouldBe OK
-      response.json shouldBe expectedAgentRecordJson(None, suspensionStatus = true, isAnIndividual = true)
+      response.json shouldBe expectedAgentRecordJson(
+        None,
+        suspensionStatus = true,
+        isAnIndividual = true
+      )
 
-  }
+    }
 
     "return 401 when internal auth is not provided for clientVerifyEntity" in {
-      val response =
-        wsClient
-          .url(clientUrl(testArn))
-          .get()
-          .futureValue
+      val response = get(clientUrl(testArn), defaultHeaders = Nil)
 
       response.status shouldBe UNAUTHORIZED
     }
@@ -217,7 +202,7 @@ class AgentDetailsControllerISpec
       stubInternalAuthorised()
       givenAgentIsUnknown404(testArn)
 
-      val response = doClientGetRequest(testArn)
+      val response = get(clientUrl(testArn))
 
       response.status shouldBe NOT_FOUND
     }
@@ -230,14 +215,17 @@ class AgentDetailsControllerISpec
       givenCitizenIsAlive(testSaUtr1)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr1)
 
-      val response = doAgentGetRequest()
+      val response = get(agentUrl)
 
       response.status shouldBe OK
-      response.json shouldBe expectedAgentRecordJson(Some(testUtr1), suspensionStatus = false, isAnIndividual = false)
+      response.json shouldBe expectedAgentRecordJson(
+        Some(testUtr1),
+        suspensionStatus = false,
+        isAnIndividual = false
+      )
 
       verifyEmailRequestWasSent(0)
     }
-
 
     "after lock expire return agent record and and send out email if agent is on refusalToDealWith" in {
       retry(5) {
@@ -245,12 +233,20 @@ class AgentDetailsControllerISpec
         givenDESGetAgentRecord(testArn2, Some(testUtr1))
         givenCitizenIsAlive(testSaUtr1)
         givenAgentUtrCheckWithRefusalToDealWithTrue(testUtr1)
-        givenEmailSent(emailInformation(testArn2, testUtr1, List("Agent is on the 'Refuse To Deal With' list")))
+        givenEmailSent(emailInformation(
+          testArn2,
+          testUtr1,
+          List("Agent is on the 'Refuse To Deal With' list")
+        ))
 
-        val response = doAgentGetRequest()
+        val response = get(agentUrl)
 
         response.status shouldBe OK
-        response.json shouldBe expectedAgentRecordJson(Some(testUtr1), suspensionStatus = false, isAnIndividual = false)
+        response.json shouldBe expectedAgentRecordJson(
+          Some(testUtr1),
+          suspensionStatus = false,
+          isAnIndividual = false
+        )
 
         verifyEmailRequestWasSent(1)
       }
@@ -264,14 +260,14 @@ class AgentDetailsControllerISpec
 
       val html = "<html><head></head><body></body></html>"
       val encodedHtmlStr = java.util.Base64.getEncoder.encodeToString(html.getBytes())
-      val response = doPOSTRequest(testArn, encodedHtmlStr)
+      val response = postRaw(postUrl(testArn), defaultHeaders = Seq("Authorization" -> "Bearer 123"))(encodedHtmlStr)
       response.status shouldBe CREATED
     }
 
     "return internal server error when payload is not encoded" in {
       isLoggedInAsStride("stride")
 
-      val response = doPOSTRequest(testArn, s"""{"a":"b"}""")
+      val response = post(postUrl(testArn), defaultHeaders = Seq("Authorization" -> "Bearer 123"))(s"""{"a":"b"}""")
       response.status shouldBe INTERNAL_SERVER_ERROR
       response.body.contains("build PDF failed with error:")
     }
@@ -279,7 +275,7 @@ class AgentDetailsControllerISpec
     "return internal server error when payload empty" in {
       isLoggedInAsStride("stride")
 
-      val response = doPOSTRequest(testArn, "")
+      val response = post(postUrl(testArn), defaultHeaders = Seq("Authorization" -> "Bearer 123"))("")
       response.status shouldBe INTERNAL_SERVER_ERROR
       response.body.contains("base64 encoding failed with field not provided")
     }

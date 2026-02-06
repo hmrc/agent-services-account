@@ -10,3 +10,4 @@ POST        /agent/agency-details/arn/:arn                      uk.gov.hmrc.agen
 POST        /dms-agent-callback                                 uk.gov.hmrc.agentservicesaccount.controllers.DmsNotificationController.dmsCallback()
 
 POST        /legacy-subscription-request/:regime                uk.gov.hmrc.agentservicesaccount.controllers.LegacySubscriptionController.startSubscription(regime: LegacyRegime)
+POST        /robotics/callback                                  uk.gov.hmrc.agentservicesaccount.controllers.LegacySubscriptionController.roboticsCallback()

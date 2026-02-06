@@ -21,11 +21,14 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import org.apache.pekko.Done
+import play.api.Logging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
@@ -35,7 +38,8 @@ class SubscriptionService @Inject() (
   agentEpayeRegistrationConnector: AgentEpayeRegistrationConnector,
   subscriptionWorkItemRepository: SubscriptionWorkItemRepository,
   appConfig: AppConfig
-)(implicit ec: ExecutionContext):
+)(implicit ec: ExecutionContext)
+extends Logging:
 
   def startPayeSubscription(
     arn: Arn,
@@ -59,3 +63,14 @@ class SubscriptionService @Inject() (
       )
       .map(_ => Done)
   }
+
+  def handleRoboticsCallback(
+    callback: SubscriptionCallback,
+    correlationId: String
+  ): Future[Boolean] =
+    callback.status match {
+      case CallbackSuccess => subscriptionWorkItemRepository.addAgentReference(callback.agentId, correlationId)
+      case CallbackFailure =>
+        logger.error(s"[handleRoboticsCallback] Robotics callback for correlationId $correlationId returned failed status, reason: '${callback.requestMessage}', marking work item as permanently failed")
+        subscriptionWorkItemRepository.markAsPermanentlyFailed(correlationId)
+    }

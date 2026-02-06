@@ -23,6 +23,7 @@ lazy val microservice = Project("agent-services-account", file("."))
 //    Test / parallelExecution := false,
     scalacOptions += "-Wconf:src=routes/.*:s"
   )
+  .settings(Test / logBuffered := false)
   .settings(CodeCoverageSettings.settings)
   .disablePlugins(JUnitXmlReportPlugin)
 
@@ -31,3 +32,4 @@ lazy val it = project
   .dependsOn(microservice % "test->test")
   .settings(DefaultBuildSettings.itSettings())
   .settings(libraryDependencies ++= AppDependencies.it)
+  .settings(Test / logBuffered := false)

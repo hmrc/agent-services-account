@@ -16,60 +16,44 @@
 
 package uk.gov.hmrc.agentservicesaccount.controllers
 
-import play.api.http.Status.{BAD_REQUEST, OK, UNAUTHORIZED}
+import play.api.http.Status.BAD_REQUEST
+import play.api.http.Status.OK
+import play.api.http.Status.UNAUTHORIZED
 import play.api.libs.json.Json
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
-import play.api.libs.ws.{WSClient, WSResponse}
-import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsNotification, SubmissionItemStatus}
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSResponse
+import uk.gov.hmrc.agentservicesaccount.models.dms.DmsNotification
+import uk.gov.hmrc.agentservicesaccount.models.dms.SubmissionItemStatus
 import uk.gov.hmrc.agentservicesaccount.stubs.InternalAuthStub
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 
-
 class DmsNotificationControllerISpec
-  extends ComponentSpecHelper
-    with InternalAuthStub {
+extends ComponentSpecHelper
+with InternalAuthStub:
 
-  override def extraConfig: Map[String, Any] = Map(
-      "microservice.services.internal-auth.host" -> mockHost,
-      "microservice.services.internal-auth.port" -> mockPort,
-      "internal-auth-token-enabled-on-start" -> false,
-      "auditing.enabled" -> false
-    )
+  val url = "/dms-agent-callback"
 
-  val wsClient: WSClient = app.injector.instanceOf[WSClient]
+  "POST /dms-notification/callback" should:
 
-  private val url = s"http://localhost:$port/agent-services-account/dms-agent-callback"
-
-  private def post(payload: String, withAuth: Boolean = true): WSResponse = {
-    val headers = Seq("Content-Type" -> "application/json") ++
-        (if (withAuth) Seq("Authorization" -> "Bearer token") else Seq.empty)
-
-    val request = wsClient.url(url).withHttpHeaders(headers *)
-
-    request.post(payload).futureValue
-  }
-
-  "POST /agent-services-account/dms-notification/callback" should {
-
-    "return 200 OK for a valid notification" in {
+    "return 200 OK for a valid notification" in:
       stubInternalAuthorised()
 
-      val json = Json.stringify(Json.toJson(DmsNotification("test123", SubmissionItemStatus.Submitted, None)))
-      val response = post(json)
+      val response =
+        post(url)(DmsNotification(
+          "test123",
+          SubmissionItemStatus.Submitted,
+          None
+        ))
 
       response.status shouldBe OK
-    }
 
-    "return 400 BAD_REQUEST for invalid JSON" in {
+    "return 400 BAD_REQUEST for invalid JSON" in:
       stubInternalAuthorised()
 
-      val response = post("""{"invalid":"payload"}""")
+      val response = post(url)(Json.obj("invalid" -> "payload"))
       response.status shouldBe BAD_REQUEST
-    }
 
-    "return 401 UNAUTHORIZED if no internal auth header present" in {
-      val response = post("""{}""", withAuth = false)
+    "return 401 UNAUTHORIZED if no internal auth header present" in:
+      val response = post(url, defaultHeaders = Seq("Content-Type" -> "application/json"))("")
       response.status shouldBe UNAUTHORIZED
-    }
-  }
-}

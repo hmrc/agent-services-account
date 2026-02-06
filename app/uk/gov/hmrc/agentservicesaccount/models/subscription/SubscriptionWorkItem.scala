@@ -27,6 +27,7 @@ case class SubscriptionWorkItem(
   subscriptionRequest: SubscriptionRequest,
   regime: LegacyRegime,
   agentReference: Option[AgentReference],
+  correlationId: Option[String] = None, // Used to correlate callback from DES with the original request. Only required for CT/SA
   sessionId: Option[String] = None // Only required for local testing against stubs. Always set to None for QA/Prod
 )
 
@@ -40,6 +41,7 @@ object SubscriptionWorkItem:
       ) and
       Reads.pure(regime) and
       (__ \ "agentReference").readNullable[AgentReference] and
+      (__ \ "correlationId").readNullable[String] and
       (__ \ "sessionId").readNullable[String]
     )(SubscriptionWorkItem.apply)
   }
@@ -51,6 +53,7 @@ object SubscriptionWorkItem:
       ) and
       (__ \ "regime").write[LegacyRegime] and
       (__ \ "agentReference").writeNullable[AgentReference] and
+      (__ \ "correlationId").writeNullable[String] and
       (__ \ "sessionId").writeNullable[String]
     )(o => Tuple.fromProductTyped(o))
 
