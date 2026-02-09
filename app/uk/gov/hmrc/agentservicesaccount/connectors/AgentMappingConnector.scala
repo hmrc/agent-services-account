@@ -41,7 +41,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class MappingConnector @Inject() (
+class AgentMappingConnector @Inject() (
   httpClient: HttpClientV2,
   appConfig: AppConfig
 )(implicit
@@ -51,7 +51,7 @@ extends Logging:
 
   private val baseUrl = s"${appConfig.agentMappingBaseUrl}/agent-mapping"
 
-  def getMappingsFor(
+  def getMappings(
     arn: Arn,
     regime: LegacyRegime
   )(implicit rh: RequestHeader): Future[Seq[Mapping]] = httpClient
@@ -60,7 +60,7 @@ extends Logging:
     .map { response =>
       response.status match {
         case Status.OK => response.json.as[Mappings].mappings
-        case Status.NO_CONTENT => Nil
+        case Status.NOT_FOUND => Nil
         case other =>
           throw UpstreamErrorResponse(
             response.body,

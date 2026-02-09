@@ -18,9 +18,8 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 import play.api.Logging
 import play.api.http.Status
-import play.api.libs.functional.syntax.toFunctionalBuilderOps
+import play.api.libs.json.Json
 import play.api.libs.json.Reads
-import play.api.libs.json.__
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
@@ -34,7 +33,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 
 @Singleton
 class EnrolmentStoreProxyConnector @Inject() (
@@ -56,7 +55,7 @@ extends Logging:
   )(using
     request: RequestHeader
   ): Future[List[EnrolmentStoreProxyConnector.Enrolment]] = {
-    val url = url"$baseUrl/enrolment-store/groups/$groupId/enrolments?type=principal"
+    val url = url"$baseUrl/enrolment-store/groups/${groupId.value}/enrolments?type=principal"
     httpClient
       .get(url)
       .execute[HttpResponse]
@@ -82,8 +81,4 @@ object EnrolmentStoreProxyConnector:
   )
 
   object Enrolment:
-    given Reads[Enrolment] =
-      (
-        (__ \ "service").read[String] and
-        (__ \ "state").read[String]
-      )(Enrolment.apply)
+    given Reads[Enrolment] = Json.reads[Enrolment]

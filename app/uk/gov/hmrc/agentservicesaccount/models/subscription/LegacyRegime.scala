@@ -23,14 +23,14 @@ enum LegacyRegime:
 
   case PAYE, SA, CT
 
-  val enrolmentKey: String =
+  def enrolmentKey: String =
     this match {
       case PAYE => "IR-PAYE-AGENT"
       case SA => "IR-SA-AGENT"
       case CT => "IR-CT-AGENT"
     }
 
-  val mappingKey: String =
+  def mappingKey: String =
     this match {
       case PAYE => "paye"
       case SA => "sa"

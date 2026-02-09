@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.agentservicesaccount.connectors.MappingConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.AgentMappingConnector
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
@@ -44,7 +44,7 @@ class SubscriptionService @Inject() (
   agentEpayeRegistrationConnector: AgentEpayeRegistrationConnector,
   subscriptionWorkItemRepository: SubscriptionWorkItemRepository,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
-  mappingConnector: MappingConnector,
+  agentMappingConnector: AgentMappingConnector,
   appConfig: AppConfig
 )(implicit ec: ExecutionContext)
 extends Logging:
@@ -106,7 +106,7 @@ extends Logging:
               )
             )
           case _ =>
-            mappingConnector.getMappingsFor(arn, regime).map {
+            agentMappingConnector.getMappings(arn, regime).map {
               case mappings if mappings.nonEmpty =>
                 SubscriptionInfo(
                   regime = regime,

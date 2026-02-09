@@ -22,44 +22,29 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
 import play.api.libs.json.Json
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayeSubscriptionRequest
 
-trait AgentEpayeRegistrationStubs:
+trait EnrolmentStoreProxyStubs:
 
-  def givenEpayeRegisterCallSucceeds(request: PayeSubscriptionRequest)(agentReference: AgentReference): Unit = stubFor(
-    post(urlEqualTo("/agent-epaye-registration/registrations"))
-      .withRequestBody(equalToJson(
-        Json.toJson(request)(PayeSubscriptionRequest.registerWrites).toString
-      ))
+  def givenEs3CallSucceeds(groupId: GroupId)(regime: LegacyRegime): Unit = stubFor(
+    get(urlEqualTo(s"/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments?type=principal"))
       .willReturn(
         aResponse()
           .withStatus(200)
-          .withBody(Json.obj(
-            "agentReference" -> agentReference
-          ).toString)
+          .withBody(Json.arr(Json.obj(
+            "service" -> regime.enrolmentKey,
+            "state" -> "Activated"
+          )).toString)
       )
   )
 
-  def givenEpayeRegisterCallFails(request: PayeSubscriptionRequest): Unit = stubFor(
-    post(urlEqualTo(s"/agent-epaye-registration/registrations"))
-      .withRequestBody(equalToJson(
-        Json.toJson(request)(PayeSubscriptionRequest.registerWrites).toString
-      ))
+  def givenEs3CallFails(groupId: GroupId): Unit = stubFor(
+    get(urlEqualTo(s"/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments?type=principal"))
       .willReturn(
         aResponse()
-          .withStatus(400)
+          .withStatus(500)
       )
   )
-
-  def verifyPayeRegisterCall(
-    count: Int = 1
-  ): Unit =
-    eventually(Timeout(Span(5, Seconds))) {
-      verify(
-        count,
-        postRequestedFor(
-          urlEqualTo("/agent-epaye-registration/registrations")
-        )
-      )
-    }
