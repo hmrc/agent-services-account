@@ -152,4 +152,4 @@ with GuiceOneServerPerSuite:
 
   val baseUrl: String = "/agent-services-account"
 
-  def buildClient(path: String): WSRequest = ws.url(s"http://localhost:$port$baseUrl$path").withFollowRedirects(false)
+  def buildClient(path: String): WSRequest = ws.url(s"http://localhost:$port$baseUrl${path.replace(baseUrl, "")}").withFollowRedirects(false)

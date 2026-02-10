@@ -22,7 +22,7 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 
 enum SubscriptionStatus:
-  case SubscriptionInProgress, SubscriptionCompleted, SubscriptionFailed, SubscriptionMapped, SubscriptionOnAgency, NotSubscribed
+  case SubscriptionInProgress, SubscriptionFailed, SubscriptionMapped, SubscriptionOnAgency, NotSubscribed, InvalidStatus
 
 object SubscriptionStatus:
 
@@ -30,7 +30,7 @@ object SubscriptionStatus:
 
   def fromProcessingStatus(processingStatus: ProcessingStatus): SubscriptionStatus =
     processingStatus match {
-      case Succeeded => SubscriptionCompleted
       case ToDo | InProgress | Failed => SubscriptionInProgress // Failed included as that status implies it is retryable
-      case _ => SubscriptionFailed
+      case PermanentlyFailed => SubscriptionFailed
+      case _ => InvalidStatus // Other status types should never be set and completion should remove the work item
     }
