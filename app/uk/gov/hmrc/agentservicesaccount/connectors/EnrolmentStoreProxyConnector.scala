@@ -16,35 +16,33 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import play.api.Logging
-import play.api.http.Status
-import play.api.libs.json.Json
-import play.api.libs.json.Reads
-import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.GroupId
-import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.hc
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.StringContextOps
-import uk.gov.hmrc.http.UpstreamErrorResponse
-import uk.gov.hmrc.http.client.HttpClientV2
-
 import javax.inject.Inject
 import javax.inject.Singleton
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
+import play.api.http.Status.*
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.models.{CredId, Es20Request, Es20Response, Es8Request, EspKnownFact, GroupId}
+import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 
 @Singleton
 class EnrolmentStoreProxyConnector @Inject() (
-  httpClient: HttpClientV2,
-  appConfig: AppConfig
-)(using
-  ec: ExecutionContext
-)
-extends Logging:
+  appConfig: AppConfig,
+  http: HttpClientV2
+)(
+  implicit ec: ExecutionContext
+):
 
-  private val baseUrl: String = s"${appConfig.enrolmentStoreProxyBaseUrl}/enrolment-store-proxy"
+  private val baseUrl: String = appConfig.enrolmentStoreProxyBaseUrl
 
   /*
    * ES3: Query Enrolments allocated to a group
@@ -55,20 +53,60 @@ extends Logging:
   )(using
     request: RequestHeader
   ): Future[List[EnrolmentStoreProxyConnector.Enrolment]] = {
-    val url = url"$baseUrl/enrolment-store/groups/${groupId.value}/enrolments?type=principal"
-    httpClient
+    val url = url"$baseUrl/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments?type=principal"
+    http
       .get(url)
       .execute[HttpResponse]
       .map { response =>
         response.status match {
-          case Status.OK => (response.json \ "enrolments").as[List[EnrolmentStoreProxyConnector.Enrolment]]
-          case Status.NO_CONTENT => Nil
+          case OK => (response.json \ "enrolments").as[List[EnrolmentStoreProxyConnector.Enrolment]]
+          case NO_CONTENT => Nil
           case other =>
             throw UpstreamErrorResponse(
               response.body,
               other,
               other
             )
+        }
+      }
+  }
+
+  def queryKnownFactsForPayeAgent(payeAgentRef: String)(using HeaderCarrier): Future[Option[Es20Response]] = {
+    val request = Es20Request(
+      service = "IR-PAYE-AGENT",
+      knownFacts = Seq(EspKnownFact("IRAgentReference", payeAgentRef))
+    )
+
+    http
+      .post(url"$baseUrl/enrolment-store-proxy/enrolment-store/enrolments")
+      .withBody(Json.toJson(request))
+      .execute[HttpResponse]
+      .map { response =>
+        response.status match {
+          case OK => Some(response.json.as[Es20Response])
+          case NO_CONTENT => None
+          case status =>
+            throw UpstreamErrorResponse(response.body, status, status)
+        }
+      }
+  }
+
+  def allocatePayeAgentEnrolment(
+    groupId: GroupId,
+    payeAgentRef: String,
+    adminCredId: CredId
+  )(using HeaderCarrier): Future[Unit] = {
+    val enrolmentKey = s"IR-PAYE-AGENT~IRAgentReference~$payeAgentRef"
+
+    http
+      .post(url"$baseUrl/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments/$enrolmentKey")
+      .withBody(Json.toJson(Es8Request(adminCredId.value, "principal")))
+      .execute[HttpResponse]
+      .map { response =>
+        response.status match {
+          case CREATED => ()
+          case status =>
+            throw UpstreamErrorResponse(response.body, status, status)
         }
       }
   }

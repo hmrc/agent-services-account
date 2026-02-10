@@ -59,6 +59,14 @@ with AgentEpayeRegistrationStubs {
       result shouldBe testAgentReference
     }
 
+    "return agent reference when payeAgentReference is returned" in {
+      givenEpayeRegisterCallSucceedsWithPayeReference(testSubscriptionRequest)(testAgentReference)
+
+      val result = connector.register(testSubscriptionRequest).futureValue
+
+      result shouldBe testAgentReference
+    }
+
     "throw error when OPRA returns unexpected response" in {
       givenEpayeRegisterCallFails(testSubscriptionRequest)
 

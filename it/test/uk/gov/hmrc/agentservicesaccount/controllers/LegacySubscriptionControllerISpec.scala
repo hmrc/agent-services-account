@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
@@ -95,7 +96,10 @@ with AgentAuthStubs:
         subscriptionRequest = testPayeSubscriptionRequest,
         regime = PAYE,
         agentReference = Some(testAgentReference),
-        sessionId = None
+        groupId = Some(GroupId("test-group-id")),
+        adminCredId = Some(CredId("test-cred-id")),
+        sessionId = None,
+        bearerToken = None
       )
 
       givenEpayeRegisterCallSucceeds(testPayeSubscriptionRequest)(testAgentReference)
@@ -278,18 +282,18 @@ with AgentAuthStubs:
         requestMessage = "test-message"
       )
       repository.pushNew(SubscriptionWorkItem(
-        testArn,
-        testSaSubscriptionRequest,
-        SA,
-        None,
-        Some(correlationId)
+        arn = testArn,
+        subscriptionRequest = testSaSubscriptionRequest,
+        regime = SA,
+        agentReference = None,
+        correlationId = Some(correlationId)
       )).futureValue
       val expected = SubscriptionWorkItem(
-        testArn,
-        testSaSubscriptionRequest,
-        SA,
-        Some(testAgentReference),
-        Some(correlationId)
+        arn = testArn,
+        subscriptionRequest = testSaSubscriptionRequest,
+        regime = SA,
+        agentReference = Some(testAgentReference),
+        correlationId = Some(correlationId)
       )
 
       val response = post(s"/robotics/callback")(testCallbackRequest, extraHeaders = Seq("correlationId" -> correlationId))
@@ -307,11 +311,11 @@ with AgentAuthStubs:
         requestMessage = "test-message"
       )
       repository.pushNew(SubscriptionWorkItem(
-        testArn,
-        testCtSubscriptionRequest,
-        CT,
-        None,
-        Some(correlationId)
+        arn = testArn,
+        subscriptionRequest = testCtSubscriptionRequest,
+        regime = CT,
+        agentReference = None,
+        correlationId = Some(correlationId)
       )).futureValue
 
       val response = post(s"/robotics/callback")(testCallbackRequest, extraHeaders = Seq("correlationId" -> correlationId))
