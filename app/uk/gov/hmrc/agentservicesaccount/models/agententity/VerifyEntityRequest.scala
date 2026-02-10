@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.agententity
 
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
 case class VerifyEntityRequest(identifier: Arn)

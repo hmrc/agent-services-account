@@ -50,7 +50,8 @@ class CacheProvider @Inject() (
   val agentDetailsCache: Cache[AgentDetailsDesResponse] =
     if (cacheEnabled) {
       agencyDetailsCache
-    } else {
+    }
+    else {
       new DoNotCache[AgentDetailsDesResponse]
     }
 

@@ -16,22 +16,30 @@
 
 package uk.gov.hmrc.agentservicesaccount.models
 
-
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import uk.gov.hmrc.agentmtdidentifiers.model.{SuspensionDetails, Utr}
-import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException.{CitizenConnectorRequestFailed, EntityDeceasedCheckFailed}
+import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
+import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException.CitizenConnectorRequestFailed
+import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException.EntityDeceasedCheckFailed
 import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException.AgentIsOnRefuseToDealList
-import uk.gov.hmrc.agentservicesaccount.models.agententity.{EmailCheckExceptions, EntityCheckException, EntityCheckResult}
+import uk.gov.hmrc.agentservicesaccount.models.agententity.EmailCheckExceptions
+import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckException
+import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckResult
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-
-class EntityCheckResultSpec extends UnitSpec:
+class EntityCheckResultSpec
+extends UnitSpec:
 
   val testAgentRecord = AgentDetailsDesResponse(
     uniqueTaxReference = Some(Utr("1234567890")),
-    agencyDetails = Some(AgencyDetails(Some("Test Agency"), None, None, None)),
+    agencyDetails = Some(AgencyDetails(
+      Some("Test Agency"),
+      None,
+      None,
+      None
+    )),
     suspensionDetails = Some(SuspensionDetails(true, Some(Set("ITSA")))),
     isAnIndividual = Some(false)
   )
@@ -78,9 +86,10 @@ class EntityCheckResultSpec extends UnitSpec:
 
     "match against sealed trait for pattern matching" in {
       val ex: EntityCheckException = AgentIsOnRefuseToDealList
-      val matched = ex match
-        case AgentIsOnRefuseToDealList => true
-        case _                         => false
+      val matched =
+        ex match
+          case AgentIsOnRefuseToDealList => true
+          case _ => false
 
       matched mustBe true
     }

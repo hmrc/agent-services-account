@@ -21,11 +21,13 @@ import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.internalauth.client.test.StubBehaviour
-import uk.gov.hmrc.internalauth.client.{Predicate, Retrieval}
+import uk.gov.hmrc.internalauth.client.Predicate
+import uk.gov.hmrc.internalauth.client.Retrieval
 
 import scala.concurrent.Future
 
-trait MockInternalAuth extends MockitoSugar { this: TestSuite =>
+trait MockInternalAuth
+extends MockitoSugar { this: TestSuite =>
 
   val mockStubBehaviour: StubBehaviour = mock[StubBehaviour]
 
@@ -38,4 +40,5 @@ trait MockInternalAuth extends MockitoSugar { this: TestSuite =>
     when(mockStubBehaviour.stubAuth[Unit](any[Option[Predicate]], any[Retrieval[Unit]]))
       .thenReturn(Future.failed(e))
   }
+
 }

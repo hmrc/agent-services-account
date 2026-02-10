@@ -25,7 +25,8 @@ import uk.gov.hmrc.domain.SaUtr
 
 import scala.concurrent.Future
 
-trait MockCitizenDetailsConnector extends MockitoSugar {
+trait MockCitizenDetailsConnector
+extends MockitoSugar {
 
   val mockCitizenDetailsConnector: CitizenDetailsConnector = mock[CitizenDetailsConnector]
 
@@ -42,4 +43,5 @@ trait MockCitizenDetailsConnector extends MockitoSugar {
     when(mockCitizenDetailsConnector.getCitizenDeceasedFlag(saUtr))
       .thenReturn(Future.failed(ex))
   }
+
 }

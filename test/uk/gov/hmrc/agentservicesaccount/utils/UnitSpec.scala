@@ -24,4 +24,11 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.WsScalaTestClient
 import play.api.test.DefaultAwaitTimeout
 
-trait UnitSpec extends AnyWordSpec with should.Matchers with DefaultAwaitTimeout with MockitoSugar with ScalaFutures with OptionValues with WsScalaTestClient
+trait UnitSpec
+extends AnyWordSpec
+with should.Matchers
+with DefaultAwaitTimeout
+with MockitoSugar
+with ScalaFutures
+with OptionValues
+with WsScalaTestClient

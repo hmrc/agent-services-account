@@ -22,7 +22,8 @@ import play.api.mvc.Request
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector.Enrolment
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
-import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.stubs.EnrolmentStoreProxyStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
@@ -41,12 +42,24 @@ with EnrolmentStoreProxyStubs {
   val testGroupId = GroupId("test-group-id")
 
   "ES3" should {
-    "return active principal enrolments on a successful response" in {
-      givenEs3CallSucceeds(testGroupId)(SA)
+    "return active principal enrolments on a successful 200 response" in {
+      givenEs3CallSucceeds(testGroupId)(SA, CT, PAYE)
 
       val result = connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue
 
-      result shouldBe Seq(Enrolment(service = SA.enrolmentKey, state = "Activated"))
+      result shouldBe Seq(
+        Enrolment(service = SA.enrolmentKey, state = "Activated"),
+        Enrolment(service = CT.enrolmentKey, state = "Activated"),
+        Enrolment(service = PAYE.enrolmentKey, state = "Activated")
+      )
+    }
+
+    "return nothing on a successful 404 response" in {
+      givenEs3CallSucceeds(testGroupId)()
+
+      val result = connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue
+
+      result shouldBe Nil
     }
 
     "throw error when EACD returns unexpected response" in {

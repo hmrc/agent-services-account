@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentservicesaccount.mocks
 
-import org.mockito.ArgumentMatchers.{any, eq as meq}
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq as meq
 import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
@@ -26,7 +27,8 @@ import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 
 import scala.concurrent.Future
 
-trait MockEmailConnector extends MockitoSugar { this: TestSuite =>
+trait MockEmailConnector
+extends MockitoSugar { this: TestSuite =>
 
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
 
@@ -41,5 +43,5 @@ trait MockEmailConnector extends MockitoSugar { this: TestSuite =>
       mockEmailConnector.sendEmail(meq(emailInfo))(using any[RequestHeader])
     ).thenReturn(Future.successful(()))
   }
-  
+
 }

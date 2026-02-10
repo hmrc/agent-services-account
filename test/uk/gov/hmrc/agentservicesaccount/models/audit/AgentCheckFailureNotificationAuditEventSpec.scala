@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.audit
 
-
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
@@ -26,8 +25,9 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 import java.time.format.DateTimeFormatter
 
-
-class AgentCheckFailureNotificationAuditEventSpec extends UnitSpec with InstantClockTestSupport:
+class AgentCheckFailureNotificationAuditEventSpec
+extends UnitSpec
+with InstantClockTestSupport:
 
   val testArn = Arn("AARN1234567")
   val testUtr = "1234567890"

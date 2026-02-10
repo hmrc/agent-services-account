@@ -29,15 +29,17 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.PayeSubscriptionRequ
 
 trait EnrolmentStoreProxyStubs:
 
-  def givenEs3CallSucceeds(groupId: GroupId)(regime: LegacyRegime): Unit = stubFor(
+  def givenEs3CallSucceeds(groupId: GroupId)(regimes: LegacyRegime*): Unit = stubFor(
     get(urlEqualTo(s"/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments?type=principal"))
       .willReturn(
         aResponse()
-          .withStatus(200)
-          .withBody(Json.arr(Json.obj(
-            "service" -> regime.enrolmentKey,
-            "state" -> "Activated"
-          )).toString)
+          .withStatus(if regimes.nonEmpty then 200 else 204)
+          .withBody(Json.arr(regimes.map { regime =>
+            Json.obj(
+              "service" -> regime.enrolmentKey,
+              "state" -> "Activated"
+            )
+          }*).toString)
       )
   )
 

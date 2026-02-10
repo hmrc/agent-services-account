@@ -18,49 +18,52 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 
 import play.api.Logging
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.Action
+import play.api.mvc.AnyContent
+import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
-import uk.gov.hmrc.agentservicesaccount.services.{AgentDetailsService, DmsService}
+import uk.gov.hmrc.agentservicesaccount.services.AgentDetailsService
+import uk.gov.hmrc.agentservicesaccount.services.DmsService
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.temporal.ChronoUnit
 import java.time.Instant
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class AgentDetailsController @Inject()(
-                                        cc: ControllerComponents,
-                                        agentEntityService: AgentDetailsService,
-                                        dmsService: DmsService,
-                                        authActions: AuthActions,
-                                        auth: BackendAuthComponents
+class AgentDetailsController @Inject() (
+  cc: ControllerComponents,
+  agentEntityService: AgentDetailsService,
+  dmsService: DmsService,
+  authActions: AuthActions,
+  auth: BackendAuthComponents
 )(implicit
   ec: ExecutionContext,
   appConfig: AppConfig
 )
 extends BackendController(cc)
-  with Logging {
+with Logging {
 
-  //for agents
-  def agentGetWithChecks: Action[AnyContent] = authActions.authorisedWithArn { implicit request =>arn =>
+  // for agents
+  def agentGetWithChecks: Action[AnyContent] = authActions.authorisedWithArn { implicit request => arn =>
     agentEntityService
       .getAgentDetailsWithChecks(arn)
       .map(entityCheckResult => Ok(Json.toJson(entityCheckResult.agentRecord)))
   }
 
-  //clients, stride
-  def clientGetWithChecks(arn:Arn): Action[AnyContent] = internalAuth.async  { implicit request =>
+  // clients, stride
+  def clientGetWithChecks(arn: Arn): Action[AnyContent] = internalAuth.async { implicit request =>
     agentEntityService
       .getAgentDetailsWithChecks(arn)
       .map(entityCheckResult => Ok(Json.toJson(entityCheckResult.agentRecord)))
-    }
-  
-  
+  }
+
   def post(arn: Arn): Action[AnyContent] =
     authActions.withAffinityGroupAgentOrStride(strideRoles) {
       implicit request =>
@@ -79,8 +82,6 @@ extends BackendController(cc)
     }
 
   private val strideRoles = Seq(appConfig.manuallyAssuredStrideRole)
-  
-  
 
   private val predicate = Predicate.Permission(
     resource = Resource(
@@ -91,6 +92,5 @@ extends BackendController(cc)
   )
 
   val internalAuth = auth.authorizedAction(predicate)
-
 
 }

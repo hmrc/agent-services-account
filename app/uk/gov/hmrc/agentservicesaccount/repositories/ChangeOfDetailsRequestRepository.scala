@@ -38,30 +38,29 @@ import uk.gov.hmrc.mongo.MongoComponent
 
 @Singleton
 class ChangeOfDetailsRequestRepository @Inject() (mongoComponent: MongoComponent)(
-    using appConfig: AppConfig,
-    ec: ExecutionContext
-) extends PlayMongoRepository[ChangeOfDetailsRequest](
-      collectionName = "change-of-details-request",
-      domainFormat = ChangeOfDetailsRequest.mongoFormat,
-      mongoComponent = mongoComponent,
-      indexes = indexes(appConfig.mongoTtl),
-      replaceIndexes = true
-    ):
+  using
+  appConfig: AppConfig,
+  ec: ExecutionContext
+)
+extends PlayMongoRepository[ChangeOfDetailsRequest](
+  collectionName = "change-of-details-request",
+  domainFormat = ChangeOfDetailsRequest.mongoFormat,
+  mongoComponent = mongoComponent,
+  indexes = indexes(appConfig.mongoTtl),
+  replaceIndexes = true
+):
 
-  def find(arn: String): Future[Option[ChangeOfDetailsRequest]] =
-    collection.find(equal("arn", arn)).headOption()
+  def find(arn: String): Future[Option[ChangeOfDetailsRequest]] = collection.find(equal("arn", arn)).headOption()
 
-  def upsert(changeOfDetailsRequest: ChangeOfDetailsRequest): Future[UpdateResult] =
-    collection
-      .replaceOne(
-        filter = equal("arn", changeOfDetailsRequest.arn),
-        replacement = changeOfDetailsRequest,
-        options = new ReplaceOptions().upsert(true)
-      )
-      .head()
+  def upsert(changeOfDetailsRequest: ChangeOfDetailsRequest): Future[UpdateResult] = collection
+    .replaceOne(
+      filter = equal("arn", changeOfDetailsRequest.arn),
+      replacement = changeOfDetailsRequest,
+      options = new ReplaceOptions().upsert(true)
+    )
+    .head()
 
-  def delete(arn: String): Future[DeleteResult] =
-    collection.deleteOne(equal("arn", arn)).head()
+  def delete(arn: String): Future[DeleteResult] = collection.deleteOne(equal("arn", arn)).head()
 
 object ChangeOfDetailsRequestRepository:
   def indexes(ttl: Long): Seq[IndexModel] = Seq(

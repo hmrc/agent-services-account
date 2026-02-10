@@ -26,7 +26,8 @@ import uk.gov.hmrc.agentservicesaccount.services.EmailService
 
 import scala.concurrent.Future
 
-trait MockEmailService extends MockitoSugar {
+trait MockEmailService
+extends MockitoSugar {
   this: MockAppConfig =>
 
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
@@ -39,5 +40,5 @@ trait MockEmailService extends MockitoSugar {
 //    when(mockAppConfig.agentMaintainerEmail)
 //      .thenReturn("agent.maintainer@example.com")
   }
-  
+
 }

@@ -21,7 +21,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class DmsSubmissionReferenceSpec extends UnitSpec:
+class DmsSubmissionReferenceSpec
+extends UnitSpec:
 
   val testRef = DmsSubmissionReference("ABC123XYZ789")
 
@@ -43,5 +44,5 @@ class DmsSubmissionReferenceSpec extends UnitSpec:
       generated.submissionReference.length mustBe 12
       generated.submissionReference.forall(c => c.isDigit || (c.isLetter && c.isUpper)) mustBe true
     }
-    
+
   }

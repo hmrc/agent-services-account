@@ -27,14 +27,11 @@ trait AgentMappingStubs:
   def givenGetMappingsCallSucceeds(
     arn: Arn,
     regime: LegacyRegime
-  )(agentReferences: Seq[AgentReference]): Unit = stubFor(
+  )(agentReferences: AgentReference*): Unit = stubFor(
     get(urlEqualTo(s"/agent-mapping/mappings/key/${regime.mappingKey}/arn/${arn.value}"))
       .willReturn(
         aResponse()
-          .withStatus(if (agentReferences.isEmpty)
-            404
-          else
-            200)
+          .withStatus(if agentReferences.nonEmpty then 200 else 404)
           .withBody(Json.obj(
             "mappings" -> Json.arr(
               agentReferences.map { reference =>

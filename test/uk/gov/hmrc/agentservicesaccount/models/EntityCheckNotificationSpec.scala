@@ -22,7 +22,8 @@ import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class EntityCheckNotificationSpec extends UnitSpec:
+class EntityCheckNotificationSpec
+extends UnitSpec:
 
   val testArn = Arn("AARN1234567")
   val testNotification = EntityCheckNotification(
@@ -60,6 +61,6 @@ class EntityCheckNotificationSpec extends UnitSpec:
 
     "have correct field values" in {
       testNotification.arn mustBe testArn
-      testNotification.failedChecks must include ("deceased")
+      testNotification.failedChecks must include("deceased")
     }
   }

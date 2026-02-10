@@ -23,7 +23,8 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 import java.time.Instant
 
-class DmsResponseSpec extends UnitSpec:
+class DmsResponseSpec
+extends UnitSpec:
 
   val processingDate = Instant.parse("2024-07-01T10:15:30Z")
   val reference = "ABC1234567890"

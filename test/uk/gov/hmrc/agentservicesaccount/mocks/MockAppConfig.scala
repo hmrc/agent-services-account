@@ -18,7 +18,8 @@ package uk.gov.hmrc.agentservicesaccount.mocks
 
 // Add these:
 
-import org.mockito.ArgumentMatchers.{any, eq as meq}
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq as meq
 import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
@@ -28,7 +29,8 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.duration.DurationInt
 
-trait MockAppConfig extends MockitoSugar { this: TestSuite =>
+trait MockAppConfig
+extends MockitoSugar { this: TestSuite =>
 
   val mockServiceConfig: ServicesConfig = mock[ServicesConfig]
   val mockConfig: Configuration = mock[Configuration]
@@ -92,4 +94,5 @@ trait MockAppConfig extends MockitoSugar { this: TestSuite =>
     .thenReturn("other-string")
 
   val mockAppConfig: AppConfig = new AppConfig(mockConfig, mockServiceConfig)
+
 }

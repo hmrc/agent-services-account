@@ -27,7 +27,8 @@ import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.*
 import uk.gov.hmrc.agentservicesaccount.mocks.*
-import uk.gov.hmrc.agentservicesaccount.models.agententity.{EntityCheckException, EntityCheckResult}
+import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckException
+import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckResult
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderNames
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
@@ -41,17 +42,17 @@ with GuiceOneAppPerTest
 with MockAppConfig
 with MockAuthConnector
 with MockAgentEntityService
-  with MockDesConnector
-  with MockInternalAuth
-  with MockDmsService
+with MockDesConnector
+with MockInternalAuth
+with MockDmsService
 with MockFactory {
 
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
   val as: ActorSystem = ActorSystem()
   implicit val mat: Materializer = Materializer(as)
-  
+
   val stubBackendAuthComponents: BackendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
-  
+
   val mockAuthActions: AuthActions = new AuthActions(mockAuthConnector, stubControllerComponents())
 
   val controller =
@@ -85,9 +86,9 @@ with MockFactory {
 
     "suspended and a GET request to /agent-record-with-checks" in {
       val agentDetailsDesResponse = testAgentDetailsDesResponse.copy(suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))))
-      
+
       mockAuth()(Right(enrolmentsWithNoIrSAAgent))
-      
+
       mockVerifyEntitySuccess(testArn)(
         EntityCheckResult(
           agentDetailsDesResponse,
@@ -146,5 +147,5 @@ with MockFactory {
       }
     }
   }
-}
 
+}

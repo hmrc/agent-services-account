@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import com.mongodb.client.result.{DeleteResult, UpdateResult}
+import com.mongodb.client.result.DeleteResult
+import com.mongodb.client.result.UpdateResult
 import org.bson.BsonObjectId
 import org.mockito.Mockito.when
 import uk.gov.hmrc.agentservicesaccount.assets.TestConstants.testChangeOfDetailsRequest
@@ -26,12 +27,14 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 import scala.concurrent.Future
 
-class ChangeOfDetailsRequestServiceSpec extends UnitSpec:
+class ChangeOfDetailsRequestServiceSpec
+extends UnitSpec:
 
   val mockChangeOfDetailsRequestRepository: ChangeOfDetailsRequestRepository = mock[ChangeOfDetailsRequestRepository]
-  val testService: ChangeOfDetailsRequestService = new ChangeOfDetailsRequestService(
-    mockChangeOfDetailsRequestRepository
-  )
+  val testService: ChangeOfDetailsRequestService =
+    new ChangeOfDetailsRequestService(
+      mockChangeOfDetailsRequestRepository
+    )
 
   "find" should:
     "return Some(changeOfDetailsRequest)" when:
@@ -53,7 +56,11 @@ class ChangeOfDetailsRequestServiceSpec extends UnitSpec:
     "return UpdateResult and was acknowledged" when:
       "the record is successfully inserted in the DB" in:
         when(mockChangeOfDetailsRequestRepository.upsert(testChangeOfDetailsRequest))
-          .thenReturn(Future.successful(UpdateResult.acknowledged(1, 1, BsonObjectId())))
+          .thenReturn(Future.successful(UpdateResult.acknowledged(
+            1,
+            1,
+            BsonObjectId()
+          )))
         val result: UpdateResult = testService.upsert(testChangeOfDetailsRequest).futureValue
 
         result.wasAcknowledged() shouldBe true
@@ -61,7 +68,11 @@ class ChangeOfDetailsRequestServiceSpec extends UnitSpec:
     "return UpdateResult and was acknowledged" when:
       "the record is successfully updated in the DB" in:
         when(mockChangeOfDetailsRequestRepository.upsert(testChangeOfDetailsRequest))
-          .thenReturn(Future.successful(UpdateResult.acknowledged(1, 1, BsonObjectId())))
+          .thenReturn(Future.successful(UpdateResult.acknowledged(
+            1,
+            1,
+            BsonObjectId()
+          )))
         val result: UpdateResult = testService.upsert(testChangeOfDetailsRequest).futureValue
 
         result.wasAcknowledged() shouldBe true

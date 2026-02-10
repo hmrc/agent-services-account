@@ -29,11 +29,8 @@ import uk.gov.hmrc.agentservicesaccount.repositories.ChangeOfDetailsRequestRepos
 @Singleton
 class ChangeOfDetailsRequestService @Inject() (changeOfDetailsRequestRepository: ChangeOfDetailsRequestRepository):
 
-  def find(arn: String): Future[Option[ChangeOfDetailsRequest]] =
-    changeOfDetailsRequestRepository.find(arn)
+  def find(arn: String): Future[Option[ChangeOfDetailsRequest]] = changeOfDetailsRequestRepository.find(arn)
 
-  def upsert(changeOfDetailsRequest: ChangeOfDetailsRequest): Future[UpdateResult] =
-    changeOfDetailsRequestRepository.upsert(changeOfDetailsRequest)
+  def upsert(changeOfDetailsRequest: ChangeOfDetailsRequest): Future[UpdateResult] = changeOfDetailsRequestRepository.upsert(changeOfDetailsRequest)
 
-  def delete(arn: String): Future[DeleteResult] =
-    changeOfDetailsRequestRepository.delete(arn)
+  def delete(arn: String): Future[DeleteResult] = changeOfDetailsRequestRepository.delete(arn)

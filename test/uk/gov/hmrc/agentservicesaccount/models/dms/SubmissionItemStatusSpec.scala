@@ -21,7 +21,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class SubmissionItemStatusSpec extends UnitSpec:
+class SubmissionItemStatusSpec
+extends UnitSpec:
 
   "SubmissionItemStatus" should {
     "serialize to JSON correctly" in {
@@ -31,7 +32,7 @@ class SubmissionItemStatusSpec extends UnitSpec:
       Json.toJson[SubmissionItemStatus](SubmissionItemStatus.Processed).as[String] mustBe "Processed"
       Json.toJson[SubmissionItemStatus](SubmissionItemStatus.Submitted).as[String] mustBe "Submitted"
     }
-    
+
     "deserialize from JSON correctly" in {
       Json.fromJson[SubmissionItemStatus](JsString("Completed")).get mustBe SubmissionItemStatus.Completed
       Json.fromJson[SubmissionItemStatus](JsString("Failed")).get mustBe SubmissionItemStatus.Failed
@@ -55,4 +56,3 @@ class SubmissionItemStatusSpec extends UnitSpec:
       )
     }
   }
-

@@ -44,7 +44,7 @@ with AgentMappingStubs {
   "getMappings" should {
     LegacyRegime.values.foreach { regime =>
       s"return agent reference on a successful 200 response for $regime and $testArn" in {
-        givenGetMappingsCallSucceeds(testArn, regime)(Seq(testAgentReference, testAgentReference2))
+        givenGetMappingsCallSucceeds(testArn, regime)(testAgentReference, testAgentReference2)
 
         val result = connector.getMappings(testArn, regime).futureValue
 
@@ -61,7 +61,7 @@ with AgentMappingStubs {
       }
 
       s"return empty list on a successful 404 response for $regime and $testArn" in {
-        givenGetMappingsCallSucceeds(testArn, regime)(Nil)
+        givenGetMappingsCallSucceeds(testArn, regime)()
 
         val result = connector.getMappings(testArn, regime).futureValue
 

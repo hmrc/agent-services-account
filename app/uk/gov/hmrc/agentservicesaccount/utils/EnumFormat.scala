@@ -22,17 +22,20 @@ import scala.reflect.ClassTag
 
 object EnumFormat:
 
-  /**
-   * Creates a Format for Scala 3 enums by automatically retrieving all enum values.
-   *
-   * @tparam E The enum type
-   * @return A Format for the enum type
-   */
+  /** Creates a Format for Scala 3 enums by automatically retrieving all enum values.
+    *
+    * @tparam E
+    *   The enum type
+    * @return
+    *   A Format for the enum type
+    */
   def enumFormat[E <: scala.reflect.Enum](using ct: ClassTag[E]): Format[E] =
-    
+
     // Get the enum's companion object
     val enumClass = ct.runtimeClass
-    val companionField = try enumClass.getField("MODULE$") catch case _ => null
+    val companionField =
+      try enumClass.getField("MODULE$")
+      catch case _ => null
     val companionObj = if companionField != null then companionField.get(null) else null
 
     // Call the values() method on the companion object to get all enum values
@@ -42,13 +45,15 @@ object EnumFormat:
     // Create the Format using the retrieved enum values
     enumFormatWithValues(enumValues)
 
-    /**
-     * Creates a Format for Scala 3 enums with explicitly provided enum values.
-     *
-     * @param enumValues The enum values to use for serialization/deserialization
-     * @tparam E The enum type
-     * @return A Format for the enum type
-     */
+    /** Creates a Format for Scala 3 enums with explicitly provided enum values.
+      *
+      * @param enumValues
+      *   The enum values to use for serialization/deserialization
+      * @tparam E
+      *   The enum type
+      * @return
+      *   A Format for the enum type
+      */
   private def enumFormatWithValues[E <: reflect.Enum](enumValues: Iterable[E])(using ct: ClassTag[E]): Format[E] =
     val enumName = ct.runtimeClass.getSimpleName
 
@@ -63,11 +68,10 @@ object EnumFormat:
       Writes(e => JsString(e.toString))
     )
 
-  /**
-   * Extension method to create a Format for all values of an enum.
-   *
-   * @tparam E The enum type
-   */
+  /** Extension method to create a Format for all values of an enum.
+    *
+    * @tparam E
+    *   The enum type
+    */
   extension [E <: reflect.Enum](values: Array[E])
     def jsonFormat(using ClassTag[E]): Format[E] = enumFormatWithValues(values)
-

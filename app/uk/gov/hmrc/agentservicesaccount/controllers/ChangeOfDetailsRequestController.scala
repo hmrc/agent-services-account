@@ -32,19 +32,17 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 @Singleton()
 class ChangeOfDetailsRequestController @Inject() (
-    changeOfDetailsRequestService: ChangeOfDetailsRequestService,
-    cc: ControllerComponents
+  changeOfDetailsRequestService: ChangeOfDetailsRequestService,
+  cc: ControllerComponents
 )(using ec: ExecutionContext)
-    extends BackendController(cc):
+extends BackendController(cc):
 
   def find(arn: String): Action[AnyContent] = Action.async: request =>
     changeOfDetailsRequestService
       .find(arn)
       .map:
-        case Some(changeOfDetailsRequest) =>
-          Ok(Json.toJson(changeOfDetailsRequest)(ChangeOfDetailsRequest.format))
-        case None =>
-          NotFound
+        case Some(changeOfDetailsRequest) => Ok(Json.toJson(changeOfDetailsRequest)(ChangeOfDetailsRequest.format))
+        case None => NotFound
 
   def upsert(): Action[ChangeOfDetailsRequest] =
     Action.async(parse.json[ChangeOfDetailsRequest](ChangeOfDetailsRequest.format)): request =>
@@ -52,14 +50,11 @@ class ChangeOfDetailsRequestController @Inject() (
         .upsert(request.body)
         .map(_ => NoContent)
         .recover:
-          case _ =>
-            throw new InternalServerException("Failed to upsert ChangeOfDetailsRequest for ARN: " + request.body.arn)
+          case _ => throw new InternalServerException("Failed to upsert ChangeOfDetailsRequest for ARN: " + request.body.arn)
 
   def delete(arn: String): Action[AnyContent] = Action.async: request =>
     changeOfDetailsRequestService
       .delete(arn)
       .map:
-        case result if result.wasAcknowledged() && result.getDeletedCount >= 1 =>
-          NoContent
-        case _ =>
-          NotFound
+        case result if result.wasAcknowledged() && result.getDeletedCount >= 1 => NoContent
+        case _ => NotFound

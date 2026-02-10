@@ -16,28 +16,38 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.audit.{AgentCheckAuditEvent, AgentCheckFailureNotificationAuditEvent, AuditDetail, EmailData}
-import uk.gov.hmrc.agentservicesaccount.models.{AgentCheckOutcome, EntityCheckNotification}
+import uk.gov.hmrc.agentservicesaccount.models.audit.AgentCheckAuditEvent
+import uk.gov.hmrc.agentservicesaccount.models.audit.AgentCheckFailureNotificationAuditEvent
+import uk.gov.hmrc.agentservicesaccount.models.audit.AuditDetail
+import uk.gov.hmrc.agentservicesaccount.models.audit.EmailData
+import uk.gov.hmrc.agentservicesaccount.models.AgentCheckOutcome
+import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future} 
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
-class AuditService @Inject()(appConfig: AppConfig,
-                             auditConnector: AuditConnector)
-                            (implicit ec: ExecutionContext) {
+class AuditService @Inject() (
+  appConfig: AppConfig,
+  auditConnector: AuditConnector
+)(implicit ec: ExecutionContext) {
 
   def auditEntityChecksPerformed(
     arn: Arn,

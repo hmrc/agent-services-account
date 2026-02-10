@@ -17,7 +17,9 @@
 package uk.gov.hmrc.agentservicesaccount.assets
 
 import java.time.Instant
-import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, BusinessAddress, ChangeOfDetailsRequest}
+import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
+import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
+import uk.gov.hmrc.agentservicesaccount.models.ChangeOfDetailsRequest
 
 object TestConstants:
 

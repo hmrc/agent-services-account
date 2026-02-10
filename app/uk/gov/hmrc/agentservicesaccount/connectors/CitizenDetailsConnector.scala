@@ -18,7 +18,9 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 import play.api.Logging
 import play.api.http.Status
-import play.api.libs.json.{JsPath, Json, Reads}
+import play.api.libs.json.JsPath
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException
@@ -28,8 +30,10 @@ import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 case class CitizenDeceased(deceased: Boolean)
 
@@ -47,7 +51,7 @@ class CitizenDetailsConnector @Inject() (
 extends Logging {
 
   private val baseUrl = appConfig.citizenDetailsBaseUrl
-  
+
   def getCitizenDeceasedFlag(
     saUtr: SaUtr
   )(using request: RequestHeader): Future[Option[DeceasedCheckException]] = {

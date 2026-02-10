@@ -15,6 +15,7 @@
  */
 
 package uk.gov.hmrc.agentservicesaccount.services
+
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.mvc.Request
 import play.api.test.FakeRequest
@@ -25,7 +26,8 @@ import uk.gov.hmrc.agentservicesaccount.mocks.*
 import uk.gov.hmrc.agentservicesaccount.models.UtrChecksResponse
 import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException.EntityDeceasedCheckFailed
 import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException.AgentIsOnRefuseToDealList
-import uk.gov.hmrc.agentservicesaccount.models.agententity.{EntityCheckException, EntityCheckResult}
+import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckException
+import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckResult
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
@@ -35,16 +37,15 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import scala.concurrent.ExecutionContext
 
 class AgentDetailsServiceSpec
-  extends UnitSpec
-    with CleanMongoCollectionSupport
-    with MockDesConnector
-    with MockCitizenDetailsConnector
-    with MockAppConfig
-    with MockEmailService
-    with MockAgentAssuranceConnector
-    with MockAuditService
-    with IntegrationPatience
-    {
+extends UnitSpec
+with CleanMongoCollectionSupport
+with MockDesConnector
+with MockCitizenDetailsConnector
+with MockAppConfig
+with MockEmailService
+with MockAgentAssuranceConnector
+with MockAuditService
+with IntegrationPatience {
 
   implicit val ac: AppConfig = mockAppConfig
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
@@ -65,7 +66,7 @@ class AgentDetailsServiceSpec
 
   "verifyAgent" should {
     "return Some(SuspensionDetails) when the agent is suspended" in {
-      
+
       val agentDetailsDesResponse = testAgentDetailsDesResponse
         .copy(suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))))
 
@@ -82,12 +83,12 @@ class AgentDetailsServiceSpec
 
       val result = service.getAgentDetailsWithChecks(testArn).futureValue
 
-      result shouldBe EntityCheckResult(agentDetailsDesResponse,Seq(AgentIsOnRefuseToDealList))
+      result shouldBe EntityCheckResult(agentDetailsDesResponse, Seq(AgentIsOnRefuseToDealList))
     }
 
     "return None when the agent is not suspended" in {
       val agentDetailsDesResponse = testAgentDetailsDesResponse
-      
+
       val utrChecksResponse = UtrChecksResponse(
         isManuallyAssured = false,
         isRefusalToDealWith = false,
@@ -101,14 +102,16 @@ class AgentDetailsServiceSpec
 
       val result = service.getAgentDetailsWithChecks(testArn).futureValue
 
-      result shouldBe EntityCheckResult(agentDetailsDesResponse,Seq.empty[EntityCheckException])
+      result shouldBe EntityCheckResult(agentDetailsDesResponse, Seq.empty[EntityCheckException])
     }
-    
+
     "return Some(SuspensionDetails) and do entityChecks and sent email with deceased failed" in {
-      
+
       val agentDetailsDesResponse = testAgentDetailsDesResponse
-        .copy(suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))),
-          isAnIndividual = Some(true))
+        .copy(
+          suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))),
+          isAnIndividual = Some(true)
+        )
 
       val utrChecksResponse = UtrChecksResponse(
         isManuallyAssured = true,
@@ -125,7 +128,7 @@ class AgentDetailsServiceSpec
       val result = service.getAgentDetailsWithChecks(testArn).futureValue
 
       result shouldBe EntityCheckResult(agentDetailsDesResponse, Seq(EntityDeceasedCheckFailed))
-      
+
     }
   }
 

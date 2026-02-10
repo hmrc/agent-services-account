@@ -22,9 +22,13 @@ import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-case class ChangeOfDetailsRequest(arn: String, timeSubmitted: Instant)
+case class ChangeOfDetailsRequest(
+  arn: String,
+  timeSubmitted: Instant
+)
 
 object ChangeOfDetailsRequest:
+
   given mongoFormat: OFormat[ChangeOfDetailsRequest] =
     (__ \ "arn")
       .format[String]

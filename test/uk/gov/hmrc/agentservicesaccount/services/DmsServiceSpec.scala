@@ -22,11 +22,15 @@ import play.api.test.Helpers.await
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.helpers.ChangeDesiDetailsPayloads
 import uk.gov.hmrc.agentservicesaccount.mocks.*
-import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsResponse, DmsSubmissionReference}
+import uk.gov.hmrc.agentservicesaccount.models.dms.DmsResponse
+import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
-import uk.gov.hmrc.http.{InternalServerException, UpstreamErrorResponse}
+import uk.gov.hmrc.http.InternalServerException
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
-import java.time.{Instant, LocalDateTime, ZoneId}
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.Base64
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -61,11 +65,12 @@ with MockAppConfig {
 
       mocksendPdfAccepted()
 
-      val result = service.submitToDms(
-        Some(encoded),
-        timestamp,
-        DmsSubmissionReference("DmsSubmissionReference")
-      ).futureValue
+      val result =
+        service.submitToDms(
+          Some(encoded),
+          timestamp,
+          DmsSubmissionReference("DmsSubmissionReference")
+        ).futureValue
 
       result shouldBe DmsResponse(timestamp, "")
     }
@@ -88,11 +93,12 @@ with MockAppConfig {
 
       mocksendPdfAccepted()
 
-      val result = service.submitToDms(
-        Some(encoded),
-        timestamp,
-        DmsSubmissionReference("DmsSubmissionReference")
-      ).futureValue
+      val result =
+        service.submitToDms(
+          Some(encoded),
+          timestamp,
+          DmsSubmissionReference("DmsSubmissionReference")
+        ).futureValue
 
       result shouldBe DmsResponse(timestamp, "")
     }

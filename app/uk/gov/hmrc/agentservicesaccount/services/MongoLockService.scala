@@ -18,14 +18,19 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
-import uk.gov.hmrc.mongo.lock.{MongoLockRepository, TimePeriodLockService}
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
+import uk.gov.hmrc.mongo.lock.TimePeriodLockService
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
-class MongoLockService @Inject()(mongoLockRepository: MongoLockRepository)
-                                (implicit appConfig: AppConfig, ec: ExecutionContext) {
+class MongoLockService @Inject() (mongoLockRepository: MongoLockRepository)(implicit
+  appConfig: AppConfig,
+  ec: ExecutionContext
+) {
 
   def dailyLock[T](utr: Utr)(body: => Future[T]): Future[Option[T]] = {
     val lockService = TimePeriodLockService(

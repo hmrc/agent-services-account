@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import org.scalatest.time.{Millis, Seconds, Span}
+import org.scalatest.time.Millis
+import org.scalatest.time.Seconds
+import org.scalatest.time.Span
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
@@ -27,17 +29,17 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class MongoLockServiceSpec
 extends UnitSpec
 with CleanMongoCollectionSupport
 with MockAppConfig {
 
-  override implicit val patienceConfig: PatienceConfig =
-    PatienceConfig(timeout = scaled(Span(3, Seconds)), interval = scaled(Span(300, Millis)))
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(3, Seconds)), interval = scaled(Span(300, Millis)))
 
-  
   val mongoLockRepository = new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
   implicit val ac: AppConfig = mockAppConfig
 

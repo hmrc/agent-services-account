@@ -17,30 +17,29 @@
 package uk.gov.hmrc.agentservicesaccount.repositories
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.mongo.cache.{DataKey, MongoCacheRepository}
+import uk.gov.hmrc.mongo.cache.DataKey
+import uk.gov.hmrc.mongo.cache.MongoCacheRepository
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-/** A single entity is stored in the cache.
-  * Akin to previous ShortLivedCache/Save4Later.
+/** A single entity is stored in the cache. Akin to previous ShortLivedCache/Save4Later.
   */
 trait EntityCacheCustom[CacheId, A] {
+
   val cacheRepo: MongoCacheRepository[CacheId]
   val format: Format[A]
-  
 
   private implicit lazy val f: Format[A] = format
 
-  private val dataKey  = DataKey[A]("dataKey")
+  private val dataKey = DataKey[A]("dataKey")
 
-  def putCache(cacheId: CacheId)(data: A)(implicit ec: ExecutionContext): Future[Unit] =
-    cacheRepo
-      .put[A](cacheId)(dataKey, data)
-      .map(_ => ())
+  def putCache(cacheId: CacheId)(data: A)(implicit ec: ExecutionContext): Future[Unit] = cacheRepo
+    .put[A](cacheId)(dataKey, data)
+    .map(_ => ())
 
-  def getFromCache(cacheId: CacheId): Future[Option[A]] =
-    cacheRepo.get[A](cacheId)(dataKey)
+  def getFromCache(cacheId: CacheId): Future[Option[A]] = cacheRepo.get[A](cacheId)(dataKey)
 
-  def deleteFromCache(cacheId: CacheId): Future[Unit] =
-    cacheRepo.delete(cacheId)(dataKey)
+  def deleteFromCache(cacheId: CacheId): Future[Unit] = cacheRepo.delete(cacheId)(dataKey)
+
 }

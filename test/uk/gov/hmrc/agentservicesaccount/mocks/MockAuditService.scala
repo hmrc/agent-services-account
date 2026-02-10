@@ -21,14 +21,17 @@ import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
-import uk.gov.hmrc.agentservicesaccount.models.{AgentCheckOutcome, EntityCheckNotification}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
+import uk.gov.hmrc.agentservicesaccount.models.AgentCheckOutcome
+import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
 import uk.gov.hmrc.agentservicesaccount.services.AuditService
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import scala.concurrent.Future
 
-trait MockAuditService extends MockitoSugar { this: TestSuite =>
+trait MockAuditService
+extends MockitoSugar { this: TestSuite =>
 
   val mockAuditService: AuditService = mock[AuditService]
 
@@ -49,4 +52,5 @@ trait MockAuditService extends MockitoSugar { this: TestSuite =>
       )(using any[RequestHeader])
     ).thenReturn(Future.successful(AuditResult.Success))
   }
+
 }

@@ -25,36 +25,37 @@ object PathBinders {
   implicit val arnBinder: PathBindable[Arn] =
     new PathBindable[Arn] {
       override def bind(
-          key: String,
-          value: String
+        key: String,
+        value: String
       ): Either[String, Arn] = {
         if (Arn.isValid(value)) {
           Right(Arn(value))
-        } else {
+        }
+        else {
           Left("Invalid ARN")
         }
       }
 
       override def unbind(
-          key: String,
-          arn: Arn
+        key: String,
+        arn: Arn
       ): String = arn.value
     }
 
   implicit val legacyRegimeBinder: PathBindable[LegacyRegime] =
     new PathBindable[LegacyRegime] {
       override def bind(
-          key: String,
-          value: String
-      ): Either[String, LegacyRegime] =
-        LegacyRegime.values
-          .find(_.toString == value)
-          .map(Right(_))
-          .getOrElse(Left(s"Invalid legacy regime: $value"))
+        key: String,
+        value: String
+      ): Either[String, LegacyRegime] = LegacyRegime.values
+        .find(_.toString == value)
+        .map(Right(_))
+        .getOrElse(Left(s"Invalid legacy regime: $value"))
 
       override def unbind(
-          key: String,
-          legacyRegime: LegacyRegime
+        key: String,
+        legacyRegime: LegacyRegime
       ): String = legacyRegime.toString
     }
+
 }
