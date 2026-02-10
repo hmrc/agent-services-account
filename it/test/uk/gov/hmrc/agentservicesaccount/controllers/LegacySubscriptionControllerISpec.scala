@@ -73,7 +73,10 @@ with AgentAuthStubs:
         subscriptionRequest = testSubscriptionRequest,
         regime = PAYE,
         agentReference = Some(testAgentReference),
-        sessionId = None
+        groupId = Some("test-group-id"),
+        adminCredId = Some("test-cred-id"),
+        sessionId = None,
+        bearerToken = None
       )
 
       givenEpayeRegisterCallSucceeds(testSubscriptionRequest)(testAgentReference)
@@ -147,18 +150,18 @@ with AgentAuthStubs:
         isAbroad = false
       )
       repository.pushNew(SubscriptionWorkItem(
-        testArn,
-        testSubscriptionRequest,
-        SA,
-        None,
-        Some(correlationId)
+        arn = testArn,
+        subscriptionRequest = testSubscriptionRequest,
+        regime = SA,
+        agentReference = None,
+        correlationId = Some(correlationId)
       )).futureValue
       val expected = SubscriptionWorkItem(
-        testArn,
-        testSubscriptionRequest,
-        SA,
-        Some(testAgentReference),
-        Some(correlationId)
+        arn = testArn,
+        subscriptionRequest = testSubscriptionRequest,
+        regime = SA,
+        agentReference = Some(testAgentReference),
+        correlationId = Some(correlationId)
       )
 
       val response = post(s"/robotics/callback")(testCallbackRequest, extraHeaders = Seq("correlationId" -> correlationId))
@@ -184,11 +187,11 @@ with AgentAuthStubs:
         isAbroad = false
       )
       repository.pushNew(SubscriptionWorkItem(
-        testArn,
-        testSubscriptionRequest,
-        CT,
-        None,
-        Some(correlationId)
+        arn = testArn,
+        subscriptionRequest = testSubscriptionRequest,
+        regime = CT,
+        agentReference = None,
+        correlationId = Some(correlationId)
       )).futureValue
 
       val response = post(s"/robotics/callback")(testCallbackRequest, extraHeaders = Seq("correlationId" -> correlationId))

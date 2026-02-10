@@ -27,8 +27,11 @@ case class SubscriptionWorkItem(
   subscriptionRequest: SubscriptionRequest,
   regime: LegacyRegime,
   agentReference: Option[AgentReference],
+  groupId: Option[String] = None,
+  adminCredId: Option[String] = None,
   correlationId: Option[String] = None, // Used to correlate callback from DES with the original request. Only required for CT/SA
-  sessionId: Option[String] = None // Only required for local testing against stubs. Always set to None for QA/Prod
+  sessionId: Option[String] = None, // Local stub-only: ESP stubs require X-Session-ID; keep None for QA/Prod.
+  bearerToken: Option[String] = None // Local stub-only: ESP stubs require Authorization; never persist in QA/Prod.
 )
 
 object SubscriptionWorkItem:
@@ -41,8 +44,11 @@ object SubscriptionWorkItem:
       ) and
       Reads.pure(regime) and
       (__ \ "agentReference").readNullable[AgentReference] and
+      (__ \ "groupId").readNullable[String] and
+      (__ \ "adminCredId").readNullable[String] and
       (__ \ "correlationId").readNullable[String] and
-      (__ \ "sessionId").readNullable[String]
+      (__ \ "sessionId").readNullable[String] and
+      (__ \ "bearerToken").readNullable[String]
     )(SubscriptionWorkItem.apply)
   }
   private def mongoWrites(implicit crypto: Encrypter & Decrypter): Writes[SubscriptionWorkItem] =
@@ -53,8 +59,11 @@ object SubscriptionWorkItem:
       ) and
       (__ \ "regime").write[LegacyRegime] and
       (__ \ "agentReference").writeNullable[AgentReference] and
+      (__ \ "groupId").writeNullable[String] and
+      (__ \ "adminCredId").writeNullable[String] and
       (__ \ "correlationId").writeNullable[String] and
-      (__ \ "sessionId").writeNullable[String]
+      (__ \ "sessionId").writeNullable[String] and
+      (__ \ "bearerToken").writeNullable[String]
     )(o => Tuple.fromProductTyped(o))
 
   def mongoFormat(implicit crypto: Encrypter & Decrypter): Format[SubscriptionWorkItem] = Format(mongoReads, mongoWrites)

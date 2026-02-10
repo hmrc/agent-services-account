@@ -210,7 +210,11 @@ extends BasicUserAuthStubs {
     this
   }
 
-  def isLoggedInAsASAgent(arn: Arn): AgentAuthStubs = {
+  def isLoggedInAsASAgent(
+    arn: Arn,
+    credId: String = "test-cred-id",
+    groupId: String = "test-group-id"
+  ): AgentAuthStubs = {
     stubFor(
       post(urlPathEqualTo(s"/auth/authorise")).willReturn(
         aResponse()
@@ -230,7 +234,12 @@ extends BasicUserAuthStubs {
                |      ],
                |      "state": "Activated"
                |    }
-               |  ]
+               |  ],
+               |  "optionalCredentials": {
+               |    "providerId": "$credId",
+               |    "providerType": "GovernmentGateway"
+               |  },
+               |  "groupIdentifier": "$groupId"
                |}
        """.stripMargin
           )

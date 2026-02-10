@@ -40,6 +40,18 @@ trait MockAppConfig extends MockitoSugar { this: TestSuite =>
   when(mockConfig.get[Long](meq("mongodb.timeToLive"))(any()))
     .thenReturn(3600L)
 
+  when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.paye-known-facts.initial-delay"))(any()))
+    .thenReturn(1.second)
+
+  when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.paye-known-facts.interval"))(any()))
+    .thenReturn(1.second)
+
+  when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.paye-known-facts.retry-interval"))(any()))
+    .thenReturn(1.second)
+
+  when(mockConfig.get[Int](meq("work-item-jobs.paye-known-facts.max-attempts"))(any()))
+    .thenReturn(3)
+
   // Stub ServicesConfig - getString
   when(mockServiceConfig.getString(meq("stride.roles.agent-services-account")))
     .thenReturn("maintain_agent_manually_assure")

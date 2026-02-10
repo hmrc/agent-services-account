@@ -44,10 +44,11 @@ class LegacySubscriptionController @Inject() (
 extends BackendController(cc)
 with Logging:
 
-  def startSubscription(regime: LegacyRegime): Action[AnyContent] = authActions.authorisedWithArn {
-    implicit request => arn =>
+  def startSubscription(regime: LegacyRegime): Action[AnyContent] = authActions.authorisedWithArnAndCredId {
+    implicit request => arn => adminCredId => groupId =>
       request.body.asJson.map(_.validate[SubscriptionRequest](SubscriptionRequest.reads(regime))) match {
-        case Some(JsSuccess(request: PayeSubscriptionRequest, _)) => legacySubscriptionService.startPayeSubscription(arn, request).map(_ => Ok)
+        case Some(JsSuccess(request: PayeSubscriptionRequest, _)) =>
+          legacySubscriptionService.startPayeSubscription(arn, request, adminCredId, groupId).map(_ => Ok)
         case Some(JsSuccess(request: SaSubscriptionRequest, _)) => Future.successful(NotImplemented)
         case Some(JsSuccess(request: CtSubscriptionRequest, _)) => Future.successful(NotImplemented)
         case Some(JsError(errors)) => Future.successful(BadRequest(s"Invalid subscription request, reason: $errors"))

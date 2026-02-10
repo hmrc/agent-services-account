@@ -26,8 +26,8 @@ import scala.concurrent.Future
 import com.typesafe.config.Config
 import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.model.Filters
-import org.mongodb.scala.model.Updates
+import org.mongodb.scala.model.{Filters, FindOneAndUpdateOptions, ReturnDocument, Updates}
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.crypto.Decrypter
@@ -36,6 +36,7 @@ import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem, WorkItemFields, W
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 
 @Singleton
 class SubscriptionWorkItemRepository @Inject() (
@@ -60,6 +61,54 @@ extends WorkItemRepository[SubscriptionWorkItem](
   override def now(): Instant = Instant.now()
 
   override def inProgressRetryAfter: Duration = config.getDuration("work-item-repository.subscriptions.retry-in-progress-after")
+
+  def pullOutstandingPaye(failedBefore: Instant, availableBefore: Instant): Future[Option[WorkItem[SubscriptionWorkItem]]] = {
+    def findNextItemByQuery(query: org.bson.conversions.Bson): Future[Option[WorkItem[SubscriptionWorkItem]]] =
+      coll
+        .findOneAndUpdate(
+          filter = query,
+          update = Updates.combine(
+            Updates.set(workItemFields.status, ProcessingStatus.InProgress),
+            Updates.set(workItemFields.updatedAt, now())
+          ),
+          options = FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+        ).toFutureOption()
+
+    def baseFilter(status: ProcessingStatus): org.bson.conversions.Bson =
+      Filters.and(
+        Filters.equal(workItemFields.status, status),
+        Filters.equal(s"${workItemFields.item}.regime", LegacyRegime.PAYE.toString),
+        Filters.exists(s"${workItemFields.item}.agentReference", true)
+      )
+
+    def todoQuery: org.bson.conversions.Bson =
+      Filters.and(
+        baseFilter(ProcessingStatus.ToDo),
+        Filters.lt(workItemFields.availableAt, availableBefore)
+      )
+
+    def failedQuery: org.bson.conversions.Bson =
+      Filters.and(
+        baseFilter(ProcessingStatus.Failed),
+        Filters.lt(workItemFields.updatedAt, failedBefore),
+        Filters.lt(workItemFields.availableAt, availableBefore)
+      )
+
+    def inProgressQuery: org.bson.conversions.Bson =
+      Filters.and(
+        baseFilter(ProcessingStatus.InProgress),
+        Filters.lt(workItemFields.updatedAt, now().minus(inProgressRetryAfter))
+      )
+
+    findNextItemByQuery(todoQuery).flatMap {
+      case None => findNextItemByQuery(failedQuery)
+          .flatMap {
+            case None => findNextItemByQuery(inProgressQuery)
+            case item => Future.successful(item)
+          }
+      case item => Future.successful(item)
+    }
+  }
 
   def addAgentReference(
     agentReference: AgentReference,

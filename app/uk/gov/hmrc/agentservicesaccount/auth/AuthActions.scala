@@ -23,7 +23,7 @@ import uk.gov.hmrc.agentservicesaccount.controllers.ErrorResults.NoPermission
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, credentials}
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, credentials, groupIdentifier}
 import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -48,6 +48,7 @@ class AuthActions @Inject() (val authConnector: AuthConnector, cc: ControllerCom
   ): Boolean = strideRoles.exists(s => enrolments.enrolments.exists(_.key == s))
   
   private type AuthorisedRequestWithArn = Request[AnyContent] => Arn => Future[Result]
+  private type AuthorisedRequestWithArnAndCredId = Request[AnyContent] => Arn => String => String => Future[Result]
 
 
   def authorisedWithArn[A](body: AuthorisedRequestWithArn): Action[AnyContent] = Action.async { implicit request =>
@@ -61,6 +62,29 @@ class AuthActions @Inject() (val authConnector: AuthConnector, cc: ControllerCom
           case Some(arn) => body(request)(Arn(arn))
           case _ => Future.successful(NoPermission)
         }
+      }
+      .recoverWith {
+        case ex: NoActiveSession =>
+          logger.warn("NoActiveSession", ex)
+          Future.successful(Unauthorized)
+      }
+  }
+
+  def authorisedWithArnAndCredId(body: AuthorisedRequestWithArnAndCredId): Action[AnyContent] = Action.async { implicit request =>
+    authorised(AuthProviders(GovernmentGateway))
+      .retrieve(allEnrolments.and(credentials).and(groupIdentifier)) {
+        case enrol ~ optCreds ~ optGroupId =>
+          val arnOpt = getEnrolmentInfo(
+            enrol.enrolments,
+            "HMRC-AS-AGENT",
+            "AgentReferenceNumber"
+          )
+          val credIdOpt = optCreds.map(_.providerId)
+          val groupIdOpt = optGroupId.map(_.toString)
+
+          (arnOpt, credIdOpt, groupIdOpt) match
+            case (Some(arn), Some(credId), Some(groupId)) => body(request)(Arn(arn))(credId)(groupId)
+            case _ => Future.successful(NoPermission)
       }
       .recoverWith {
         case ex: NoActiveSession =>

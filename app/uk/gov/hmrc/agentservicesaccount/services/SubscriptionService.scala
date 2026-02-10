@@ -43,13 +43,16 @@ extends Logging:
 
   def startPayeSubscription(
     arn: Arn,
-    subscriptionRequest: PayeSubscriptionRequest
+    subscriptionRequest: PayeSubscriptionRequest,
+    adminCredId: String,
+    groupId: String
   )(using request: RequestHeader): Future[Done] = agentEpayeRegistrationConnector.register(subscriptionRequest).flatMap { agentReference =>
-    lazy val optSessionId: Option[String] =
+    // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
+    val (optSessionId, optBearerToken) =
       if (appConfig.stubsCompatibilityMode)
-        RequestSupport.hc.sessionId.map(_.value)
+        (RequestSupport.hc.sessionId.map(_.value), RequestSupport.hc.authorization.map(_.value))
       else
-        None // only required for local testing against stubs
+        (None, None)
 
     subscriptionWorkItemRepository
       .pushNew(
@@ -58,7 +61,10 @@ extends Logging:
           subscriptionRequest = subscriptionRequest,
           regime = PAYE,
           agentReference = Some(agentReference),
-          sessionId = optSessionId
+          groupId = Some(groupId),
+          adminCredId = Some(adminCredId),
+          sessionId = optSessionId,
+          bearerToken = optBearerToken
         )
       )
       .map(_ => Done)
