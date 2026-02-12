@@ -19,7 +19,8 @@ package uk.gov.hmrc.agentservicesaccount.services
 import org.bson.types.ObjectId
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.{never, verify, verifyNoInteractions, when}
+import org.mockito.Mockito.{never, reset, verify, verifyNoInteractions, when}
+import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.PayeKnownFactsJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
@@ -34,7 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 
-class PayeKnownFactsWorkerSpec extends UnitSpec:
+class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
 
   given HeaderCarrier = HeaderCarrier()
 
@@ -63,7 +64,12 @@ class PayeKnownFactsWorkerSpec extends UnitSpec:
     )
   )
 
-  private def buildWorkItem(failureCount: Int) =
+  private def buildWorkItem(
+    failureCount: Int,
+    agentReference: Option[AgentReference] = Some(AgentReference("A12345")),
+    groupId: Option[String] = Some("ITEM-GROUP"),
+    adminCredId: Option[String] = Some("ITEM-ADMIN")
+  ) =
     WorkItem(
       id = new ObjectId(),
       receivedAt = Instant.now(),
@@ -75,9 +81,9 @@ class PayeKnownFactsWorkerSpec extends UnitSpec:
         arn = Arn("TARN0000001"),
         subscriptionRequest = subscriptionRequest,
         regime = LegacyRegime.PAYE,
-        agentReference = Some(AgentReference("A12345")),
-        groupId = Some("ITEM-GROUP"),
-        adminCredId = Some("ITEM-ADMIN")
+        agentReference = agentReference,
+        groupId = groupId,
+        adminCredId = adminCredId
       )
     )
 
@@ -132,4 +138,33 @@ class PayeKnownFactsWorkerSpec extends UnitSpec:
       verify(workItemService).markManualIntervention(workItem)
       verify(workItemService, never()).reschedule(workItem, jobConfig.retryInterval)
     }
+
+    "reschedule when agent reference is missing" in {
+      val workItem = buildWorkItem(failureCount = 0, agentReference = None)
+      when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
+      when(workItemService.reschedule(workItem, jobConfig.retryInterval)).thenReturn(Future.successful(true))
+
+      worker.runOnce().futureValue
+
+      verify(workItemService).reschedule(workItem, jobConfig.retryInterval)
+      verifyNoInteractions(connector)
+    }
+
+    "mark for manual intervention when group or admin cred ID is missing" in {
+      val workItem = buildWorkItem(failureCount = 0, groupId = None)
+      val response = Es20Response("IR-PAYE-AGENT", Seq(Es20Enrolment(Nil, Nil)))
+
+      when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
+      when(connector.queryKnownFactsForPayeAgent(eqTo("A12345"))(using any[HeaderCarrier]))
+        .thenReturn(Future.successful(Some(response)))
+      when(workItemService.markManualIntervention(workItem)).thenReturn(Future.successful(true))
+
+      worker.runOnce().futureValue
+
+      verify(workItemService).markManualIntervention(workItem)
+      verify(connector, never()).allocatePayeAgentEnrolment(any[String], any[String], any[String])(using any[HeaderCarrier])
+    }
   }
+  override def beforeEach(): Unit =
+    super.beforeEach()
+    reset(workItemService, connector)
