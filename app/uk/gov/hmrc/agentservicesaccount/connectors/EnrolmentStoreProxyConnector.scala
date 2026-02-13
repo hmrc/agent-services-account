@@ -61,7 +61,7 @@ extends Logging:
       .execute[HttpResponse]
       .map { response =>
         response.status match {
-          case Status.OK => response.json.as[List[EnrolmentStoreProxyConnector.Enrolment]]
+          case Status.OK => (response.json \ "enrolments").as[List[EnrolmentStoreProxyConnector.Enrolment]]
           case Status.NO_CONTENT => Nil
           case other =>
             throw UpstreamErrorResponse(
