@@ -34,12 +34,14 @@ trait EnrolmentStoreProxyStubs:
       .willReturn(
         aResponse()
           .withStatus(if regimes.nonEmpty then 200 else 204)
-          .withBody(Json.arr(regimes.map { regime =>
-            Json.obj(
-              "service" -> regime.enrolmentKey,
-              "state" -> "Activated"
-            )
-          }*).toString)
+          .withBody(Json.obj(
+            "enrolments" -> Json.arr(regimes.map { regime =>
+              Json.obj(
+                "service" -> regime.enrolmentKey,
+                "state" -> "Activated"
+              )
+            }*)
+          ).toString)
       )
   )
 
