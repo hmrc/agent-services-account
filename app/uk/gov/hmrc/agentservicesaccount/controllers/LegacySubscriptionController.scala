@@ -18,19 +18,18 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 
 import javax.inject.Inject
 import javax.inject.Singleton
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import play.api.libs.json.JsError
 import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.Logging
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
-import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionInfo.format
 import uk.gov.hmrc.agentservicesaccount.services.SubscriptionService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -38,8 +37,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 class LegacySubscriptionController @Inject() (
   legacySubscriptionService: SubscriptionService,
   cc: ControllerComponents,
-  authActions: AuthActions,
-  appConfig: AppConfig
+  authActions: AuthActions
 )(implicit ec: ExecutionContext)
 extends BackendController(cc)
 with Logging:
@@ -53,6 +51,15 @@ with Logging:
         case Some(JsError(errors)) => Future.successful(BadRequest(s"Invalid subscription request, reason: $errors"))
         case _ => Future.successful(BadRequest("Missing subscription request JSON"))
       }
+  }
+
+  def subscriptionInfo(regimes: Seq[LegacyRegime]): Action[AnyContent] = authActions.authorisedWithArnAndGroupId {
+    implicit request => (arn, groupId) =>
+      legacySubscriptionService.getSubscriptionInfo(
+        arn = arn,
+        groupId = groupId,
+        regimes = regimes
+      ).map(subscriptionInfo => Ok(Json.toJson(subscriptionInfo)))
   }
 
   def roboticsCallback(): Action[SubscriptionCallback] =

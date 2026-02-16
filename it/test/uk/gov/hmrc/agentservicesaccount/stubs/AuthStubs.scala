@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.agentservicesaccount.stubs
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 
 trait BasicUserAuthStubs { WiremockAware =>
   def isNotLoggedIn = {
@@ -36,6 +37,8 @@ trait AgentAuthStubs
 extends BasicUserAuthStubs {
 
   def irAgentReference: String = "IRSA-123"
+
+  val testGroupId = GroupId("1234-5678-ABCD-EFGH")
 
   def isLoggedInAsAnAfinityGroupAgent(userId: String) = {
     stubFor(
@@ -230,7 +233,8 @@ extends BasicUserAuthStubs {
                |      ],
                |      "state": "Activated"
                |    }
-               |  ]
+               |  ],
+               |  "groupIdentifier": "${testGroupId.value}"
                |}
        """.stripMargin
           )

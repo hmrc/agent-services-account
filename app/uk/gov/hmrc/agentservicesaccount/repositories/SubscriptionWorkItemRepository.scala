@@ -25,16 +25,22 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import com.typesafe.config.Config
 import org.mongodb.scala.MongoCollection
-import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.IndexModel
+import org.mongodb.scala.model.IndexOptions
+import org.mongodb.scala.model.Indexes
 import org.mongodb.scala.model.Updates
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
-import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem, WorkItemFields, WorkItemRepository}
+import uk.gov.hmrc.mongo.workitem.WorkItem
+import uk.gov.hmrc.mongo.workitem.WorkItemFields
+import uk.gov.hmrc.mongo.workitem.WorkItemRepository
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.*
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 
 @Singleton
@@ -49,8 +55,15 @@ extends WorkItemRepository[SubscriptionWorkItem](
   collectionName = "subscription-work-items",
   mongoComponent = mongoComponent,
   itemFormat = SubscriptionWorkItem.mongoFormat,
-  workItemFields = WorkItemFields.default
+  workItemFields = WorkItemFields.default,
+  extraIndexes = Seq(
+    IndexModel(
+      Indexes.ascending("item.arn"),
+      IndexOptions().name("uniqueArn").unique(true)
+    )
+  )
 ):
+
   // TODO set up unique ARN index (potentially needs to be partial index to avoid indexing permanently failed items),
   //  will need a custom method to wrap pushNew and handle duplicate errors caused by the index
   lazy val coll: MongoCollection[WorkItem[SubscriptionWorkItem]] = collection // necessary to avoid IntelliJ "Cannot resolve symbol 'collection'" error
@@ -61,13 +74,26 @@ extends WorkItemRepository[SubscriptionWorkItem](
 
   override def inProgressRetryAfter: Duration = config.getDuration("work-item-repository.subscriptions.retry-in-progress-after")
 
+  def findByArnAndRegime(
+    arn: Arn,
+    regime: LegacyRegime
+  ): Future[Option[WorkItem[SubscriptionWorkItem]]] = {
+    coll.find(
+      Filters.and(
+        Filters.equal("item.arn", arn.value),
+        Filters.equal("item.regime", regime.toString)
+      )
+    ).toFuture()
+      .map(_.headOption)
+  }
+
   def addAgentReference(
     agentReference: AgentReference,
     correlationId: String
   ): Future[Boolean] = {
     coll.updateOne(
       Filters.equal("item.correlationId", correlationId),
-      Updates.set("item.agentReference", Codecs.toBson[AgentReference](agentReference))
+      Updates.set("item.agentReference", agentReference.value)
     ).toFuture()
       .map(_.getModifiedCount > 0)
   }

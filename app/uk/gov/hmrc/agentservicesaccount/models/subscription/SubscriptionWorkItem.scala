@@ -19,7 +19,8 @@ package uk.gov.hmrc.agentservicesaccount.models.subscription
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
+import uk.gov.hmrc.crypto.Decrypter
+import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.json.JsonEncryption.stringEncrypterDecrypter
 
 case class SubscriptionWorkItem(
@@ -36,25 +37,25 @@ object SubscriptionWorkItem:
   private def mongoReads(implicit crypto: Encrypter & Decrypter) = (__ \ "regime").read[LegacyRegime].flatMap { regime =>
     (
       (__ \ "arn").read[Arn] and
-      (__ \ "subscriptionRequest").read[String](stringEncrypterDecrypter).map[SubscriptionRequest](string =>
-        Json.parse(string).as[SubscriptionRequest](SubscriptionRequest.reads(regime))
-      ) and
-      Reads.pure(regime) and
-      (__ \ "agentReference").readNullable[AgentReference] and
-      (__ \ "correlationId").readNullable[String] and
-      (__ \ "sessionId").readNullable[String]
+        (__ \ "subscriptionRequest").read[String](stringEncrypterDecrypter).map[SubscriptionRequest](string =>
+          Json.parse(string).as[SubscriptionRequest](SubscriptionRequest.reads(regime))
+        ) and
+        Reads.pure(regime) and
+        (__ \ "agentReference").readNullable[AgentReference] and
+        (__ \ "correlationId").readNullable[String] and
+        (__ \ "sessionId").readNullable[String]
     )(SubscriptionWorkItem.apply)
   }
   private def mongoWrites(implicit crypto: Encrypter & Decrypter): Writes[SubscriptionWorkItem] =
     (
       (__ \ "arn").write[Arn] and
-      (__ \ "subscriptionRequest").write[String](stringEncrypterDecrypter).contramap[SubscriptionRequest](subscriptionRequest =>
-        Json.toJson(subscriptionRequest).toString
-      ) and
-      (__ \ "regime").write[LegacyRegime] and
-      (__ \ "agentReference").writeNullable[AgentReference] and
-      (__ \ "correlationId").writeNullable[String] and
-      (__ \ "sessionId").writeNullable[String]
+        (__ \ "subscriptionRequest").write[String](stringEncrypterDecrypter).contramap[SubscriptionRequest](subscriptionRequest =>
+          Json.toJson(subscriptionRequest).toString
+        ) and
+        (__ \ "regime").write[LegacyRegime] and
+        (__ \ "agentReference").writeNullable[AgentReference] and
+        (__ \ "correlationId").writeNullable[String] and
+        (__ \ "sessionId").writeNullable[String]
     )(o => Tuple.fromProductTyped(o))
 
   def mongoFormat(implicit crypto: Encrypter & Decrypter): Format[SubscriptionWorkItem] = Format(mongoReads, mongoWrites)

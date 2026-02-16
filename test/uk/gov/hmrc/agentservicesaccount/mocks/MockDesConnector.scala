@@ -15,8 +15,10 @@
  */
 
 package uk.gov.hmrc.agentservicesaccount.mocks
+
 import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers.{eq => meq, any}
+import org.mockito.ArgumentMatchers.{eq => meq}
+import org.mockito.ArgumentMatchers.any
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.RequestHeader
@@ -26,7 +28,8 @@ import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 
 import scala.concurrent.Future
 
-trait MockDesConnector extends MockitoSugar { this: TestSuite =>
+trait MockDesConnector
+extends MockitoSugar { this: TestSuite =>
 
   val mockDesConnector: DesConnector = mock[DesConnector]
 
@@ -41,4 +44,5 @@ trait MockDesConnector extends MockitoSugar { this: TestSuite =>
       mockDesConnector.getAgentRecord(meq(arn))(using any[RequestHeader])
     ).thenReturn(Future.failed(ex))
   }
+
 }

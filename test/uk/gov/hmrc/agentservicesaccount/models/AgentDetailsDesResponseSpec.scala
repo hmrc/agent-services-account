@@ -19,17 +19,23 @@ package uk.gov.hmrc.agentservicesaccount.models
 import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import uk.gov.hmrc.agentmtdidentifiers.model.{SuspensionDetails, Utr}
+import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.*
 
-class AgentDetailsDesResponseSpec extends UnitSpec:
+class AgentDetailsDesResponseSpec
+extends UnitSpec:
 
   // Fake crypto for encryption tests
-  given fakeCrypto: Encrypter with Decrypter with
-    override def encrypt(plain: PlainContent): Crypted = plain match
-      case PlainText(value)  => Crypted(s"ENC($value)")
-      case PlainBytes(value) => Crypted(s"ENC(${String(value)})")
+  given fakeCrypto: Encrypter
+    with Decrypter
+    with
+
+    override def encrypt(plain: PlainContent): Crypted =
+      plain match
+        case PlainText(value) => Crypted(s"ENC($value)")
+        case PlainBytes(value) => Crypted(s"ENC(${String(value)})")
 
     override def decrypt(crypted: Crypted): PlainText =
       val raw = crypted.value.stripPrefix("ENC(").stripSuffix(")")
@@ -46,7 +52,14 @@ class AgentDetailsDesResponseSpec extends UnitSpec:
     Some("Test Agency"),
     Some("email@test.com"),
     Some("123456789"),
-    Some(BusinessAddress("Line 1", None, None, None, Some("AB1 2CD"), "GB"))
+    Some(BusinessAddress(
+      "Line 1",
+      None,
+      None,
+      None,
+      Some("AB1 2CD"),
+      "GB"
+    ))
   )
 
   val testAgentDetails = AgentDetailsDesResponse(
@@ -68,18 +81,18 @@ class AgentDetailsDesResponseSpec extends UnitSpec:
       val json = Json.obj(
         "uniqueTaxReference" -> "1234567890",
         "agencyDetails" -> Json.obj(
-          "agencyName"      -> "Test Agency",
-          "agencyEmail"     -> "email@test.com",
+          "agencyName" -> "Test Agency",
+          "agencyEmail" -> "email@test.com",
           "agencyTelephone" -> "123456789",
           "agencyAddress" -> Json.obj(
             "addressLine1" -> "Line 1",
-            "postalCode"   -> "AB1 2CD",
-            "countryCode"  -> "GB"
+            "postalCode" -> "AB1 2CD",
+            "countryCode" -> "GB"
           )
         ),
         "suspensionDetails" -> Json.obj(
           "suspensionStatus" -> true,
-          "regimes"          -> Json.arr("ITSA")
+          "regimes" -> Json.arr("ITSA")
         ),
         "isAnIndividual" -> false
       )
@@ -100,7 +113,12 @@ class AgentDetailsDesResponseSpec extends UnitSpec:
     }
 
     "support partial objects" in {
-      val partial = AgentDetailsDesResponse(None, None, None, None)
+      val partial = AgentDetailsDesResponse(
+        None,
+        None,
+        None,
+        None
+      )
       val json = Json.toJson(partial)
       val result = Json.fromJson[AgentDetailsDesResponse](json).get
       result mustBe partial

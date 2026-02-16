@@ -19,17 +19,19 @@ package uk.gov.hmrc.agentservicesaccount.services
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EmailConnector
-import uk.gov.hmrc.agentservicesaccount.models.{EmailInformation, EntityCheckNotification}
+import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
+import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.Future
 
 @Singleton
-class EmailService @Inject()(
+class EmailService @Inject() (
   appConfig: AppConfig,
   emailConnector: EmailConnector
 ) {
-  
+
   def sendEntityCheckNotification(
     entityCheckNotification: EntityCheckNotification
   )(using request: RequestHeader): Future[Unit] = {

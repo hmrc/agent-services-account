@@ -23,11 +23,15 @@ import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables._
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.StringContextOps
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 abstract class InternalAuthTokenInitialiser {
   val initialised: Future[Done]
@@ -69,21 +73,22 @@ with Logging {
     httpClient
       .post(url"${appConfig.internalAuthBaseUrl}/test-only/token")(HeaderCarrier())
       .withBody(
-        //language=JSON
+        // language=JSON
         Json.parse(
           s"""
-                      |{
-                      | "token": "${appConfig.internalAuthToken}",
-                      | "principal": "${appConfig.appName}",
-                      | "permissions": [
-                      |   {
-                      |    "resourceType": "dms-submission",
-                      |    "resourceLocation": "submit",
-                      |    "actions": ["WRITE"]
-                      |   }
-                      | ]
-                      |}
-                      |""".stripMargin)
+             |{
+             | "token": "${appConfig.internalAuthToken}",
+             | "principal": "${appConfig.appName}",
+             | "permissions": [
+             |   {
+             |    "resourceType": "dms-submission",
+             |    "resourceLocation": "submit",
+             |    "actions": ["WRITE"]
+             |   }
+             | ]
+             |}
+             |""".stripMargin
+        )
       )
       .execute
       .flatMap { response =>

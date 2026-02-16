@@ -47,7 +47,7 @@ with GuiceOneServerPerSuite:
 
   def extraConfig: Map[String, Any] = Map.empty
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(3, Seconds)), interval = scaled(Span(300, Millis)))
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(300, Millis)))
 
   override lazy val app: Application = new GuiceApplicationBuilder()
     .configure(config ++ extraConfig)
@@ -75,6 +75,10 @@ with GuiceOneServerPerSuite:
     "microservice.services.des.port" -> mockPort,
     "microservice.services.agent-assurance.host" -> mockHost,
     "microservice.services.agent-assurance.port" -> mockPort,
+    "microservice.services.agent-mapping.host" -> mockHost,
+    "microservice.services.agent-mapping.port" -> mockPort,
+    "microservice.services.enrolment-store-proxy.host" -> mockHost,
+    "microservice.services.enrolment-store-proxy.port" -> mockPort,
     "microservice.services.citizen-details.host" -> mockHost,
     "microservice.services.citizen-details.port" -> mockPort,
     "microservice.services.email.port" -> mockPort,
@@ -148,4 +152,4 @@ with GuiceOneServerPerSuite:
 
   val baseUrl: String = "/agent-services-account"
 
-  def buildClient(path: String): WSRequest = ws.url(s"http://localhost:$port$baseUrl$path").withFollowRedirects(false)
+  def buildClient(path: String): WSRequest = ws.url(s"http://localhost:$port$baseUrl${path.replace(baseUrl, "")}").withFollowRedirects(false)

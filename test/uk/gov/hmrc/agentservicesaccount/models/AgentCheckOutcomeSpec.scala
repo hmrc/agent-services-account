@@ -21,7 +21,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class AgentCheckOutcomeSpec extends UnitSpec:
+class AgentCheckOutcomeSpec
+extends UnitSpec:
 
   val testOutcome = AgentCheckOutcome(
     agentCheckType = "identity-verification",
@@ -35,16 +36,16 @@ class AgentCheckOutcomeSpec extends UnitSpec:
       val json = Json.toJson(testOutcome)
       json shouldBe Json.obj(
         "agentCheckType" -> "identity-verification",
-        "isSuccessful"   -> true,
-        "failureReason"  -> "N/A"
+        "isSuccessful" -> true,
+        "failureReason" -> "N/A"
       )
     }
 
     "deserialize from JSON correctly" in {
       val json = Json.obj(
         "agentCheckType" -> "identity-verification",
-        "isSuccessful"   -> true,
-        "failureReason"  -> "N/A"
+        "isSuccessful" -> true,
+        "failureReason" -> "N/A"
       )
 
       val parsed = Json.fromJson[AgentCheckOutcome](json).get
@@ -54,19 +55,27 @@ class AgentCheckOutcomeSpec extends UnitSpec:
     "deserialize when failureReason is missing (None)" in {
       val json = Json.obj(
         "agentCheckType" -> "compliance-check",
-        "isSuccessful"   -> false
+        "isSuccessful" -> false
       )
 
       val parsed = Json.fromJson[AgentCheckOutcome](json).get
-      parsed shouldBe AgentCheckOutcome("compliance-check", false, None)
+      parsed shouldBe AgentCheckOutcome(
+        "compliance-check",
+        false,
+        None
+      )
     }
 
     "serialize correctly when failureReason is None" in {
-      val outcome = AgentCheckOutcome("some-check", false, None)
+      val outcome = AgentCheckOutcome(
+        "some-check",
+        false,
+        None
+      )
       val json = Json.toJson(outcome)
       json shouldBe Json.obj(
         "agentCheckType" -> "some-check",
-        "isSuccessful"   -> false
+        "isSuccessful" -> false
         // failureReason omitted
       )
     }

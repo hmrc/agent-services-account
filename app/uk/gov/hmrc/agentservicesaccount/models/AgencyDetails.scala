@@ -17,9 +17,13 @@
 package uk.gov.hmrc.agentservicesaccount.models
 
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
-import play.api.libs.json.{Format, Json, OFormat, __}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import play.api.libs.json.__
 import uk.gov.hmrc.crypto.json.JsonEncryption.stringEncrypterDecrypter
-import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
+import uk.gov.hmrc.crypto.Decrypter
+import uk.gov.hmrc.crypto.Encrypter
 
 case class AgencyDetails(
   agencyName: Option[String],
@@ -31,8 +35,7 @@ case class AgencyDetails(
 }
 object AgencyDetails {
 
-
-  given  agencyDetailsFormat: Format[AgencyDetails] = Json.format[AgencyDetails]
+  given agencyDetailsFormat: Format[AgencyDetails] = Json.format[AgencyDetails]
   def agencyDetailsDatabaseFormat(using crypto: Encrypter & Decrypter): Format[AgencyDetails] =
     (__ \ "agencyName")
       .formatNullable[String](stringEncrypterDecrypter)

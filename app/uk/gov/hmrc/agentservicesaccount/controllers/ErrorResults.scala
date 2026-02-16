@@ -17,7 +17,9 @@
 package uk.gov.hmrc.agentservicesaccount.controllers
 
 import play.api.libs.json.Json.toJson
-import play.api.libs.json.{JsValue, Json, Writes}
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 import play.api.mvc.Results.Forbidden
 
 object ErrorResults {

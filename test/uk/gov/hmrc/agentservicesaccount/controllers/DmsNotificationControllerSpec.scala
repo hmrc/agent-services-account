@@ -18,30 +18,39 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.http.Status.{BAD_REQUEST, OK}
+import play.api.http.Status.BAD_REQUEST
+import play.api.http.Status.OK
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{POST, status, stubControllerComponents}
+import play.api.test.Helpers.POST
+import play.api.test.Helpers.status
+import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
-import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsNotification, SubmissionItemStatus}
+import uk.gov.hmrc.agentservicesaccount.models.dms.DmsNotification
+import uk.gov.hmrc.agentservicesaccount.models.dms.SubmissionItemStatus
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderNames
-import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
-import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, Predicate, Retrieval}
+import uk.gov.hmrc.internalauth.client.test.BackendAuthComponentsStub
+import uk.gov.hmrc.internalauth.client.test.StubBehaviour
+import uk.gov.hmrc.internalauth.client.BackendAuthComponents
+import uk.gov.hmrc.internalauth.client.Predicate
+import uk.gov.hmrc.internalauth.client.Retrieval
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class DmsNotificationControllerSpec
-  extends UnitSpec
-    with MockitoSugar
-    with MockAppConfig {
+extends UnitSpec
+with MockitoSugar
+with MockAppConfig {
 
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
   val mockStubBehaviour: StubBehaviour = mock[StubBehaviour]
-  val stubBackendAuthComponents: BackendAuthComponents =
-    BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), ec)
+  val stubBackendAuthComponents: BackendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), ec)
 
   val controller =
     new DmsNotificationController(
@@ -125,4 +134,5 @@ class DmsNotificationControllerSpec
       }
     }
   }
+
 }

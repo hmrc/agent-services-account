@@ -20,7 +20,22 @@ import play.api.libs.json.Format
 import uk.gov.hmrc.agentservicesaccount.utils.EnumFormat
 
 enum LegacyRegime:
+
   case PAYE, SA, CT
+
+  def enrolmentKey: String =
+    this match {
+      case PAYE => "IR-PAYE-AGENT"
+      case SA => "IR-SA-AGENT"
+      case CT => "IR-CT-AGENT"
+    }
+
+  def mappingKey: String =
+    this match {
+      case PAYE => "paye"
+      case SA => "sa"
+      case CT => "ct"
+    }
 
 object LegacyRegime:
   implicit val format: Format[LegacyRegime] = EnumFormat.enumFormat

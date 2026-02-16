@@ -25,27 +25,32 @@ import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 @Singleton
-class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig):
+class AppConfig @Inject() (
+  config: Configuration,
+  servicesConfig: ServicesConfig
+):
 
   val appName = "agent-services-account"
 
   val stubsCompatibilityMode: Boolean = config.get[Boolean]("stubs-compatibility-mode")
 
-  val mongoTtl: Long                = config.get[Long]("mongodb.timeToLive")
+  val mongoTtl: Long = config.get[Long]("mongodb.timeToLive")
+  val enrolmentStoreProxyBaseUrl: String = baseUrl("enrolment-store-proxy")
   val citizenDetailsBaseUrl: String = baseUrl("citizen-details")
-  val desBaseUrl: String            = baseUrl("des")
-  val desAuthToken: String          = servicesConfig.getString("microservice.services.des.authorization-token")
-  val desEnv: String                = servicesConfig.getString("microservice.services.des.environment")
+  val desBaseUrl: String = baseUrl("des")
+  val desAuthToken: String = servicesConfig.getString("microservice.services.des.authorization-token")
+  val desEnv: String = servicesConfig.getString("microservice.services.des.environment")
 
-  val entityChecksLockExpires: Duration      = servicesConfig.getDuration("agent.entity-check.lock.expires")
+  val entityChecksLockExpires: Duration = servicesConfig.getDuration("agent.entity-check.lock.expires")
   val entityChecksEmailLockExpires: Duration = servicesConfig.getDuration("agent.entity-check.email.lock.expires")
-  val emailBaseUrl: String                   = baseUrl("email")
-  val agentAssuranceBaseUrl: String          = baseUrl("agent-assurance")
-  val agentMaintainerEmail: String           = config.get[String]("agent-maintainer-email")
-  val agentEpayeRegistrationBaseUrl: String  = baseUrl("agent-epaye-registration")
+  val emailBaseUrl: String = baseUrl("email")
+  val agentAssuranceBaseUrl: String = baseUrl("agent-assurance")
+  val agentMaintainerEmail: String = config.get[String]("agent-maintainer-email")
+  val agentEpayeRegistrationBaseUrl: String = baseUrl("agent-epaye-registration")
+  val agentMappingBaseUrl: String = baseUrl("agent-mapping")
 
-  val internalAuthBaseUrl: String       = servicesConfig.baseUrl("internal-auth")
-  val internalAuthToken: String         = servicesConfig.getString("internal-auth.token")
+  val internalAuthBaseUrl: String = servicesConfig.baseUrl("internal-auth")
+  val internalAuthToken: String = servicesConfig.getString("internal-auth.token")
   val internalAuthTokenEnabled: Boolean = servicesConfig.getBoolean("internal-auth-token-enabled-on-start")
 
   val manuallyAssuredStrideRole: String = servicesConfig.getString("stride.roles.agent-services-account")
@@ -56,17 +61,12 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     "microservice.services.dms-submission.contact-details-submission.callbackEndpoint"
   )
 
-  val dmsSubmissionBusinessArea: String =
-    servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.businessArea")
+  val dmsSubmissionBusinessArea: String = servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.businessArea")
   val dmsSubmissionCallbackUrl: String = s"$appBaseUrl/$appName/$dmsSubmissionCallbackEndpoint"
-  val dmsSubmissionClassificationType: String =
-    servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.classificationType")
-  val dmsSubmissionCustomerId: String =
-    servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.customerId")
-  val dmsSubmissionFormId: String =
-    servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.formId")
-  val dmsSubmissionSource: String =
-    servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.source")
+  val dmsSubmissionClassificationType: String = servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.classificationType")
+  val dmsSubmissionCustomerId: String = servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.customerId")
+  val dmsSubmissionFormId: String = servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.formId")
+  val dmsSubmissionSource: String = servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.source")
   val dmsSubmissionUrl: String = dmsBaseUrl + "/dms-submission/submit"
 
   private def baseUrl(key: String) = servicesConfig.baseUrl(key)

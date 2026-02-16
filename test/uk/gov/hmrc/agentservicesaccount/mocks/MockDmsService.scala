@@ -19,7 +19,8 @@ package uk.gov.hmrc.agentservicesaccount.mocks
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.TestSuite
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsResponse, DmsSubmissionReference}
+import uk.gov.hmrc.agentservicesaccount.models.dms.DmsResponse
+import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
 import uk.gov.hmrc.agentservicesaccount.services.DmsService
 
 import java.time.Instant

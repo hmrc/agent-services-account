@@ -23,9 +23,8 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.agententity.VerifyEntityRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-
-
-class VerifyEntityRequestSpec extends UnitSpec:
+class VerifyEntityRequestSpec
+extends UnitSpec:
 
   val testArn = Arn("AARN1234567")
   val testRequest = VerifyEntityRequest(identifier = testArn)

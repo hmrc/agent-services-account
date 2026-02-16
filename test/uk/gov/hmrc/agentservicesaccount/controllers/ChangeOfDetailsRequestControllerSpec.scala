@@ -22,20 +22,21 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.when
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{await, stubControllerComponents}
+import play.api.test.Helpers.await
+import play.api.test.Helpers.stubControllerComponents
 import uk.gov.hmrc.agentservicesaccount.assets.TestConstants.testChangeOfDetailsRequest
 import uk.gov.hmrc.agentservicesaccount.services.ChangeOfDetailsRequestService
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.InternalServerException
 
-class ChangeOfDetailsRequestControllerSpec extends UnitSpec:
+class ChangeOfDetailsRequestControllerSpec
+extends UnitSpec:
 
   "upsert" should:
     "throw an InternalServerException" when:
       "mongo throws an exception" in:
         val mockService: ChangeOfDetailsRequestService = mock[ChangeOfDetailsRequestService]
-        val controller: ChangeOfDetailsRequestController =
-          new ChangeOfDetailsRequestController(mockService, stubControllerComponents())(using global)
+        val controller: ChangeOfDetailsRequestController = new ChangeOfDetailsRequestController(mockService, stubControllerComponents())(using global)
 
         when(mockService.upsert(ArgumentMatchers.eq(testChangeOfDetailsRequest)))
           .thenReturn(Future.failed(new RuntimeException("Mongo exception")))

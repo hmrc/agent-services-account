@@ -20,7 +20,8 @@ import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class EntityCheckExceptionSpec extends UnitSpec:
+class EntityCheckExceptionSpec
+extends UnitSpec:
 
   "EntityCheckException" should {
 

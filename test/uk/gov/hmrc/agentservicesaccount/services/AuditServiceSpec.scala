@@ -16,9 +16,12 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.{testArn, testUtr}
-import uk.gov.hmrc.agentservicesaccount.mocks.{MockAppConfig, MockAuditConnector}
-import uk.gov.hmrc.agentservicesaccount.models.{AgentCheckOutcome, EntityCheckNotification}
+import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.testArn
+import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.testUtr
+import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
+import uk.gov.hmrc.agentservicesaccount.mocks.MockAuditConnector
+import uk.gov.hmrc.agentservicesaccount.models.AgentCheckOutcome
+import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
@@ -38,7 +41,6 @@ with MockAuditConnector {
   implicit val hc: HeaderCarrier = new HeaderCarrier()
   val auditService = new AuditService(mockAppConfig, mockAuditConnector)(ec)
   implicit val request: RequestHeader = FakeRequest()
-
 
   "auditEntityCheckFailureNotificationSent" should {
     "send audit event" in {

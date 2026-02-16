@@ -25,9 +25,11 @@ import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.services.MongoLockService
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-trait MockMongoLockService extends MockitoSugar {
+trait MockMongoLockService
+extends MockitoSugar {
   this: TestSuite =>
 
   val mongoLockService: MongoLockService = mock[MongoLockService]
@@ -42,7 +44,6 @@ trait MockMongoLockService extends MockitoSugar {
         }
       })
   }
-
 
   def mockDailyLockSucceeds[T](result: T)(using ec: ExecutionContext): Unit = {
     when(mongoLockService.dailyLock(any[Utr])(any()))

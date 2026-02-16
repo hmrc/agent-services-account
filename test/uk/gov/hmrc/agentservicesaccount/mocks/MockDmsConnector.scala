@@ -21,10 +21,13 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.TestSuite
-import play.api.mvc.{MultipartFormData, RequestHeader}
-import play.api.test.Helpers.{ACCEPTED, BAD_GATEWAY}
+import play.api.mvc.MultipartFormData
+import play.api.mvc.RequestHeader
+import play.api.test.Helpers.ACCEPTED
+import play.api.test.Helpers.BAD_GATEWAY
 import uk.gov.hmrc.agentservicesaccount.connectors.DmsConnector
-import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import scala.concurrent.Future
 

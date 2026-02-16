@@ -19,25 +19,35 @@ package uk.gov.hmrc.agentservicesaccount.services
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import play.api.mvc.MultipartFormData.{DataPart, FilePart}
-import play.api.mvc.{MultipartFormData, RequestHeader}
+import play.api.mvc.MultipartFormData.DataPart
+import play.api.mvc.MultipartFormData.FilePart
+import play.api.mvc.MultipartFormData
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.DmsConnector
-import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsResponse, DmsSubmissionReference}
+import uk.gov.hmrc.agentservicesaccount.models.dms.DmsResponse
+import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
 import uk.gov.hmrc.agentservicesaccount.utils.PdfGenerator.buildPdf
-import uk.gov.hmrc.http.{InternalServerException, UpstreamErrorResponse}
+import uk.gov.hmrc.http.InternalServerException
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import java.io.ByteArrayOutputStream
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.Base64
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 @Singleton
-class DmsService @Inject()(
+class DmsService @Inject() (
   dmsConnector: DmsConnector,
   appConfig: AppConfig
 )(implicit ec: ExecutionContext) {

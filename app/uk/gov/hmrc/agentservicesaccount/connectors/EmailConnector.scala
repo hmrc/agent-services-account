@@ -21,17 +21,19 @@ import play.api.libs.json.Json
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
-import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given 
-import uk.gov.hmrc.agentservicesaccount.models.EmailInformation.given 
+import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
+import uk.gov.hmrc.agentservicesaccount.models.EmailInformation.given
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HttpErrorFunctions, HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.HttpErrorFunctions
+import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.StringContextOps
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
-
-
 
 @Singleton
 class EmailConnector @Inject() (

@@ -21,7 +21,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class UtrChecksResponseSpec extends UnitSpec:
+class UtrChecksResponseSpec
+extends UnitSpec:
 
   val testResponse = UtrChecksResponse(
     isManuallyAssured = true,
@@ -57,6 +58,10 @@ class UtrChecksResponseSpec extends UnitSpec:
       )
 
       val result = Json.fromJson[UtrChecksResponse](json).get
-      result mustBe UtrChecksResponse(isManuallyAssured = true, isRefusalToDealWith = true, businessName = None)
+      result mustBe UtrChecksResponse(
+        isManuallyAssured = true,
+        isRefusalToDealWith = true,
+        businessName = None
+      )
     }
   }

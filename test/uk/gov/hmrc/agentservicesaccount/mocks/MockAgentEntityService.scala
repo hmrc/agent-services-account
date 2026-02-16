@@ -17,7 +17,8 @@
 package uk.gov.hmrc.agentservicesaccount.mocks
 
 import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers.{eq => meq, any}
+import org.mockito.ArgumentMatchers.{eq => meq}
+import org.mockito.ArgumentMatchers.any
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.RequestHeader
@@ -27,7 +28,8 @@ import uk.gov.hmrc.agentservicesaccount.services.AgentDetailsService
 
 import scala.concurrent.Future
 
-trait MockAgentEntityService extends MockitoSugar {
+trait MockAgentEntityService
+extends MockitoSugar {
   this: TestSuite =>
 
   val mockAgentEntityService: AgentDetailsService = mock[AgentDetailsService]
@@ -36,5 +38,5 @@ trait MockAgentEntityService extends MockitoSugar {
     when(mockAgentEntityService.getAgentDetailsWithChecks(meq(arn))(using any[RequestHeader]))
       .thenReturn(Future.successful(returns))
   }
-}
 
+}

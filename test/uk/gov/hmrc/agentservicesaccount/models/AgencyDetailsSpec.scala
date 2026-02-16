@@ -20,16 +20,25 @@ import org.scalatest.matchers.must.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
-import uk.gov.hmrc.crypto.{Crypted, Decrypter, Encrypter, PlainBytes, PlainContent, PlainText}
+import uk.gov.hmrc.crypto.Crypted
+import uk.gov.hmrc.crypto.Decrypter
+import uk.gov.hmrc.crypto.Encrypter
+import uk.gov.hmrc.crypto.PlainBytes
+import uk.gov.hmrc.crypto.PlainContent
+import uk.gov.hmrc.crypto.PlainText
 
-class AgencyDetailsSpec extends UnitSpec:
+class AgencyDetailsSpec
+extends UnitSpec:
 
-  given fakeCrypto: Encrypter with Decrypter with
-    override def encrypt(plain: PlainContent): Crypted = plain match {
-      case PlainText(value) =>  Crypted(s"ENC(${value})")
-      case PlainBytes(value) =>  Crypted(s"ENC(${value})")
-    }
+  given fakeCrypto: Encrypter
+    with Decrypter
+    with
 
+    override def encrypt(plain: PlainContent): Crypted =
+      plain match {
+        case PlainText(value) => Crypted(s"ENC(${value})")
+        case PlainBytes(value) => Crypted(s"ENC(${value})")
+      }
 
     override def decrypt(crypted: Crypted): PlainText =
       val raw = crypted.value.stripPrefix("ENC(").stripSuffix(")")
@@ -39,14 +48,20 @@ class AgencyDetailsSpec extends UnitSpec:
       val raw = reversiblyEncrypted.value.stripPrefix("ENC(").stripSuffix(")")
       PlainBytes(raw.getBytes("UTF-8"))
 
-
   "AgencyDetails" should {
     "serialize and deserialize using encrypted format" in {
       val agencyDetails = AgencyDetails(
         Some("Agency Name"),
         Some("email@example.com"),
         Some("123456789"),
-        Some(BusinessAddress("line1", None, None, None, Some("AB1 2CD"), "GB"))
+        Some(BusinessAddress(
+          "line1",
+          None,
+          None,
+          None,
+          Some("AB1 2CD"),
+          "GB"
+        ))
       )
 
       val json = Json.toJson(agencyDetails)(using AgencyDetails.agencyDetailsDatabaseFormat)
@@ -58,7 +73,14 @@ class AgencyDetailsSpec extends UnitSpec:
 
   "BusinessAddress" should {
     "roundtrip through encryption format" in {
-      val addr = BusinessAddress("line1", Some("line2"), None, None, Some("ZZ1 1ZZ"), "GB")
+      val addr = BusinessAddress(
+        "line1",
+        Some("line2"),
+        None,
+        None,
+        Some("ZZ1 1ZZ"),
+        "GB"
+      )
       val json = Json.toJson(addr)(using BusinessAddress.businessAddressDatabaseFormat)
       val result = Json.fromJson[BusinessAddress](json)(using BusinessAddress.businessAddressDatabaseFormat).get
 

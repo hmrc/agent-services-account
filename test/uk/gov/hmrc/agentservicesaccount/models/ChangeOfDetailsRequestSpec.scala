@@ -22,7 +22,8 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.assets.TestConstants.testChangeOfDetailsRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class ChangeOfDetailsRequestSpec extends UnitSpec:
+class ChangeOfDetailsRequestSpec
+extends UnitSpec:
 
   "ChangeOfDetailsRequest" should:
     "serialize to JSON using the implicit mongoFormat" in:
@@ -60,13 +61,13 @@ class ChangeOfDetailsRequestSpec extends UnitSpec:
       val result = Json.toJson(testChangeOfDetailsRequest)(ChangeOfDetailsRequest.format)
 
       result shouldBe Json.obj(
-        "arn"           -> "AARN1234567",
+        "arn" -> "AARN1234567",
         "timeSubmitted" -> testChangeOfDetailsRequest.timeSubmitted
       )
 
     "deserialize from JSON using the standard macro formatter" in:
       val json = Json.obj(
-        "arn"           -> "AARN1234567",
+        "arn" -> "AARN1234567",
         "timeSubmitted" -> testChangeOfDetailsRequest.timeSubmitted
       )
 

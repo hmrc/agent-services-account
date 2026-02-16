@@ -21,19 +21,26 @@ import play.api.Configuration
 import play.api.libs.json.*
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.services.Cache
-import uk.gov.hmrc.crypto.{Decrypter, Encrypter, PlainText}
-import uk.gov.hmrc.mongo.cache.{CacheIdType, MongoCacheRepository}
+import uk.gov.hmrc.crypto.Decrypter
+import uk.gov.hmrc.crypto.Encrypter
+import uk.gov.hmrc.crypto.PlainText
+import uk.gov.hmrc.mongo.cache.CacheIdType
+import uk.gov.hmrc.mongo.cache.MongoCacheRepository
 import uk.gov.hmrc.mongo.play.json.Codecs
-import uk.gov.hmrc.mongo.{MongoComponent, TimestampSupport}
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.TimestampSupport
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.Inject
+import javax.inject.Named
+import javax.inject.Singleton
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Success
 
 @Singleton
-class AgencyDetailsCacheRepository @Inject()(
+class AgencyDetailsCacheRepository @Inject() (
   config: Configuration,
   mongo: MongoComponent,
   timestampSupport: TimestampSupport,
@@ -57,7 +64,7 @@ with Cache[AgentDetailsDesResponse] {
       timestampSupport = timestampSupport,
       cacheIdType = CacheIdType.SimpleCacheId,
       replaceIndexes = true,
-      extraCodecs =  Seq(
+      extraCodecs = Seq(
         Codecs.playFormatCodec[AgentDetailsDesResponse](AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat(using crypto))
       )
     )
@@ -80,4 +87,5 @@ with Cache[AgentDetailsDesResponse] {
         }
     }
   }
+
 }

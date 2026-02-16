@@ -17,9 +17,14 @@
 package uk.gov.hmrc.agentservicesaccount.helpers
 
 import uk.gov.hmrc.agentservicesaccount.models.*
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
-import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
-import uk.gov.hmrc.domain.{Nino, SaAgentReference, SaUtr}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
+import uk.gov.hmrc.auth.core.Enrolment
+import uk.gov.hmrc.auth.core.EnrolmentIdentifier
+import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.SaAgentReference
+import uk.gov.hmrc.domain.SaUtr
 
 import java.time.LocalDate
 
@@ -75,8 +80,6 @@ object TestConstants {
   val today: LocalDate = LocalDate.now
 
   val membershipExpiresOnDate: LocalDate = LocalDate.parse("2024-01-12")
-
-  
 
   // DES Agent Record
   val agencyDetailsUk: AgencyDetails = AgencyDetails(

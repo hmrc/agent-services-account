@@ -15,7 +15,9 @@
  */
 
 package uk.gov.hmrc.agentservicesaccount.mocks
-import org.mockito.ArgumentMatchers.{any, eq as meq}
+
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq as meq
 import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
@@ -23,12 +25,15 @@ import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.authorise.EmptyPredicate
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval}
+import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
+import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-trait MockAuthConnector extends MockitoSugar { this: TestSuite =>
+trait MockAuthConnector
+extends MockitoSugar { this: TestSuite =>
 
   val mockAuthConnector: AuthConnector = mock[AuthConnector]
 
@@ -68,4 +73,5 @@ trait MockAuthConnector extends MockitoSugar { this: TestSuite =>
       )
     )
   }
+
 }

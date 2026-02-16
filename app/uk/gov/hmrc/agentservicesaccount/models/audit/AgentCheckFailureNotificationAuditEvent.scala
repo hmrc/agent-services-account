@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.audit
 
-import play.api.libs.json.{Json, OWrites, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.OWrites
+import play.api.libs.json.Writes
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
 import java.time.LocalDateTime

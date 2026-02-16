@@ -25,7 +25,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayeSubscriptionRequest
 
-trait AgentEpayeRegistrationStubs {
+trait AgentEpayeRegistrationStubs:
 
   def givenEpayeRegisterCallSucceeds(request: PayeSubscriptionRequest)(agentReference: AgentReference): Unit = stubFor(
     post(urlEqualTo("/agent-epaye-registration/registrations"))
@@ -63,5 +63,3 @@ trait AgentEpayeRegistrationStubs {
         )
       )
     }
-
-}

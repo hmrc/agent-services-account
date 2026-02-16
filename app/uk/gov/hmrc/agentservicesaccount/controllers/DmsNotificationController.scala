@@ -17,17 +17,22 @@
 package uk.gov.hmrc.agentservicesaccount.controllers
 
 import play.api.Logging
-import play.api.libs.json.{JsError, JsSuccess, JsValue}
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.libs.json.JsError
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsValue
+import play.api.mvc.Action
+import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsNotification, SubmissionItemStatus}
+import uk.gov.hmrc.agentservicesaccount.models.dms.DmsNotification
+import uk.gov.hmrc.agentservicesaccount.models.dms.SubmissionItemStatus
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
-class DmsNotificationController @Inject()(
+class DmsNotificationController @Inject() (
   cc: ControllerComponents,
   auth: BackendAuthComponents,
   appConfig: AppConfig

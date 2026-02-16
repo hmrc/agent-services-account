@@ -19,18 +19,19 @@ package uk.gov.hmrc.agentservicesaccount.services
 import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.mocks.{MockAppConfig, MockEmailConnector}
-import uk.gov.hmrc.agentservicesaccount.models.{EmailInformation, EntityCheckNotification}
+import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
+import uk.gov.hmrc.agentservicesaccount.mocks.MockEmailConnector
+import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
+import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 import scala.concurrent.ExecutionContext
-
 
 class EmailServiceSpec
 extends UnitSpec
 with MockEmailConnector
 with MockAppConfig {
-  
+
   implicit val request: RequestHeader = FakeRequest()
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
   val service: EmailService = new EmailService(mockAppConfig, mockEmailConnector)

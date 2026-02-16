@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.controllers
 
+import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
@@ -28,12 +29,17 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.COTAX
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.stubs.AgentAuthStubs
 import uk.gov.hmrc.agentservicesaccount.stubs.AgentEpayeRegistrationStubs
+import uk.gov.hmrc.agentservicesaccount.stubs.AgentMappingStubs
+import uk.gov.hmrc.agentservicesaccount.stubs.EnrolmentStoreProxyStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{Deferred, PermanentlyFailed}
 
 class LegacySubscriptionControllerISpec
 extends ComponentSpecHelper
 with AgentEpayeRegistrationStubs
+with AgentMappingStubs
+with EnrolmentStoreProxyStubs
 with AgentAuthStubs:
 
   lazy val repository: SubscriptionWorkItemRepository = app.injector.instanceOf[SubscriptionWorkItemRepository]
@@ -58,75 +64,208 @@ with AgentAuthStubs:
 
   val testAgentReference = AgentReference("AB1234")
 
+  val testPayeSubscriptionRequest: PayeSubscriptionRequest = PayeSubscriptionRequest(
+    agentName = testAgentName,
+    contactName = testContactName,
+    phoneNumber = Some(testPhoneNumber),
+    emailAddress = Some(testEmail),
+    address = testAddress
+  )
+  val testSaSubscriptionRequest: SubscriptionRequest = SaSubscriptionRequest(
+    agentName = testAgentName,
+    contactName = testContactName,
+    phoneNumber = Some(testPhoneNumber),
+    emailAddress = Some(testEmail),
+    address = testAddress,
+    isAbroad = false
+  )
+  val testCtSubscriptionRequest: SubscriptionRequest = CtSubscriptionRequest(
+    agentName = testAgentName,
+    contactName = testContactName,
+    phoneNumber = Some(testPhoneNumber),
+    emailAddress = Some(testEmail),
+    address = testAddress,
+    isAbroad = false
+  )
   "POST /legacy-subscription-request/:regime" should:
     "return 200 after successfully calling OPRA and creating a new work item for PAYE regime" in:
       isLoggedInAsASAgent(testArn)
-      val testSubscriptionRequest = PayeSubscriptionRequest(
-        agentName = testAgentName,
-        contactName = testContactName,
-        phoneNumber = Some(testPhoneNumber),
-        emailAddress = Some(testEmail),
-        address = testAddress
-      )
       val expected = SubscriptionWorkItem(
         arn = testArn,
-        subscriptionRequest = testSubscriptionRequest,
+        subscriptionRequest = testPayeSubscriptionRequest,
         regime = PAYE,
         agentReference = Some(testAgentReference),
         sessionId = None
       )
 
-      givenEpayeRegisterCallSucceeds(testSubscriptionRequest)(testAgentReference)
+      givenEpayeRegisterCallSucceeds(testPayeSubscriptionRequest)(testAgentReference)
 
-      val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testSubscriptionRequest)
+      val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testPayeSubscriptionRequest)
 
       response.status shouldBe 200
       repository.coll.find().headOption().futureValue.map(_.item) shouldBe Some(expected)
 
     "throw error after a failed OPRA call without creating a new work item for PAYE regime" in:
       isLoggedInAsASAgent(testArn)
-      val testSubscriptionRequest: PayeSubscriptionRequest = PayeSubscriptionRequest(
-        agentName = testAgentName,
-        contactName = testContactName,
-        phoneNumber = Some(testPhoneNumber),
-        emailAddress = Some(testEmail),
-        address = testAddress
-      )
 
-      givenEpayeRegisterCallFails(testSubscriptionRequest)
+      givenEpayeRegisterCallFails(testPayeSubscriptionRequest)
 
-      val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testSubscriptionRequest)
+      val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testPayeSubscriptionRequest)
 
       response.status shouldBe 400
       repository.coll.find().headOption().futureValue.flatMap(_.item.agentReference) shouldBe None
 
     "return 501 for SA regime" in:
       isLoggedInAsASAgent(testArn)
-      val testSubscriptionRequest: SubscriptionRequest = SaSubscriptionRequest(
-        agentName = testAgentName,
-        contactName = testContactName,
-        phoneNumber = Some(testPhoneNumber),
-        emailAddress = Some(testEmail),
-        address = testAddress,
-        isAbroad = false
-      )
-      val response = post(s"/legacy-subscription-request/$SA")(testSubscriptionRequest)
+
+      val response = post(s"/legacy-subscription-request/$SA")(testSaSubscriptionRequest)
 
       response.status shouldBe 501
 
     "return 501 for CT regime" in:
       isLoggedInAsASAgent(testArn)
-      val testSubscriptionRequest: SubscriptionRequest = CtSubscriptionRequest(
-        agentName = testAgentName,
-        contactName = testContactName,
-        phoneNumber = Some(testPhoneNumber),
-        emailAddress = Some(testEmail),
-        address = testAddress,
-        isAbroad = false
-      )
-      val response = post(s"/legacy-subscription-request/$CT")(testSubscriptionRequest)
+
+      val response = post(s"/legacy-subscription-request/$CT")(testCtSubscriptionRequest)
 
       response.status shouldBe 501
+
+  "GET /legacy-subscription-info" should:
+    "return 200 with the correct information for an in progress work item" in:
+      isLoggedInAsASAgent(testArn)
+
+      repository.pushNew(SubscriptionWorkItem(
+        testArn,
+        testSaSubscriptionRequest,
+        SA,
+        None
+      )).futureValue
+
+      val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
+
+      response.status shouldBe 200
+      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
+        SubscriptionInfo(
+          regime = SA,
+          subscriptionStatus = SubscriptionStatus.SubscriptionInProgress
+        )
+      )
+
+    "return 200 with the correct information for a permanently failed work item" in:
+      isLoggedInAsASAgent(testArn)
+
+      val model =
+        repository.pushNew(SubscriptionWorkItem(
+          testArn,
+          testSaSubscriptionRequest,
+          SA,
+          None
+        )).futureValue
+
+      repository.markAs(model.id, PermanentlyFailed).futureValue
+
+      val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
+
+      response.status shouldBe 200
+      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
+        SubscriptionInfo(
+          regime = SA,
+          subscriptionStatus = SubscriptionStatus.SubscriptionFailed
+        )
+      )
+
+    "return 200 with the correct information for a work item in an unexpected state" in :
+      isLoggedInAsASAgent(testArn)
+
+      val model =
+        repository.pushNew(SubscriptionWorkItem(
+          testArn,
+          testSaSubscriptionRequest,
+          SA,
+          None
+        )).futureValue
+
+      repository.markAs(model.id, Deferred).futureValue
+
+      val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
+
+      response.status shouldBe 200
+      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
+        SubscriptionInfo(
+          regime = SA,
+          subscriptionStatus = SubscriptionStatus.InvalidStatus
+        )
+      )
+
+    "return 200 with the correct information for an agency with an existing subscription" in:
+      isLoggedInAsASAgent(testArn)
+      givenEs3CallSucceeds(testGroupId)(PAYE)
+
+      val response = get(s"/legacy-subscription-info?regimes=${PAYE.toString}")
+
+      response.status shouldBe 200
+      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
+        SubscriptionInfo(
+          regime = PAYE,
+          subscriptionStatus = SubscriptionStatus.SubscriptionOnAgency
+        )
+      )
+    "return 200 with the correct information for an agency with an existing mapping" in:
+      isLoggedInAsASAgent(testArn)
+      givenEs3CallSucceeds(testGroupId)()
+      givenGetMappingsCallSucceeds(testArn, CT)(testAgentReference)
+
+      val response = get(s"/legacy-subscription-info?regimes=${CT.toString}")
+
+      response.status shouldBe 200
+      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
+        SubscriptionInfo(
+          regime = CT,
+          subscriptionStatus = SubscriptionStatus.SubscriptionMapped
+        )
+      )
+    "return 200 with the correct information for an agency with no subscription info" in:
+      isLoggedInAsASAgent(testArn)
+      givenEs3CallSucceeds(testGroupId)()
+      givenGetMappingsCallSucceeds(testArn, SA)()
+
+      val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
+
+      response.status shouldBe 200
+      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
+        SubscriptionInfo(
+          regime = SA,
+          subscriptionStatus = SubscriptionStatus.NotSubscribed
+        )
+      )
+
+    "return 200 with the correct information for a multiple different subscriptions in different states" in:
+      isLoggedInAsASAgent(testArn)
+      repository.pushNew(SubscriptionWorkItem(
+        testArn,
+        testSaSubscriptionRequest,
+        SA,
+        None
+      )).futureValue
+      givenEs3CallSucceeds(testGroupId)(CT)
+      givenGetMappingsCallSucceeds(testArn, PAYE)(testAgentReference)
+
+      val response = get(s"/legacy-subscription-info?regimes=${SA.toString}&regimes=${CT.toString}&regimes=${PAYE.toString}")
+
+      response.status shouldBe 200
+      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
+        SubscriptionInfo(
+          regime = SA,
+          subscriptionStatus = SubscriptionStatus.SubscriptionInProgress
+        ),
+        SubscriptionInfo(
+          regime = CT,
+          subscriptionStatus = SubscriptionStatus.SubscriptionOnAgency
+        ),
+        SubscriptionInfo(
+          regime = PAYE,
+          subscriptionStatus = SubscriptionStatus.SubscriptionMapped
+        )
+      )
 
   "POST /robotics/callback" should:
     "return 204 when a work item is successfully updated with the new agentReference from a successful callback" in:
@@ -138,24 +277,16 @@ with AgentAuthStubs:
         status = CallbackSuccess,
         requestMessage = "test-message"
       )
-      val testSubscriptionRequest = SaSubscriptionRequest(
-        agentName = testAgentName,
-        contactName = testContactName,
-        phoneNumber = Some(testPhoneNumber),
-        emailAddress = Some(testEmail),
-        address = testAddress,
-        isAbroad = false
-      )
       repository.pushNew(SubscriptionWorkItem(
         testArn,
-        testSubscriptionRequest,
+        testSaSubscriptionRequest,
         SA,
         None,
         Some(correlationId)
       )).futureValue
       val expected = SubscriptionWorkItem(
         testArn,
-        testSubscriptionRequest,
+        testSaSubscriptionRequest,
         SA,
         Some(testAgentReference),
         Some(correlationId)
@@ -175,17 +306,9 @@ with AgentAuthStubs:
         status = CallbackFailure,
         requestMessage = "test-message"
       )
-      val testSubscriptionRequest = CtSubscriptionRequest(
-        agentName = testAgentName,
-        contactName = testContactName,
-        phoneNumber = Some(testPhoneNumber),
-        emailAddress = Some(testEmail),
-        address = testAddress,
-        isAbroad = false
-      )
       repository.pushNew(SubscriptionWorkItem(
         testArn,
-        testSubscriptionRequest,
+        testCtSubscriptionRequest,
         CT,
         None,
         Some(correlationId)

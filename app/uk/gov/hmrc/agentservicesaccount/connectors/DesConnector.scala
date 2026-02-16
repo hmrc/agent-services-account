@@ -28,13 +28,16 @@ import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderNames, HttpReads, StringContextOps}
+import uk.gov.hmrc.http.HeaderNames
+import uk.gov.hmrc.http.HttpReads
+import uk.gov.hmrc.http.StringContextOps
 
 import java.net.URL
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class DesConnector @Inject() (
@@ -53,7 +56,7 @@ with Logging {
 
   private val Environment = "Environment"
   private val CorrelationId = "CorrelationId"
-  
+
   // API #1170 (API#4) Get Agent Record
   def getAgentRecord(arn: Arn)(using request: RequestHeader): Future[AgentDetailsDesResponse] = {
     val url = url"$baseUrl/registration/personal-details/arn/${arn.value}"
@@ -65,10 +68,10 @@ with Logging {
   private def getWithDesHeadersWithRetry[A: HttpReads](
     apiName: String,
     url: URL
-  )(using request: RequestHeader,
+  )(using
+    request: RequestHeader,
     x: Reads[A]
   ): Future[A] = {
-
 
     retryFor[A](s"$apiName connector get $url")(retryCondition) {
       httpV2
@@ -76,7 +79,7 @@ with Logging {
         .setHeader(desHeaders(
           authorizationToken,
           environment
-        ): _*)
+        )*)
         .executeAndDeserialise[A]
     }
   }

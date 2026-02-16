@@ -22,7 +22,9 @@ import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class CacheProviderSpec extends UnitSpec with MockitoSugar {
+class CacheProviderSpec
+extends UnitSpec
+with MockitoSugar {
 
   "CacheProvider" should {
 
