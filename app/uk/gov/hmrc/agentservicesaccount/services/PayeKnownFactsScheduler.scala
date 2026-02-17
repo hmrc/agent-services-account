@@ -21,8 +21,10 @@ import play.api.Logging
 import play.api.inject.ApplicationLifecycle
 import uk.gov.hmrc.agentservicesaccount.config.PayeKnownFactsJobConfig
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class PayeKnownFactsScheduler @Inject() (
@@ -32,15 +34,15 @@ class PayeKnownFactsScheduler @Inject() (
   lifecycle: ApplicationLifecycle
 )(using
   ec: ExecutionContext
-) extends Logging:
+)
+extends Logging:
 
-  private val scheduled = actorSystem.scheduler.scheduleAtFixedRate(
-    initialDelay = jobConfig.initialDelay,
-    interval = jobConfig.interval
-  )(() =>
-    worker.runOnce().recover { case error =>
-      logger.error("Paye known facts scheduler run failed", error)
-    }
-  )
+  private val scheduled =
+    actorSystem.scheduler.scheduleAtFixedRate(
+      initialDelay = jobConfig.initialDelay,
+      interval = jobConfig.interval
+    )(() =>
+      worker.runOnce().recover { case error => logger.error("Paye known facts scheduler run failed", error) }
+    )
 
   lifecycle.addStopHook(() => Future.successful(scheduled.cancel()))

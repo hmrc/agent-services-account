@@ -20,6 +20,7 @@ import play.api.libs.json.Format
 import play.api.libs.json.Json
 
 case class SubscriptionCallback(
+  requestId: String,
   targetSystem: TargetSystem,
   operationRequired: Operation,
   agentId: AgentReference,

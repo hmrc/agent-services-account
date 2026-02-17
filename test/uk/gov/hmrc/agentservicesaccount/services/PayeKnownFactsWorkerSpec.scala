@@ -17,24 +17,35 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import org.bson.types.ObjectId
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.{never, reset, verify, verifyNoInteractions, when}
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq as eqTo
+import org.mockito.Mockito.never
+import org.mockito.Mockito.reset
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoInteractions
+import org.mockito.Mockito.when
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.PayeKnownFactsJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.agentservicesaccount.models.{CredId, Es20Enrolment, Es20Response, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.CredId
+import uk.gov.hmrc.agentservicesaccount.models.Es20Enrolment
+import uk.gov.hmrc.agentservicesaccount.models.Es20Response
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 
-class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
+class PayeKnownFactsWorkerSpec
+extends UnitSpec
+with BeforeAndAfterEach:
 
   given HeaderCarrier = HeaderCarrier()
 
@@ -47,7 +58,12 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
 
   private val workItemService = mock[PayeKnownFactsWorkItemService]
   private val connector = mock[EnrolmentStoreProxyConnector]
-  private val worker = new PayeKnownFactsWorker(workItemService, connector, jobConfig)
+  private val worker =
+    new PayeKnownFactsWorker(
+      workItemService,
+      connector,
+      jobConfig
+    )
 
   private val subscriptionRequest = PayeSubscriptionRequest(
     agentName = "Agent Name",
@@ -68,23 +84,22 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
     agentReference: Option[AgentReference] = Some(AgentReference("A12345")),
     groupId: Option[GroupId] = Some(GroupId("ITEM-GROUP")),
     adminCredId: Option[CredId] = Some(CredId("ITEM-ADMIN"))
-  ) =
-    WorkItem(
-      id = new ObjectId(),
-      receivedAt = Instant.now(),
-      updatedAt = Instant.now(),
-      availableAt = Instant.now(),
-      status = ProcessingStatus.InProgress,
-      failureCount = failureCount,
-      item = SubscriptionWorkItem(
-        arn = Arn("TARN0000001"),
-        subscriptionRequest = subscriptionRequest,
-        regime = LegacyRegime.PAYE,
-        agentReference = agentReference,
-        groupId = groupId,
-        adminCredId = adminCredId
-      )
+  ) = WorkItem(
+    id = new ObjectId(),
+    receivedAt = Instant.now(),
+    updatedAt = Instant.now(),
+    availableAt = Instant.now(),
+    status = ProcessingStatus.InProgress,
+    failureCount = failureCount,
+    item = SubscriptionWorkItem(
+      arn = Arn("TARN0000001"),
+      subscriptionRequest = subscriptionRequest,
+      regime = LegacyRegime.PAYE,
+      agentReference = agentReference,
+      groupId = groupId,
+      adminCredId = adminCredId
     )
+  )
 
   "PayeKnownFactsWorker" should {
     "do nothing when there is no outstanding work item" in {
@@ -115,7 +130,12 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
       when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
       when(connector.queryKnownFactsForAgent(eqTo(LegacyRegime.PAYE), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(Some(response)))
-      when(connector.allocateAgentEnrolment(any[LegacyRegime], any[GroupId], any[String], any[CredId])(using any[HeaderCarrier]))
+      when(connector.allocateAgentEnrolment(
+        any[LegacyRegime],
+        any[GroupId],
+        any[String],
+        any[CredId]
+      )(using any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
       when(workItemService.complete(workItem)).thenReturn(Future.successful(true))
 
@@ -161,7 +181,12 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
       worker.runOnce().futureValue
 
       verify(workItemService).markManualIntervention(workItem)
-      verify(connector, never()).allocateAgentEnrolment(any[LegacyRegime], any[GroupId], any[String], any[CredId])(using any[HeaderCarrier])
+      verify(connector, never()).allocateAgentEnrolment(
+        any[LegacyRegime],
+        any[GroupId],
+        any[String],
+        any[CredId]
+      )(using any[HeaderCarrier])
     }
   }
   override def beforeEach(): Unit =

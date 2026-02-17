@@ -25,15 +25,24 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import com.typesafe.config.Config
 import org.mongodb.scala.MongoCollection
-import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.model.{Filters, FindOneAndUpdateOptions, IndexModel, IndexOptions, Indexes, ReturnDocument, Updates}
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.FindOneAndUpdateOptions
+import org.mongodb.scala.model.IndexModel
+import org.mongodb.scala.model.IndexOptions
+import org.mongodb.scala.model.Indexes
+import org.mongodb.scala.model.ReturnDocument
+import org.mongodb.scala.model.Updates
+import play.api.Logging
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
-import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem, WorkItemFields, WorkItemRepository}
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.WorkItem
+import uk.gov.hmrc.mongo.workitem.WorkItemFields
+import uk.gov.hmrc.mongo.workitem.WorkItemRepository
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.*
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
@@ -57,7 +66,9 @@ extends WorkItemRepository[SubscriptionWorkItem](
       IndexOptions().name("uniqueArn").unique(true)
     )
   )
-):
+)
+with Logging:
+
   // TODO set up unique ARN index (potentially needs to be partial index to avoid indexing permanently failed items),
   //  will need a custom method to wrap pushNew and handle duplicate errors caused by the index
   lazy val coll: MongoCollection[WorkItem[SubscriptionWorkItem]] = collection // necessary to avoid IntelliJ "Cannot resolve symbol 'collection'" error
@@ -81,46 +92,45 @@ extends WorkItemRepository[SubscriptionWorkItem](
       .map(_.headOption)
   }
 
-  def pullOutstandingPaye(failedBefore: Instant, availableBefore: Instant): Future[Option[WorkItem[SubscriptionWorkItem]]] = {
-    def findNextItemByQuery(query: org.bson.conversions.Bson): Future[Option[WorkItem[SubscriptionWorkItem]]] =
-      coll
-        .findOneAndUpdate(
-          filter = query,
-          update = Updates.combine(
-            Updates.set(workItemFields.status, ProcessingStatus.InProgress),
-            Updates.set(workItemFields.updatedAt, now())
-          ),
-          options = FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
-        ).toFutureOption()
+  def pullOutstandingPaye(
+    failedBefore: Instant,
+    availableBefore: Instant
+  ): Future[Option[WorkItem[SubscriptionWorkItem]]] = {
+    def findNextItemByQuery(query: org.bson.conversions.Bson): Future[Option[WorkItem[SubscriptionWorkItem]]] = coll
+      .findOneAndUpdate(
+        filter = query,
+        update = Updates.combine(
+          Updates.set(workItemFields.status, ProcessingStatus.InProgress),
+          Updates.set(workItemFields.updatedAt, now())
+        ),
+        options = FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+      ).toFutureOption()
 
-    def baseFilter(status: ProcessingStatus): org.bson.conversions.Bson =
-      Filters.and(
-        Filters.equal(workItemFields.status, status),
-        Filters.equal(s"${workItemFields.item}.regime", LegacyRegime.PAYE.toString),
-        Filters.exists(s"${workItemFields.item}.agentReference", true)
-      )
+    def baseFilter(status: ProcessingStatus): org.bson.conversions.Bson = Filters.and(
+      Filters.equal(workItemFields.status, status),
+      Filters.equal(s"${workItemFields.item}.regime", LegacyRegime.PAYE.toString),
+      Filters.exists(s"${workItemFields.item}.agentReference", true)
+    )
 
-    def todoQuery: org.bson.conversions.Bson =
-      Filters.and(
-        baseFilter(ProcessingStatus.ToDo),
-        Filters.lt(workItemFields.availableAt, availableBefore)
-      )
+    def todoQuery: org.bson.conversions.Bson = Filters.and(
+      baseFilter(ProcessingStatus.ToDo),
+      Filters.lt(workItemFields.availableAt, availableBefore)
+    )
 
-    def failedQuery: org.bson.conversions.Bson =
-      Filters.and(
-        baseFilter(ProcessingStatus.Failed),
-        Filters.lt(workItemFields.updatedAt, failedBefore),
-        Filters.lt(workItemFields.availableAt, availableBefore)
-      )
+    def failedQuery: org.bson.conversions.Bson = Filters.and(
+      baseFilter(ProcessingStatus.Failed),
+      Filters.lt(workItemFields.updatedAt, failedBefore),
+      Filters.lt(workItemFields.availableAt, availableBefore)
+    )
 
-    def inProgressQuery: org.bson.conversions.Bson =
-      Filters.and(
-        baseFilter(ProcessingStatus.InProgress),
-        Filters.lt(workItemFields.updatedAt, now().minus(inProgressRetryAfter))
-      )
+    def inProgressQuery: org.bson.conversions.Bson = Filters.and(
+      baseFilter(ProcessingStatus.InProgress),
+      Filters.lt(workItemFields.updatedAt, now().minus(inProgressRetryAfter))
+    )
 
     findNextItemByQuery(todoQuery).flatMap {
-      case None => findNextItemByQuery(failedQuery)
+      case None =>
+        findNextItemByQuery(failedQuery)
           .flatMap {
             case None => findNextItemByQuery(inProgressQuery)
             case item => Future.successful(item)
@@ -128,22 +138,43 @@ extends WorkItemRepository[SubscriptionWorkItem](
       case item => Future.successful(item)
     }
   }
+  def findByRequestId(
+    requestId: String
+  ): Future[Option[WorkItem[SubscriptionWorkItem]]] = coll.find(Filters.equal("item.requestId", requestId)).toFuture().map(_.headOption)
 
   def addAgentReference(
     agentReference: AgentReference,
-    correlationId: String
+    requestId: String
   ): Future[Boolean] = {
     coll.updateOne(
-      Filters.equal("item.correlationId", correlationId),
+      Filters.equal("item.requestId", requestId),
       Updates.set("item.agentReference", agentReference.value)
     ).toFuture()
-      .map(_.getModifiedCount > 0)
+      .flatMap { update =>
+        if update.getModifiedCount > 0 then Future.successful(true)
+        else
+          findByRequestId(requestId).map {
+            case Some(workItem) if workItem.item.agentReference.isDefined =>
+              logger.warn(s"[SubscriptionWorkItemRepository][addAgentReference] Agent reference for $requestId was already set previously, duplicate callback received")
+              true
+            case _ => false
+          }
+      }
   }
 
-  def markAsPermanentlyFailed(correlationId: String): Future[Boolean] = {
+  def markAsPermanentlyFailed(requestId: String): Future[Boolean] = {
     coll.updateOne(
-      Filters.equal("item.correlationId", correlationId),
+      Filters.equal("item.requestId", requestId),
       Updates.set("status", PermanentlyFailed)
     ).toFuture()
-      .map(_.getModifiedCount > 0)
+      .flatMap { update =>
+        if update.getModifiedCount > 0 then Future.successful(true)
+        else
+          findByRequestId(requestId).map {
+            case Some(workItem) if workItem.status == PermanentlyFailed =>
+              logger.warn(s"[SubscriptionWorkItemRepository][markAsPermanentlyFailed] Status for $requestId was already set to PermanentlyFailed, duplicate update received")
+              true
+            case _ => false
+          }
+      }
   }

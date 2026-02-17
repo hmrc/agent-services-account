@@ -29,6 +29,7 @@ class SubscriptionCallbackSpec
 extends UnitSpec:
 
   val testCallback = SubscriptionCallback(
+    requestId = "test-request-id",
     targetSystem = CESA,
     operationRequired = CREATE,
     agentId = AgentReference("ABC123"),
@@ -37,6 +38,7 @@ extends UnitSpec:
   )
 
   val testCallback2 = SubscriptionCallback(
+    requestId = "test-request-id",
     targetSystem = COTAX,
     operationRequired = UPDATE,
     agentId = AgentReference("ABC123"),
@@ -45,6 +47,7 @@ extends UnitSpec:
   )
 
   val testCallbackJson: JsObject = Json.obj(
+    "requestId" -> "test-request-id",
     "targetSystem" -> "CESA",
     "operationRequired" -> "CREATE",
     "agentId" -> "ABC123",
@@ -53,6 +56,7 @@ extends UnitSpec:
   )
 
   val testCallbackJson2: JsObject = Json.obj(
+    "requestId" -> "test-request-id",
     "targetSystem" -> "COTAX",
     "operationRequired" -> "UPDATE",
     "agentId" -> "ABC123",

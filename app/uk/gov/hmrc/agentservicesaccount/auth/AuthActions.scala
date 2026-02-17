@@ -24,18 +24,27 @@ import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, credentials, groupIdentifier}
-import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.affinityGroup
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.credentials
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.groupIdentifier
+import uk.gov.hmrc.auth.core.retrieve.Credentials
+import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import scala.concurrent.{ExecutionContext, Future}
-import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
-class AuthActions @Inject() (val authConnector: AuthConnector, cc: ControllerComponents)(implicit ec: ExecutionContext)
-  extends BackendController(cc)
-    with AuthorisedFunctions
-    with Logging {
+class AuthActions @Inject() (
+  val authConnector: AuthConnector,
+  cc: ControllerComponents
+)(implicit ec: ExecutionContext)
+extends BackendController(cc)
+with AuthorisedFunctions
+with Logging {
 
   private def getEnrolmentInfo(
     enrolment: Set[Enrolment],
@@ -70,8 +79,9 @@ class AuthActions @Inject() (val authConnector: AuthConnector, cc: ControllerCom
       }
   }
 
-  def authorisedWithArnAndGroupId[A](body: Request[AnyContent] => (Arn, GroupId) => Future[Result]): Action[AnyContent] =
-    authorisedWithArnAndCredId { request => arn => _ => groupId => body(request)(arn, groupId) }
+  def authorisedWithArnAndGroupId[A](body: Request[AnyContent] => (Arn, GroupId) => Future[Result]): Action[AnyContent] = authorisedWithArnAndCredId {
+    request => arn => _ => groupId => body(request)(arn, groupId)
+  }
 
   def authorisedWithArnAndCredId(body: AuthorisedRequestWithArnAndCredId): Action[AnyContent] = Action.async { implicit request =>
     authorised(AuthProviders(GovernmentGateway))

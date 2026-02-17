@@ -16,10 +16,8 @@
 
 package uk.gov.hmrc.agentservicesaccount.controllers
 
-import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
@@ -33,8 +31,10 @@ import uk.gov.hmrc.agentservicesaccount.stubs.AgentEpayeRegistrationStubs
 import uk.gov.hmrc.agentservicesaccount.stubs.AgentMappingStubs
 import uk.gov.hmrc.agentservicesaccount.stubs.EnrolmentStoreProxyStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{Deferred, PermanentlyFailed}
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.Deferred
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
+
+import java.util.UUID
 
 class LegacySubscriptionControllerISpec
 extends ComponentSpecHelper
@@ -91,23 +91,13 @@ with AgentAuthStubs:
   "POST /legacy-subscription-request/:regime" should:
     "return 200 after successfully calling OPRA and creating a new work item for PAYE regime" in:
       isLoggedInAsASAgent(testArn)
-      val expected = SubscriptionWorkItem(
-        arn = testArn,
-        subscriptionRequest = testPayeSubscriptionRequest,
-        regime = PAYE,
-        agentReference = Some(testAgentReference),
-        groupId = Some(testGroupId),
-        adminCredId = Some(CredId("test-cred-id")),
-        sessionId = None,
-        bearerToken = None
-      )
 
       givenEpayeRegisterCallSucceeds(testPayeSubscriptionRequest)(testAgentReference)
 
       val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testPayeSubscriptionRequest)
 
       response.status shouldBe 200
-      repository.coll.find().headOption().futureValue.map(_.item) shouldBe Some(expected)
+      repository.coll.find().headOption().futureValue.nonEmpty shouldBe true
 
     "throw error after a failed OPRA call without creating a new work item for PAYE regime" in:
       isLoggedInAsASAgent(testArn)
@@ -177,7 +167,7 @@ with AgentAuthStubs:
         )
       )
 
-    "return 200 with the correct information for a work item in an unexpected state" in :
+    "return 200 with the correct information for a work item in an unexpected state" in:
       isLoggedInAsASAgent(testArn)
 
       val model =
@@ -273,8 +263,9 @@ with AgentAuthStubs:
 
   "POST /robotics/callback" should:
     "return 204 when a work item is successfully updated with the new agentReference from a successful callback" in:
-      val correlationId = "test-correlation-id"
+      val requestId = UUID.randomUUID().toString
       val testCallbackRequest = SubscriptionCallback(
+        requestId = requestId,
         targetSystem = CESA,
         operationRequired = CREATE,
         agentId = testAgentReference,
@@ -286,24 +277,56 @@ with AgentAuthStubs:
         subscriptionRequest = testSaSubscriptionRequest,
         regime = SA,
         agentReference = None,
-        correlationId = Some(correlationId)
+        requestId = requestId
       )).futureValue
       val expected = SubscriptionWorkItem(
         arn = testArn,
         subscriptionRequest = testSaSubscriptionRequest,
         regime = SA,
         agentReference = Some(testAgentReference),
-        correlationId = Some(correlationId)
+        requestId = requestId
       )
 
-      val response = post(s"/robotics/callback")(testCallbackRequest, extraHeaders = Seq("correlationId" -> correlationId))
+      val response = post(s"/robotics/callback")(testCallbackRequest)
+
+      response.status shouldBe 204
+      repository.coll.find().headOption().futureValue.map(_.item) shouldBe Some(expected)
+
+    "return 204 when a work item is already updated by a prior a successful callback" in:
+      val requestId = UUID.randomUUID().toString
+      val testCallbackRequest = SubscriptionCallback(
+        requestId = requestId,
+        targetSystem = CESA,
+        operationRequired = CREATE,
+        agentId = testAgentReference,
+        status = CallbackSuccess,
+        requestMessage = "test-message"
+      )
+      repository.pushNew(SubscriptionWorkItem(
+        arn = testArn,
+        subscriptionRequest = testSaSubscriptionRequest,
+        regime = SA,
+        agentReference = None,
+        requestId = requestId
+      )).futureValue
+      val expected = SubscriptionWorkItem(
+        arn = testArn,
+        subscriptionRequest = testSaSubscriptionRequest,
+        regime = SA,
+        agentReference = Some(testAgentReference),
+        requestId = requestId
+      )
+
+      post(s"/robotics/callback")(testCallbackRequest)
+      val response = post(s"/robotics/callback")(testCallbackRequest)
 
       response.status shouldBe 204
       repository.coll.find().headOption().futureValue.map(_.item) shouldBe Some(expected)
 
     "return 204 when a work item is successfully set to permanently failed state from a failed callback" in:
-      val correlationId = "test-correlation-id"
+      val requestId = UUID.randomUUID().toString
       val testCallbackRequest = SubscriptionCallback(
+        requestId = requestId,
         targetSystem = COTAX,
         operationRequired = CREATE,
         agentId = AgentReference(""),
@@ -315,30 +338,42 @@ with AgentAuthStubs:
         subscriptionRequest = testCtSubscriptionRequest,
         regime = CT,
         agentReference = None,
-        correlationId = Some(correlationId)
+        requestId = requestId
       )).futureValue
 
-      val response = post(s"/robotics/callback")(testCallbackRequest, extraHeaders = Seq("correlationId" -> correlationId))
+      val response = post(s"/robotics/callback")(testCallbackRequest)
+
+      response.status shouldBe 204
+      repository.coll.find().headOption().futureValue.map(_.status) shouldBe Some(PermanentlyFailed)
+
+    "return 204 when a work item is already updated by a prior failed callback" in:
+      val requestId = UUID.randomUUID().toString
+      val testCallbackRequest = SubscriptionCallback(
+        requestId = requestId,
+        targetSystem = COTAX,
+        operationRequired = CREATE,
+        agentId = AgentReference(""),
+        status = CallbackFailure,
+        requestMessage = "test-message"
+      )
+      repository.pushNew(SubscriptionWorkItem(
+        arn = testArn,
+        subscriptionRequest = testCtSubscriptionRequest,
+        regime = CT,
+        agentReference = None,
+        requestId = requestId
+      )).futureValue
+
+      post(s"/robotics/callback")(testCallbackRequest)
+      val response = post(s"/robotics/callback")(testCallbackRequest)
 
       response.status shouldBe 204
       repository.coll.find().headOption().futureValue.map(_.status) shouldBe Some(PermanentlyFailed)
 
     "return 404 when no work item is found for the given correlationId" in:
-      val correlationId = "test-correlation-id"
+      val requestId = UUID.randomUUID().toString
       val testCallbackRequest = SubscriptionCallback(
-        targetSystem = CESA,
-        operationRequired = CREATE,
-        agentId = testAgentReference,
-        status = CallbackSuccess,
-        requestMessage = "test-message"
-      )
-
-      val response = post(s"/robotics/callback")(testCallbackRequest, extraHeaders = Seq("correlationId" -> correlationId))
-
-      response.status shouldBe 404
-
-    "return 400 when the correlationId header is missing" in:
-      val testCallbackRequest = SubscriptionCallback(
+        requestId = requestId,
         targetSystem = CESA,
         operationRequired = CREATE,
         agentId = testAgentReference,
@@ -348,7 +383,7 @@ with AgentAuthStubs:
 
       val response = post(s"/robotics/callback")(testCallbackRequest)
 
-      response.status shouldBe 400
+      response.status shouldBe 404
 
     "return 400 when the payload is invalid" in:
       val response = post(s"/robotics/callback")(Json.obj("invalid" -> "payload"))

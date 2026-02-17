@@ -18,11 +18,15 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
-import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.WorkItem
 
-import java.time.{Duration, Instant}
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import java.time.Duration
+import java.time.Instant
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 @Singleton
@@ -39,12 +43,17 @@ class PayeKnownFactsWorkItemService @Inject() (
       availableBefore = now
     )
 
-  def reschedule(workItem: WorkItem[SubscriptionWorkItem], retryInterval: FiniteDuration): Future[Boolean] =
+  def reschedule(
+    workItem: WorkItem[SubscriptionWorkItem],
+    retryInterval: FiniteDuration
+  ): Future[Boolean] =
     val nextRun = Instant.now().plus(Duration.ofMillis(retryInterval.toMillis))
-    repository.markAs(workItem.id, ProcessingStatus.Failed, Some(nextRun))
+    repository.markAs(
+      workItem.id,
+      ProcessingStatus.Failed,
+      Some(nextRun)
+    )
 
-  def complete(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] =
-    repository.complete(workItem.id, ProcessingStatus.Succeeded)
+  def complete(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] = repository.complete(workItem.id, ProcessingStatus.Succeeded)
 
-  def markManualIntervention(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] =
-    repository.complete(workItem.id, ProcessingStatus.PermanentlyFailed)
+  def markManualIntervention(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] = repository.complete(workItem.id, ProcessingStatus.PermanentlyFailed)

@@ -17,21 +17,26 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import org.bson.types.ObjectId
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.{verify, when}
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq as eqTo
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.when
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.CredId
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
-import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 
-class PayeKnownFactsWorkItemServiceSpec extends UnitSpec:
+class PayeKnownFactsWorkItemServiceSpec
+extends UnitSpec:
 
   private val repository = mock[SubscriptionWorkItemRepository]
   private val service = new PayeKnownFactsWorkItemService(repository)
@@ -57,15 +62,15 @@ class PayeKnownFactsWorkItemServiceSpec extends UnitSpec:
     availableAt = Instant.now(),
     status = ProcessingStatus.InProgress,
     failureCount = 0,
-      item = SubscriptionWorkItem(
-        arn = Arn("TARN0000001"),
-        subscriptionRequest = subscriptionRequest,
-        regime = LegacyRegime.PAYE,
-        agentReference = Some(AgentReference("A12345")),
+    item = SubscriptionWorkItem(
+      arn = Arn("TARN0000001"),
+      subscriptionRequest = subscriptionRequest,
+      regime = LegacyRegime.PAYE,
+      agentReference = Some(AgentReference("A12345")),
       groupId = Some(GroupId("ITEM-GROUP")),
       adminCredId = Some(CredId("ITEM-ADMIN"))
-      )
     )
+  )
 
   "PayeKnownFactsWorkItemService" should {
     "pull outstanding items for PAYE" in {
@@ -78,12 +83,20 @@ class PayeKnownFactsWorkItemServiceSpec extends UnitSpec:
     }
 
     "reschedule items by marking them failed with a next run time" in {
-      when(repository.markAs(eqTo(workItem.id), eqTo(ProcessingStatus.Failed), any[Option[Instant]]))
+      when(repository.markAs(
+        eqTo(workItem.id),
+        eqTo(ProcessingStatus.Failed),
+        any[Option[Instant]]
+      ))
         .thenReturn(Future.successful(true))
 
       service.reschedule(workItem, 10.seconds).futureValue
 
-      verify(repository).markAs(eqTo(workItem.id), eqTo(ProcessingStatus.Failed), any[Option[Instant]])
+      verify(repository).markAs(
+        eqTo(workItem.id),
+        eqTo(ProcessingStatus.Failed),
+        any[Option[Instant]]
+      )
     }
 
     "complete items by marking them succeeded" in {

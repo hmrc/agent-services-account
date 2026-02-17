@@ -80,14 +80,13 @@ extends Logging:
   }
 
   def handleRoboticsCallback(
-    callback: SubscriptionCallback,
-    correlationId: String
+    callback: SubscriptionCallback
   ): Future[Boolean] =
     callback.status match {
-      case CallbackSuccess => subscriptionWorkItemRepository.addAgentReference(callback.agentId, correlationId)
+      case CallbackSuccess => subscriptionWorkItemRepository.addAgentReference(callback.agentId, callback.requestId)
       case CallbackFailure =>
-        logger.error(s"[handleRoboticsCallback] Robotics callback for correlationId $correlationId returned failed status, reason: '${callback.requestMessage}', marking work item as permanently failed")
-        subscriptionWorkItemRepository.markAsPermanentlyFailed(correlationId)
+        logger.error(s"[handleRoboticsCallback] Robotics callback for requestId ${callback.requestId} returned failed status, reason: '${callback.requestMessage}', marking work item as permanently failed")
+        subscriptionWorkItemRepository.markAsPermanentlyFailed(callback.requestId)
     }
 
   def getSubscriptionInfo(
