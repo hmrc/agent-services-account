@@ -20,6 +20,7 @@ import play.api.Logging
 import uk.gov.hmrc.agentservicesaccount.config.PayeKnownFactsJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, SessionId}
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
@@ -61,7 +62,7 @@ class PayeKnownFactsWorker @Inject() (
             authorization = workItem.item.bearerToken.map(Authorization.apply),
             sessionId = workItem.item.sessionId.map(SessionId.apply)
           )
-          enrolmentStoreProxyConnector.queryKnownFactsForPayeAgent(agentReference.value).flatMap {
+          enrolmentStoreProxyConnector.queryKnownFactsForAgent(LegacyRegime.PAYE, agentReference.value).flatMap {
             case None =>
               logger.info(s"Paye known facts not available yet for work item: ${workItem.id}")
               handleFailure(workItem)
@@ -69,9 +70,10 @@ class PayeKnownFactsWorker @Inject() (
               (workItem.item.groupId, workItem.item.adminCredId) match
                 case (Some(groupId), Some(adminCredId)) =>
                   enrolmentStoreProxyConnector
-                    .allocatePayeAgentEnrolment(
+                    .allocateAgentEnrolment(
+                      regime = LegacyRegime.PAYE,
                       groupId = groupId,
-                      payeAgentRef = agentReference.value,
+                      agentReference = agentReference.value,
                       adminCredId = adminCredId
                     )
                     .flatMap { _ =>

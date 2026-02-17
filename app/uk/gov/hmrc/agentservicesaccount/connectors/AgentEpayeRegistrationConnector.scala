@@ -54,12 +54,11 @@ class AgentEpayeRegistrationConnector @Inject() (
         response.status match {
           case OK =>
             val json = response.json
-            (json \ "agentReference")
+            (json \ "payeAgentReference")
               .asOpt[AgentReference]
-              .orElse((json \ "payeAgentReference").asOpt[AgentReference])
               .getOrElse(
                 throw UpstreamErrorResponse(
-                  s"Agent reference missing in Agent Epaye Registration response: ${response.body}",
+                  s"Paye agent reference missing in Agent Epaye Registration response: ${response.body}",
                   response.status
                 )
               )

@@ -23,7 +23,7 @@ import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.PayeKnownFactsJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.agentservicesaccount.models.{Es20Enrolment, Es20Response}
+import uk.gov.hmrc.agentservicesaccount.models.{CredId, Es20Enrolment, Es20Response, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
@@ -66,8 +66,8 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
   private def buildWorkItem(
     failureCount: Int,
     agentReference: Option[AgentReference] = Some(AgentReference("A12345")),
-    groupId: Option[String] = Some("ITEM-GROUP"),
-    adminCredId: Option[String] = Some("ITEM-ADMIN")
+    groupId: Option[GroupId] = Some(GroupId("ITEM-GROUP")),
+    adminCredId: Option[CredId] = Some(CredId("ITEM-ADMIN"))
   ) =
     WorkItem(
       id = new ObjectId(),
@@ -115,7 +115,7 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
       when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
       when(connector.queryKnownFactsForPayeAgent(eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(Some(response)))
-      when(connector.allocatePayeAgentEnrolment(eqTo("ITEM-GROUP"), eqTo("A12345"), eqTo("ITEM-ADMIN"))(using any[HeaderCarrier]))
+      when(connector.allocatePayeAgentEnrolment(eqTo(GroupId("ITEM-GROUP")), eqTo("A12345"), eqTo(CredId("ITEM-ADMIN")))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
       when(workItemService.complete(workItem)).thenReturn(Future.successful(true))
 
@@ -161,7 +161,7 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
       worker.runOnce().futureValue
 
       verify(workItemService).markManualIntervention(workItem)
-      verify(connector, never()).allocatePayeAgentEnrolment(any[String], any[String], any[String])(using any[HeaderCarrier])
+      verify(connector, never()).allocatePayeAgentEnrolment(any[GroupId], any[String], any[CredId])(using any[HeaderCarrier])
     }
   }
   override def beforeEach(): Unit =

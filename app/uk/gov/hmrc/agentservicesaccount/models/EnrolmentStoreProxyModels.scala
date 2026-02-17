@@ -49,7 +49,8 @@ object Es20Response:
 
 final case class Es8Request(
   userId: String,
-  `type`: String
+  `type`: String,
+  action: String
 )
 
 object Es8Request:

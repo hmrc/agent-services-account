@@ -36,22 +36,6 @@ trait AgentEpayeRegistrationStubs:
         aResponse()
           .withStatus(200)
           .withBody(Json.obj(
-            "agentReference" -> agentReference
-          ).toString)
-      )
-  )
-
-  def givenEpayeRegisterCallSucceedsWithPayeReference(
-    request: PayeSubscriptionRequest
-  )(agentReference: AgentReference): Unit = stubFor(
-    post(urlEqualTo("/agent-epaye-registration/registrations"))
-      .withRequestBody(equalToJson(
-        Json.toJson(request)(PayeSubscriptionRequest.registerWrites).toString
-      ))
-      .willReturn(
-        aResponse()
-          .withStatus(200)
-          .withBody(Json.obj(
             "payeAgentReference" -> agentReference
           ).toString)
       )

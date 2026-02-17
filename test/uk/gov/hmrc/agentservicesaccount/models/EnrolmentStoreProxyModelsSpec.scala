@@ -73,10 +73,11 @@ class EnrolmentStoreProxyModelsSpec extends UnitSpec:
 
   "Es8Request" should {
     "round-trip to JSON with the expected type field" in {
-      val model = Es8Request("admin-cred", "principal")
+      val model = Es8Request("admin-cred", "principal", "enrolAndActivate")
       val json: JsValue = Json.toJson(model)
 
       (json \ "type").as[String] shouldBe "principal"
+      (json \ "action").as[String] shouldBe "enrolAndActivate"
       json.as[Es8Request] shouldBe model
     }
   }
