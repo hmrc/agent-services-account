@@ -29,6 +29,7 @@ import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.{CredId, Es20Request, Es20Response, Es8Request, EspKnownFact, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
@@ -71,10 +72,10 @@ class EnrolmentStoreProxyConnector @Inject() (
       }
   }
 
-  def queryKnownFactsForPayeAgent(payeAgentRef: String)(using HeaderCarrier): Future[Option[Es20Response]] = {
+  def queryKnownFactsForAgent(regime: LegacyRegime, agentReference: String)(using HeaderCarrier): Future[Option[Es20Response]] = {
     val request = Es20Request(
-      service = "IR-PAYE-AGENT",
-      knownFacts = Seq(EspKnownFact("IRAgentReference", payeAgentRef))
+      service = regime.enrolmentKey,
+      knownFacts = Seq(EspKnownFact(regime.agentReferenceKey, agentReference))
     )
 
     http
@@ -91,16 +92,17 @@ class EnrolmentStoreProxyConnector @Inject() (
       }
   }
 
-  def allocatePayeAgentEnrolment(
+  def allocateAgentEnrolment(
+    regime: LegacyRegime,
     groupId: GroupId,
-    payeAgentRef: String,
+    agentReference: String,
     adminCredId: CredId
   )(using HeaderCarrier): Future[Unit] = {
-    val enrolmentKey = s"IR-PAYE-AGENT~IRAgentReference~$payeAgentRef"
+    val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
 
     http
       .post(url"$baseUrl/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments/$enrolmentKey")
-      .withBody(Json.toJson(Es8Request(adminCredId.value, "principal")))
+      .withBody(Json.toJson(Es8Request(adminCredId.value, "principal", "enrolAndActivate")))
       .execute[HttpResponse]
       .map { response =>
         response.status match {

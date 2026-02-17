@@ -30,6 +30,13 @@ enum LegacyRegime:
       case CT => "IR-CT-AGENT"
     }
 
+  def agentReferenceKey: String =
+    this match {
+      case PAYE => "IRAgentReference"
+      case SA => "IRAgentReference"
+      case CT => "IRAgentReference"
+    }
+
   def mappingKey: String =
     this match {
       case PAYE => "paye"

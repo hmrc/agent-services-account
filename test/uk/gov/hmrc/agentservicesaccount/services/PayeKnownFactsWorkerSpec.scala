@@ -98,7 +98,7 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
     "reschedule when known facts are not yet available" in {
       val workItem = buildWorkItem(failureCount = 0)
       when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
-      when(connector.queryKnownFactsForPayeAgent(eqTo("A12345"))(using any[HeaderCarrier]))
+      when(connector.queryKnownFactsForAgent(eqTo(LegacyRegime.PAYE), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(None))
       when(workItemService.reschedule(workItem, jobConfig.retryInterval)).thenReturn(Future.successful(true))
 
@@ -113,9 +113,9 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
       val response = Es20Response("IR-PAYE-AGENT", Seq(Es20Enrolment(Nil, Nil)))
 
       when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
-      when(connector.queryKnownFactsForPayeAgent(eqTo("A12345"))(using any[HeaderCarrier]))
+      when(connector.queryKnownFactsForAgent(eqTo(LegacyRegime.PAYE), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(Some(response)))
-      when(connector.allocatePayeAgentEnrolment(eqTo(GroupId("ITEM-GROUP")), eqTo("A12345"), eqTo(CredId("ITEM-ADMIN")))(using any[HeaderCarrier]))
+      when(connector.allocateAgentEnrolment(eqTo(LegacyRegime.PAYE), eqTo(GroupId("ITEM-GROUP")), eqTo("A12345"), eqTo(CredId("ITEM-ADMIN")))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
       when(workItemService.complete(workItem)).thenReturn(Future.successful(true))
 
@@ -128,7 +128,7 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
     "mark for manual intervention once max attempts are reached" in {
       val workItem = buildWorkItem(failureCount = 2)
       when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
-      when(connector.queryKnownFactsForPayeAgent(eqTo("A12345"))(using any[HeaderCarrier]))
+      when(connector.queryKnownFactsForAgent(eqTo(LegacyRegime.PAYE), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(None))
       when(workItemService.markManualIntervention(workItem)).thenReturn(Future.successful(true))
 
@@ -154,14 +154,14 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
       val response = Es20Response("IR-PAYE-AGENT", Seq(Es20Enrolment(Nil, Nil)))
 
       when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
-      when(connector.queryKnownFactsForPayeAgent(eqTo("A12345"))(using any[HeaderCarrier]))
+      when(connector.queryKnownFactsForAgent(eqTo(LegacyRegime.PAYE), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(Some(response)))
       when(workItemService.markManualIntervention(workItem)).thenReturn(Future.successful(true))
 
       worker.runOnce().futureValue
 
       verify(workItemService).markManualIntervention(workItem)
-      verify(connector, never()).allocatePayeAgentEnrolment(any[GroupId], any[String], any[CredId])(using any[HeaderCarrier])
+      verify(connector, never()).allocateAgentEnrolment(any[LegacyRegime], any[GroupId], any[String], any[CredId])(using any[HeaderCarrier])
     }
   }
   override def beforeEach(): Unit =

@@ -70,25 +70,8 @@ class AuthActions @Inject() (val authConnector: AuthConnector, cc: ControllerCom
       }
   }
 
-  def authorisedWithArnAndGroupId[A](body: Request[AnyContent] => (Arn, GroupId) => Future[Result]): Action[AnyContent] = Action.async { implicit request =>
-    authorised(AuthProviders(GovernmentGateway))
-      .retrieve(allEnrolments and groupIdentifier) {
-        case enrol ~ Some(groupId) =>
-          getEnrolmentInfo(
-            enrol.enrolments,
-            "HMRC-AS-AGENT",
-            "AgentReferenceNumber"
-          ) match {
-            case Some(arn) => body(request)(Arn(arn), GroupId(groupId.toString))
-            case _ => Future.successful(NoPermission)
-          }
-      }
-      .recoverWith {
-        case ex: NoActiveSession =>
-          logger.warn("NoActiveSession", ex)
-          Future.successful(Unauthorized)
-      }
-  }
+  def authorisedWithArnAndGroupId[A](body: Request[AnyContent] => (Arn, GroupId) => Future[Result]): Action[AnyContent] =
+    authorisedWithArnAndCredId { request => arn => _ => groupId => body(request)(arn, groupId) }
 
   def authorisedWithArnAndCredId(body: AuthorisedRequestWithArnAndCredId): Action[AnyContent] = Action.async { implicit request =>
     authorised(AuthProviders(GovernmentGateway))
