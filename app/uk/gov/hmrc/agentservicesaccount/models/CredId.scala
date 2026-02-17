@@ -23,4 +23,4 @@ case class CredId(value: String)
 extends AnyVal
 
 object CredId:
-  implicit val format: Format[CredId] = Json.valueFormat[CredId]
+  given Format[CredId] = Json.valueFormat[CredId]

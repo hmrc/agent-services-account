@@ -30,7 +30,7 @@ class PayeKnownFactsScheduler @Inject() (
   jobConfig: PayeKnownFactsJobConfig,
   worker: PayeKnownFactsWorker,
   lifecycle: ApplicationLifecycle
-)(implicit
+)(using
   ec: ExecutionContext
 ) extends Logging:
 

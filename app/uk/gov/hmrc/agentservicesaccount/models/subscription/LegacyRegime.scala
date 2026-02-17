@@ -45,4 +45,4 @@ enum LegacyRegime:
     }
 
 object LegacyRegime:
-  implicit val format: Format[LegacyRegime] = EnumFormat.enumFormat
+  given Format[LegacyRegime] = EnumFormat.enumFormat

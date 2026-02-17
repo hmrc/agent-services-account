@@ -39,8 +39,8 @@ import uk.gov.hmrc.http.HttpReads.Implicits.*
 class EnrolmentStoreProxyConnector @Inject() (
   appConfig: AppConfig,
   http: HttpClientV2
-)(
-  implicit ec: ExecutionContext
+)(using
+  ec: ExecutionContext
 ):
 
   private val baseUrl: String = appConfig.enrolmentStoreProxyBaseUrl

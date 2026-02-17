@@ -33,7 +33,7 @@ class PayeKnownFactsWorker @Inject() (
   workItemService: PayeKnownFactsWorkItemService,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   jobConfig: PayeKnownFactsJobConfig
-)(implicit
+)(using
   ec: ExecutionContext
 ) extends Logging:
 

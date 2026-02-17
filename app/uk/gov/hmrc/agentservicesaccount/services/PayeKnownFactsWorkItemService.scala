@@ -28,7 +28,7 @@ import scala.concurrent.duration.FiniteDuration
 @Singleton
 class PayeKnownFactsWorkItemService @Inject() (
   repository: SubscriptionWorkItemRepository
-)(implicit
+)(using
   ec: ExecutionContext
 ):
 
