@@ -20,30 +20,22 @@ import play.api.Logging
 import play.api.mvc.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.controllers.ErrorResults.NoPermission
+import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.affinityGroup
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.allEnrolments
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.credentials
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.groupIdentifier
-import uk.gov.hmrc.auth.core.retrieve.Credentials
-import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{affinityGroup, allEnrolments, credentials, groupIdentifier}
+import uk.gov.hmrc.auth.core.retrieve.{Credentials, ~}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import javax.inject.Inject
-import javax.inject.Singleton
+import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.{Inject, Singleton}
 
 @Singleton
-class AuthActions @Inject() (
-  val authConnector: AuthConnector,
-  cc: ControllerComponents
-)(implicit ec: ExecutionContext)
-extends BackendController(cc)
-with AuthorisedFunctions
-with Logging {
+class AuthActions @Inject() (val authConnector: AuthConnector, cc: ControllerComponents)(implicit ec: ExecutionContext)
+  extends BackendController(cc)
+    with AuthorisedFunctions
+    with Logging {
 
   private def getEnrolmentInfo(
     enrolment: Set[Enrolment],
@@ -56,7 +48,10 @@ with Logging {
     strideRoles: Seq[String]
   ): Boolean = strideRoles.exists(s => enrolments.enrolments.exists(_.key == s))
 
-  def authorisedWithArn(body: Request[AnyContent] => Arn => Future[Result]): Action[AnyContent] = Action.async { implicit request =>
+  private type AuthorisedRequestWithArn = Request[AnyContent] => Arn => Future[Result]
+  private type AuthorisedRequestWithArnAndCredId = Request[AnyContent] => Arn => CredId => GroupId => Future[Result]
+
+  def authorisedWithArn(body: AuthorisedRequestWithArn): Action[AnyContent] = Action.async { implicit request =>
     authorised(AuthProviders(GovernmentGateway))
       .retrieve(allEnrolments) { enrol =>
         getEnrolmentInfo(
@@ -75,18 +70,24 @@ with Logging {
       }
   }
 
-  def authorisedWithArnAndGroupId[A](body: Request[AnyContent] => (Arn, GroupId) => Future[Result]): Action[AnyContent] = Action.async { implicit request =>
+  def authorisedWithArnAndGroupId[A](body: Request[AnyContent] => (Arn, GroupId) => Future[Result]): Action[AnyContent] =
+    authorisedWithArnAndCredId { request => arn => _ => groupId => body(request)(arn, groupId) }
+
+  def authorisedWithArnAndCredId(body: AuthorisedRequestWithArnAndCredId): Action[AnyContent] = Action.async { implicit request =>
     authorised(AuthProviders(GovernmentGateway))
-      .retrieve(allEnrolments and groupIdentifier) {
-        case enrol ~ Some(groupId) =>
-          getEnrolmentInfo(
+      .retrieve(allEnrolments.and(credentials).and(groupIdentifier)) {
+        case enrol ~ optCreds ~ optGroupId =>
+          val arnOpt = getEnrolmentInfo(
             enrol.enrolments,
             "HMRC-AS-AGENT",
             "AgentReferenceNumber"
-          ) match {
-            case Some(arn) => body(request)(Arn(arn), GroupId(groupId))
+          )
+          val credIdOpt = optCreds.map(creds => CredId(creds.providerId))
+          val groupIdOpt = optGroupId.map(id => GroupId(id.toString))
+
+          (arnOpt, credIdOpt, groupIdOpt) match
+            case (Some(arn), Some(credId), Some(groupId)) => body(request)(Arn(arn))(credId)(groupId)
             case _ => Future.successful(NoPermission)
-          }
       }
       .recoverWith {
         case ex: NoActiveSession =>

@@ -52,7 +52,16 @@ class AgentEpayeRegistrationConnector @Inject() (
       .execute[HttpResponse]
       .map { response =>
         response.status match {
-          case OK => (response.json \ "agentReference").as[AgentReference]
+          case OK =>
+            val json = response.json
+            (json \ "payeAgentReference")
+              .asOpt[AgentReference]
+              .getOrElse(
+                throw UpstreamErrorResponse(
+                  s"Paye agent reference missing in Agent Epaye Registration response: ${response.body}",
+                  response.status
+                )
+              )
           case status =>
             throw UpstreamErrorResponse(
               s"Unexpected response from Agent Epaye Registration: ${response.body}",

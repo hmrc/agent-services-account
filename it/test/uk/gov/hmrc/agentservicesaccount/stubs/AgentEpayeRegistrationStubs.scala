@@ -36,7 +36,7 @@ trait AgentEpayeRegistrationStubs:
         aResponse()
           .withStatus(200)
           .withBody(Json.obj(
-            "agentReference" -> agentReference
+            "payeAgentReference" -> agentReference
           ).toString)
       )
   )
