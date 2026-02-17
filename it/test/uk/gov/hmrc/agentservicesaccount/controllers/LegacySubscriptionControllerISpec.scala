@@ -96,7 +96,7 @@ with AgentAuthStubs:
         subscriptionRequest = testPayeSubscriptionRequest,
         regime = PAYE,
         agentReference = Some(testAgentReference),
-        groupId = Some(GroupId("test-group-id")),
+        groupId = Some(testGroupId),
         adminCredId = Some(CredId("test-cred-id")),
         sessionId = None,
         bearerToken = None

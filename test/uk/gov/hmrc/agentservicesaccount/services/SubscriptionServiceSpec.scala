@@ -25,7 +25,10 @@ import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.connectors.AgentMappingConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
+import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
@@ -43,8 +46,8 @@ class SubscriptionServiceSpec
     with BeforeAndAfterEach {
 
   private val testArn = Arn("AARN0000001")
-  private val testGroupId = "test-group-id"
-  private val testAdminCredId = "test-cred-id"
+  private val testGroupId = GroupId("test-group-id")
+  private val testAdminCredId = CredId("test-cred-id")
   private val testAgentRef = AgentReference("AB1234")
   private val subscriptionRequest = PayeSubscriptionRequest(
     agentName = "Test Agency",
@@ -81,7 +84,9 @@ class SubscriptionServiceSpec
     "capture session and bearer when stubs compatibility mode is enabled" in {
       val connector = mock[AgentEpayeRegistrationConnector]
       val appConfig = mock[AppConfig]
-      val service = new SubscriptionService(connector, repository, appConfig)
+      val espConnector = mock[EnrolmentStoreProxyConnector]
+      val agentMappingConnector = mock[AgentMappingConnector]
+      val service = new SubscriptionService(connector, repository, espConnector, agentMappingConnector, appConfig)
 
       when(appConfig.stubsCompatibilityMode).thenReturn(true)
       when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
@@ -97,7 +102,9 @@ class SubscriptionServiceSpec
     "omit session and bearer when stubs compatibility mode is disabled" in {
       val connector = mock[AgentEpayeRegistrationConnector]
       val appConfig = mock[AppConfig]
-      val service = new SubscriptionService(connector, repository, appConfig)
+      val espConnector = mock[EnrolmentStoreProxyConnector]
+      val agentMappingConnector = mock[AgentMappingConnector]
+      val service = new SubscriptionService(connector, repository, espConnector, agentMappingConnector, appConfig)
 
       when(appConfig.stubsCompatibilityMode).thenReturn(false)
       when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))

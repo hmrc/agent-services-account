@@ -20,6 +20,7 @@ import org.bson.types.ObjectId
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.{verify, when}
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
@@ -56,15 +57,15 @@ class PayeKnownFactsWorkItemServiceSpec extends UnitSpec:
     availableAt = Instant.now(),
     status = ProcessingStatus.InProgress,
     failureCount = 0,
-    item = SubscriptionWorkItem(
-      arn = Arn("TARN0000001"),
-      subscriptionRequest = subscriptionRequest,
-      regime = LegacyRegime.PAYE,
-      agentReference = Some(AgentReference("A12345")),
-      groupId = Some("ITEM-GROUP"),
-      adminCredId = Some("ITEM-ADMIN")
+      item = SubscriptionWorkItem(
+        arn = Arn("TARN0000001"),
+        subscriptionRequest = subscriptionRequest,
+        regime = LegacyRegime.PAYE,
+        agentReference = Some(AgentReference("A12345")),
+      groupId = Some(GroupId("ITEM-GROUP")),
+      adminCredId = Some(CredId("ITEM-ADMIN"))
+      )
     )
-  )
 
   "PayeKnownFactsWorkItemService" should {
     "pull outstanding items for PAYE" in {

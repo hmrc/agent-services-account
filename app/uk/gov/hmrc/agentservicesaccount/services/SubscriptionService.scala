@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentMappingConnector
+import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
@@ -52,8 +53,8 @@ extends Logging:
   def startPayeSubscription(
     arn: Arn,
     subscriptionRequest: PayeSubscriptionRequest,
-    adminCredId: String,
-    groupId: String
+    adminCredId: CredId,
+    groupId: GroupId
   )(using request: RequestHeader): Future[Done] = agentEpayeRegistrationConnector.register(subscriptionRequest).flatMap { agentReference =>
     // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
     val (optSessionId, optBearerToken) =

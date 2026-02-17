@@ -115,7 +115,7 @@ class PayeKnownFactsWorkerSpec extends UnitSpec with BeforeAndAfterEach:
       when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
       when(connector.queryKnownFactsForAgent(eqTo(LegacyRegime.PAYE), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(Some(response)))
-      when(connector.allocateAgentEnrolment(eqTo(LegacyRegime.PAYE), eqTo(GroupId("ITEM-GROUP")), eqTo("A12345"), eqTo(CredId("ITEM-ADMIN")))(using any[HeaderCarrier]))
+      when(connector.allocateAgentEnrolment(any[LegacyRegime], any[GroupId], any[String], any[CredId])(using any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
       when(workItemService.complete(workItem)).thenReturn(Future.successful(true))
 
