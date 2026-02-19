@@ -28,11 +28,14 @@ import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentMappingConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.CredId
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
-import uk.gov.hmrc.crypto.{Decrypter, Encrypter, SymmetricCryptoFactory}
+import uk.gov.hmrc.crypto.Decrypter
+import uk.gov.hmrc.crypto.Encrypter
+import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 import scala.concurrent.ExecutionContext
@@ -40,10 +43,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class SubscriptionServiceSpec
-  extends UnitSpec
-    with IntegrationPatience
-    with CleanMongoCollectionSupport
-    with BeforeAndAfterEach {
+extends UnitSpec
+with IntegrationPatience
+with CleanMongoCollectionSupport
+with BeforeAndAfterEach {
 
   private val testArn = Arn("AARN0000001")
   private val testGroupId = GroupId("test-group-id")
@@ -86,12 +89,24 @@ class SubscriptionServiceSpec
       val appConfig = mock[AppConfig]
       val espConnector = mock[EnrolmentStoreProxyConnector]
       val agentMappingConnector = mock[AgentMappingConnector]
-      val service = new SubscriptionService(connector, repository, espConnector, agentMappingConnector, appConfig)
+      val service =
+        new SubscriptionService(
+          connector,
+          repository,
+          espConnector,
+          agentMappingConnector,
+          appConfig
+        )
 
       when(appConfig.stubsCompatibilityMode).thenReturn(true)
       when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
 
-      service.startPayeSubscription(testArn, subscriptionRequest, testAdminCredId, testGroupId)(using testRequest).futureValue
+      service.startPayeSubscription(
+        testArn,
+        subscriptionRequest,
+        testAdminCredId,
+        testGroupId
+      )(using testRequest).futureValue
 
       val item = repository.coll.find().first().toFuture().futureValue.item
 
@@ -104,12 +119,24 @@ class SubscriptionServiceSpec
       val appConfig = mock[AppConfig]
       val espConnector = mock[EnrolmentStoreProxyConnector]
       val agentMappingConnector = mock[AgentMappingConnector]
-      val service = new SubscriptionService(connector, repository, espConnector, agentMappingConnector, appConfig)
+      val service =
+        new SubscriptionService(
+          connector,
+          repository,
+          espConnector,
+          agentMappingConnector,
+          appConfig
+        )
 
       when(appConfig.stubsCompatibilityMode).thenReturn(false)
       when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
 
-      service.startPayeSubscription(testArn, subscriptionRequest, testAdminCredId, testGroupId)(using testRequest).futureValue
+      service.startPayeSubscription(
+        testArn,
+        subscriptionRequest,
+        testAdminCredId,
+        testGroupId
+      )(using testRequest).futureValue
 
       val item = repository.coll.find().first().toFuture().futureValue.item
 
@@ -117,4 +144,5 @@ class SubscriptionServiceSpec
       item.bearerToken shouldBe None
     }
   }
+
 }

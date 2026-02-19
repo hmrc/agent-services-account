@@ -16,17 +16,19 @@
 
 package uk.gov.hmrc.agentservicesaccount.modules
 
-import com.google.inject.{AbstractModule, Provides}
-import uk.gov.hmrc.agentservicesaccount.config.{AppConfig, PayeKnownFactsJobConfig}
+import com.google.inject.AbstractModule
+import com.google.inject.Provides
+import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.config.PayeKnownFactsJobConfig
 import uk.gov.hmrc.agentservicesaccount.services.PayeKnownFactsScheduler
 
 import javax.inject.Singleton
 
-class PayeKnownFactsModule extends AbstractModule:
-  override def configure(): Unit =
-    bind(classOf[PayeKnownFactsScheduler]).asEagerSingleton()
+class PayeKnownFactsModule
+extends AbstractModule:
+
+  override def configure(): Unit = bind(classOf[PayeKnownFactsScheduler]).asEagerSingleton()
 
   @Provides
   @Singleton
-  def providePayeKnownFactsJobConfig(appConfig: AppConfig): PayeKnownFactsJobConfig =
-    appConfig.payeKnownFactsJobConfig
+  def providePayeKnownFactsJobConfig(appConfig: AppConfig): PayeKnownFactsJobConfig = appConfig.payeKnownFactsJobConfig

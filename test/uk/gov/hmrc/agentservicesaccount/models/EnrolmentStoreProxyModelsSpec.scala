@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.agentservicesaccount.models
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class EnrolmentStoreProxyModelsSpec extends UnitSpec:
+class EnrolmentStoreProxyModelsSpec
+extends UnitSpec:
 
   "EspKnownFact" should {
     "round-trip to JSON" in {
@@ -73,7 +75,11 @@ class EnrolmentStoreProxyModelsSpec extends UnitSpec:
 
   "Es8Request" should {
     "round-trip to JSON with the expected type field" in {
-      val model = Es8Request("admin-cred", "principal", "enrolAndActivate")
+      val model = Es8Request(
+        "admin-cred",
+        "principal",
+        "enrolAndActivate"
+      )
       val json: JsValue = Json.toJson(model)
 
       (json \ "type").as[String] shouldBe "principal"

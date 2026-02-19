@@ -16,9 +16,22 @@
 
 package uk.gov.hmrc.agentservicesaccount.models
 
-import play.api.libs.json.{Format, Json, OFormat}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
-final case class EspKnownFact(key: String, value: String)
+final case class Enrolment(
+  service: String,
+  state: String
+)
+
+object Enrolment:
+  given OFormat[Enrolment] = Json.format[Enrolment]
+
+final case class EspKnownFact(
+  key: String,
+  value: String
+)
 
 object EspKnownFact:
   given OFormat[EspKnownFact] = Json.format[EspKnownFact]

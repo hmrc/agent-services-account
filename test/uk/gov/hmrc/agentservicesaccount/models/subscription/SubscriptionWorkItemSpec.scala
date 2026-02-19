@@ -55,6 +55,7 @@ extends UnitSpec:
     subscriptionRequest = testPayeSubscriptionRequest,
     regime = PAYE,
     agentReference = Some(testAgentReference),
+    requestId = "test-request-id",
     sessionId = Some("session-123"),
     bearerToken = Some("Bearer test-token")
   )
@@ -63,6 +64,7 @@ extends UnitSpec:
     "regime" -> "PAYE",
     "subscriptionRequest" -> "ibsRj/PwmBC+hnfD9XV14cpuk54MycnM5XHDSM+le0djqElGr3QtFK55VTegWQwOJXPlMHboVOm1zH0d0ZwaXUruPggPZCd7D6PcoLEYZf49TBIder8kSx7zasPZYcCOwHcdZX3k77tdEInV/Iyx/6LYP3IRvGI7DVm8MpvgKujabKcRTQSWh6beCsXGzzutoFGI2FUtHQS1GWhJbj17IfgXRwnDCgY+r5NsnxEIJpTQB/awiVs3UeLKXLWuHBPeK3SbTSDL5P7/JQSU6ZKLua2ZfyhkG7Z74Fn2RN984DI=",
     "agentReference" -> "AB1234",
+    "requestId" -> "test-request-id",
     "sessionId" -> "session-123",
     "bearerToken" -> "Bearer test-token"
   )

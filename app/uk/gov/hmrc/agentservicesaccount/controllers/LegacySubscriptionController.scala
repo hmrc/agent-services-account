@@ -46,7 +46,12 @@ with Logging:
     implicit request => arn => adminCredId => groupId =>
       request.body.asJson.map(_.validate[SubscriptionRequest](SubscriptionRequest.reads(regime))) match {
         case Some(JsSuccess(request: PayeSubscriptionRequest, _)) =>
-          legacySubscriptionService.startPayeSubscription(arn, request, adminCredId, groupId).map(_ => Ok)
+          legacySubscriptionService.startPayeSubscription(
+            arn,
+            request,
+            adminCredId,
+            groupId
+          ).map(_ => Ok)
         case Some(JsSuccess(request: SaSubscriptionRequest, _)) => Future.successful(NotImplemented)
         case Some(JsSuccess(request: CtSubscriptionRequest, _)) => Future.successful(NotImplemented)
         case Some(JsError(errors)) => Future.successful(BadRequest(s"Invalid subscription request, reason: $errors"))
@@ -65,20 +70,11 @@ with Logging:
 
   def roboticsCallback(): Action[SubscriptionCallback] =
     Action.async(parse.json[SubscriptionCallback]) { implicit request =>
-      val correlationId = request.headers.get("correlationId")
-
-      correlationId match {
-        case Some(id) =>
-          legacySubscriptionService.handleRoboticsCallback(request.body, id).map {
-            case true => NoContent
-            case false =>
-              val msg = s"Did not find a work item with correlationId: $id"
-              logger.error(s"[roboticsCallback] $msg")
-              NotFound(msg)
-          }
-        case None =>
-          val msg = "Missing correlationId header in robotics callback request"
+      legacySubscriptionService.handleRoboticsCallback(request.body).map {
+        case true => NoContent
+        case false =>
+          val msg = s"Did not find a work item with requestId: ${request.body.requestId}"
           logger.error(s"[roboticsCallback] $msg")
-          Future.successful(BadRequest(msg))
+          NotFound(msg)
       }
     }
