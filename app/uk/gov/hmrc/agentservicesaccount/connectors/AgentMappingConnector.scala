@@ -70,6 +70,12 @@ extends Logging:
       }
     }
 
+  def performAutoMapping(arn: Arn)(using rh: RequestHeader): Future[Unit] = httpClient
+    .put(url"${appConfig.agentMappingBaseUrl}/agent-mapping/mappings/auto-map/arn/${arn.value}")
+    .execute[HttpResponse]
+    .map(_ => ())
+    .recover { case _ => () }
+
 object MappingConnector:
 
   case class Mappings(mappings: Seq[Mapping])

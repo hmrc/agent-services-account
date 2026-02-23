@@ -42,6 +42,7 @@ class AppConfig @Inject() (
   val desAuthToken: String = servicesConfig.getString("microservice.services.des.authorization-token")
   val desEnv: String = servicesConfig.getString("microservice.services.des.environment")
 
+  val automapLockExpires: Duration = servicesConfig.getDuration("agent.automap.lock.expires")
   val entityChecksLockExpires: Duration = servicesConfig.getDuration("agent.entity-check.lock.expires")
   val entityChecksEmailLockExpires: Duration = servicesConfig.getDuration("agent.entity-check.email.lock.expires")
   val emailBaseUrl: String = baseUrl("email")

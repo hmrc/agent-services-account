@@ -25,9 +25,8 @@ import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.*
 import uk.gov.hmrc.agentservicesaccount.mocks.*
 import uk.gov.hmrc.agentservicesaccount.models.UtrChecksResponse
 import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException.EntityDeceasedCheckFailed
+import uk.gov.hmrc.agentservicesaccount.models.agententity.{EntityCheckException, EntityCheckResult}
 import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException.AgentIsOnRefuseToDealList
-import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckException
-import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckResult
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
@@ -44,6 +43,7 @@ with MockCitizenDetailsConnector
 with MockAppConfig
 with MockEmailService
 with MockAgentAssuranceConnector
+with MockAgentMappingConnector
 with MockAuditService
 with IntegrationPatience {
 
@@ -59,6 +59,7 @@ with IntegrationPatience {
       mockDesConnector,
       mockCitizenDetailsConnector,
       mockAgentAssuranceConnector,
+      mockAgentMappingConnector,
       mongoLockService,
       mockEmailService,
       mockAuditService

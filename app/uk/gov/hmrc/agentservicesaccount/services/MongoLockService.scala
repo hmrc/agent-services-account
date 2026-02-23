@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentmtdidentifiers.model.Utr
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.lock.TimePeriodLockService
 
@@ -46,6 +46,15 @@ class MongoLockService @Inject() (mongoLockRepository: MongoLockRepository)(impl
       mongoLockRepository,
       lockId = s"verify-utr-email-${utr.value}",
       ttl = appConfig.entityChecksEmailLockExpires
+    )
+    lockService.withRenewedLock(body)
+  }
+
+  def automapLock[T](arn: Arn)(body: => Future[T]): Future[Option[T]] = {
+    val lockService = TimePeriodLockService(
+      mongoLockRepository,
+      lockId = s"arn-automap-${arn.value}",
+      ttl = appConfig.automapLockExpires
     )
     lockService.withRenewedLock(body)
   }

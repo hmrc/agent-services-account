@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 
 import play.api.http.Status.*
 import play.api.libs.json.*
-import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
@@ -36,6 +35,7 @@ import scala.util.Try
 class AgentDetailsControllerISpec
 extends ComponentSpecHelper
 with AgentAuthStubs
+with AgentMappingStubs
 with DesStubs
 with InternalAuthStub
 with CitizenDetailsStubs
@@ -43,6 +43,10 @@ with AgentAssuranceStubs
 with DmsSubmissionStubs
 with EmailStub {
 
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    wireMockServer.resetRequests()
+  }
   override def extraConfig: Map[String, Any] = Map(
     "auditing.enabled" -> false,
     "stride.roles.agent-services-account" -> "maintain_agent_manually_assure",
@@ -51,6 +55,7 @@ with EmailStub {
     "agent.entity.cache.enabled" -> false, // test are not ready for cache enabled
     "agent.entity.cache.expires" -> "1 seconds",
     "agent.entity-check.lock.expires" -> "1 seconds",
+    "agent.automap.lock.expires" -> "1 seconds",
     "agent.entity-check.email.lock.expires" -> "1 seconds"
   )
 
@@ -152,6 +157,59 @@ with EmailStub {
 
     }
 
+    "trigger auto-mapping when agent record is fetched" in {
+      retry(5) {
+        givenAutoMappingCallSucceeds(testArn)
+        stubInternalAuthorised()
+        givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
+        givenCitizenIsAlive(testSaUtr)
+        givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
+
+        val response: WSResponse = get(clientUrl(testArn))
+
+        response.json shouldBe expectedAgentRecordJson(
+          Some(testUtr),
+          suspensionStatus = true,
+          isAnIndividual = true
+        )
+        response.status shouldBe OK
+        verifyAutoMappingCallWasMade(testArn, times=1)
+      }
+    }
+
+    "NOT trigger auto-mapping again within lock TTL" in {
+      retry(5) {
+        stubInternalAuthorised()
+        givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
+        givenCitizenIsAlive(testSaUtr)
+        givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
+
+        givenAutoMappingCallSucceeds(testArn)
+
+        get(clientUrl(testArn)).status shouldBe OK
+        get(clientUrl(testArn)).status shouldBe OK
+
+        verifyAutoMappingCallWasMade(testArn, times = 1)
+      }
+    }
+
+    "trigger auto-mapping again after lock TTL expires" in {
+      retry(5) {
+        stubInternalAuthorised()
+        givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
+        givenCitizenIsAlive(testSaUtr)
+        givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
+
+        givenAutoMappingCallSucceeds(testArn)
+
+        get(clientUrl(testArn)).status shouldBe OK
+        Thread.sleep(1500)
+        get(clientUrl(testArn)).status shouldBe OK
+
+        verifyAutoMappingCallWasMade(testArn, times = 2)
+      }
+    }
+
     "return suspension details and send email for deceased" in {
       retry(5) {
         stubInternalAuthorised()
@@ -210,6 +268,7 @@ with EmailStub {
 
   "GET agent /agent-services-account/agent-record-with-checks" should {
     "return agentRecord and DO NOT send out email when isRefusalToDealWith is false" in {
+      givenAutoMappingCallSucceeds(testArn2)
       isLoggedInAsASAgent(testArn2)
       givenDESGetAgentRecord(testArn2, Some(testUtr1))
       givenCitizenIsAlive(testSaUtr1)
@@ -225,6 +284,37 @@ with EmailStub {
       )
 
       verifyEmailRequestWasSent(0)
+    }
+
+    "NOT trigger auto-mapping again within lock TTL even if multiple requests are made" in {
+      retry(5) {
+        isLoggedInAsASAgent(testArn2)
+        givenDESGetAgentRecord(testArn2, Some(testUtr1))
+        givenCitizenIsAlive(testSaUtr1)
+        givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr1)
+        givenAutoMappingCallSucceeds(testArn2)
+
+        get(agentUrl).status shouldBe OK
+        get(agentUrl).status shouldBe OK
+
+        verifyAutoMappingCallWasMade(testArn2, times = 1)
+      }
+    }
+
+    "trigger auto-mapping again after lock TTL expires" in {
+      retry(5) {
+        isLoggedInAsASAgent(testArn2)
+        givenDESGetAgentRecord(testArn2, Some(testUtr1))
+        givenCitizenIsAlive(testSaUtr1)
+        givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr1)
+        givenAutoMappingCallSucceeds(testArn2)
+
+        get(agentUrl).status shouldBe OK
+        Thread.sleep(1500)
+        get(agentUrl).status shouldBe OK
+
+        verifyAutoMappingCallWasMade(testArn2, times = 2)
+      }
     }
 
     "after lock expire return agent record and and send out email if agent is on refusalToDealWith" in {
