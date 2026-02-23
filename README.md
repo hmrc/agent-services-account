@@ -18,7 +18,7 @@ This service is tested by the following automated test repositories:
 
     sm2 --start AGENT_ONBOARDING
     sm2 --stop AGENT_SUBSCRIPTION
-    sbt run
+    sbt -Dwork-item-jobs.sa-robotics.enabled=true run
 
 ## Endpoints
 

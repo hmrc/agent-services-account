@@ -112,9 +112,11 @@ with AgentAuthStubs:
     "return 501 for SA regime" in:
       isLoggedInAsASAgent(testArn)
 
+      givenEs3CallSucceeds(testGroupId)()
       val response = post(s"/legacy-subscription-request/$SA")(testSaSubscriptionRequest)
 
-      response.status shouldBe 501
+      response.status shouldBe 200
+      repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(SA)
 
     "return 501 for CT regime" in:
       isLoggedInAsASAgent(testArn)
@@ -167,7 +169,7 @@ with AgentAuthStubs:
         )
       )
 
-    "return 200 with the correct information for a work item in an unexpected state" in:
+    "return 200 with the correct information for a deferred work item" in:
       isLoggedInAsASAgent(testArn)
 
       val model =
@@ -186,7 +188,7 @@ with AgentAuthStubs:
       response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
         SubscriptionInfo(
           regime = SA,
-          subscriptionStatus = SubscriptionStatus.InvalidStatus
+          subscriptionStatus = SubscriptionStatus.SubscriptionInProgress
         )
       )
 

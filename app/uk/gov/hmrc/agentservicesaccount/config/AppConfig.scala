@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentservicesaccount.config
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.duration.*
 
 import play.api.Configuration
@@ -50,6 +49,7 @@ class AppConfig @Inject() (
   val agentMaintainerEmail: String = config.get[String]("agent-maintainer-email")
   val agentEpayeRegistrationBaseUrl: String = baseUrl("agent-epaye-registration")
   val agentMappingBaseUrl: String = baseUrl("agent-mapping")
+  val roboticsBaseUrl: String = baseUrl("robotics")
 
   val internalAuthBaseUrl: String = servicesConfig.baseUrl("internal-auth")
   val internalAuthToken: String = servicesConfig.getString("internal-auth.token")
@@ -78,6 +78,14 @@ class AppConfig @Inject() (
       interval = config.get[Duration](s"$prefix.interval").toMillis.millis,
       retryInterval = config.get[Duration](s"$prefix.retry-interval").toMillis.millis,
       maxAttempts = config.get[Int](s"$prefix.max-attempts")
+    )
+
+  val saRoboticsJobConfig: RoboticsJobConfig =
+    val prefix = "work-item-jobs.sa-robotics"
+    RoboticsJobConfig(
+      enabled = config.get[Boolean](s"$prefix.enabled"),
+      initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
+      interval = config.get[Duration](s"$prefix.interval").toMillis.millis
     )
 
   private def baseUrl(key: String) = servicesConfig.baseUrl(key)

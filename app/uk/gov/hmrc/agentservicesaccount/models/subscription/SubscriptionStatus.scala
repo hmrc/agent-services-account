@@ -26,11 +26,11 @@ enum SubscriptionStatus:
 
 object SubscriptionStatus:
 
-  implicit val format: Format[SubscriptionStatus] = EnumFormat.enumFormat
+  given Format[SubscriptionStatus] = EnumFormat.enumFormat
 
   def fromProcessingStatus(processingStatus: ProcessingStatus): SubscriptionStatus =
     processingStatus match {
-      case ToDo | InProgress | Failed => SubscriptionInProgress // Failed included as that status implies it is retryable
+      case ToDo | InProgress | Failed | Deferred => SubscriptionInProgress // Failed/Deferred included as those imply retryable
       case PermanentlyFailed => SubscriptionFailed
       case _ => InvalidStatus // Other status types should never be set and completion should remove the work item
     }
