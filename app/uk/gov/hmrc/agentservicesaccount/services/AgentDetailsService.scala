@@ -17,9 +17,7 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentservicesaccount.connectors.AgentAssuranceConnector
-import uk.gov.hmrc.agentservicesaccount.connectors.CitizenDetailsConnector
-import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.{AgentAssuranceConnector, AgentMappingConnector, CitizenDetailsConnector, DesConnector}
 import uk.gov.hmrc.agentservicesaccount.models.agententity.EmailCheckExceptions
 import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckException
 import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckResult
@@ -47,6 +45,7 @@ class AgentDetailsService @Inject() (
   desConnector: DesConnector,
   citizenConnector: CitizenDetailsConnector,
   agentAssuranceConnector: AgentAssuranceConnector,
+  agentMappingConnector: AgentMappingConnector,
   mongoLockService: MongoLockService,
   emailService: EmailService,
   auditService: AuditService
@@ -58,6 +57,11 @@ class AgentDetailsService @Inject() (
 
     for {
       agentRecord <- desConnector.getAgentRecord(arn)
+
+      _ = mongoLockService.automapLock(arn) {
+        agentMappingConnector.performAutoMapping(arn)
+      }
+
       entityChecksResult <- agentRecord.uniqueTaxReference
         .map(getEntityChecks(
           arn,

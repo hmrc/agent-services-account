@@ -79,6 +79,9 @@ extends MockitoSugar { this: TestSuite =>
   when(mockServiceConfig.getString(meq("microservice.services.des.environment")))
     .thenReturn("test-env")
 
+  when(mockServiceConfig.getDuration(meq("agent.automap.lock.expires")))
+    .thenReturn(1.second)
+  
   // Stub ServicesConfig - getBoolean
   when(mockServiceConfig.getBoolean(meq("internal-auth-token-enabled-on-start")))
     .thenReturn(false)

@@ -55,3 +55,16 @@ trait AgentMappingStubs:
           .withStatus(500)
       )
   )
+
+  def givenAutoMappingCallSucceeds(arn: Arn): Unit = {
+    stubFor(
+      put(urlEqualTo(s"/agent-mapping/mappings/auto-map/arn/${arn.value}"))
+        .willReturn(
+          aResponse().withStatus(201)
+        )
+    )
+  }
+
+  def verifyAutoMappingCallWasMade(arn: Arn, times: Int): Unit = {
+    verify(times, putRequestedFor(urlPathEqualTo(s"/agent-mapping/mappings/auto-map/arn/${arn.value}")))
+  }
