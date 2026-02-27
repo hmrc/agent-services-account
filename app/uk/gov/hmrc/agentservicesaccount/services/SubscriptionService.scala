@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
+import com.mongodb.MongoBulkWriteException
+import com.mongodb.MongoCommandException
+import com.mongodb.MongoWriteException
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -39,6 +42,11 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.S
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.SubscriptionOnAgency
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
+import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
+
+import scala.jdk.CollectionConverters.*
+import scala.util.control.NonFatal
 
 @Singleton
 class SubscriptionService @Inject() (
@@ -47,8 +55,22 @@ class SubscriptionService @Inject() (
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   agentMappingConnector: AgentMappingConnector,
   appConfig: AppConfig
-)(implicit ec: ExecutionContext)
+)(using ec: ExecutionContext)
 extends Logging:
+
+  private def maybeCaptureStubHeaders()(using request: RequestHeader): (Option[String], Option[String]) =
+    if (appConfig.stubsCompatibilityMode)
+      (RequestSupport.hc.sessionId.map(_.value), RequestSupport.hc.authorization.map(_.value))
+    else
+      (None, None)
+
+  private def isDuplicateKeyException(error: Throwable): Boolean =
+    error match
+      case e: MongoWriteException => e.getError.getCode == 11000 || e.getError.getMessage.contains("E11000")
+      case e: MongoBulkWriteException =>
+        e.getWriteErrors.asScala.exists(we => we.getCode == 11000 || we.getMessage.contains("E11000"))
+      case e: MongoCommandException => e.getErrorCode == 11000 || e.getErrorMessage.contains("E11000")
+      case e => Option(e.getMessage).exists(_.contains("E11000"))
 
   def startPayeSubscription(
     arn: Arn,
@@ -57,11 +79,7 @@ extends Logging:
     groupId: GroupId
   )(using request: RequestHeader): Future[Done] = agentEpayeRegistrationConnector.register(subscriptionRequest).flatMap { agentReference =>
     // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
-    val (optSessionId, optBearerToken) =
-      if (appConfig.stubsCompatibilityMode)
-        (RequestSupport.hc.sessionId.map(_.value), RequestSupport.hc.authorization.map(_.value))
-      else
-        (None, None)
+    val (optSessionId, optBearerToken) = maybeCaptureStubHeaders()
 
     subscriptionWorkItemRepository
       .pushNew(
@@ -79,21 +97,94 @@ extends Logging:
       .map(_ => Done)
   }
 
+  def startSaSubscription(
+    arn: Arn,
+    subscriptionRequest: SaSubscriptionRequest,
+    adminCredId: CredId,
+    groupId: GroupId
+  )(using request: RequestHeader): Future[Done] =
+    enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).flatMap { enrolments =>
+      val alreadyEnrolled = enrolments.exists(e => e.service == LegacyRegime.SA.enrolmentKey && e.state == "Activated")
+      if alreadyEnrolled then
+        Future.failed(UpstreamErrorResponse("Already enrolled for SA", 409, 409))
+      else
+        subscriptionWorkItemRepository.findByArnAndRegime(arn, LegacyRegime.SA).flatMap {
+          case Some(existing) if existing.status != PermanentlyFailed =>
+            Future.failed(UpstreamErrorResponse("SA subscription already in progress", 409, 409))
+          case Some(existing) =>
+            // SA work items are uniquely keyed by (arn, regime). When a previous attempt is PermanentlyFailed we allow
+            // the user to re-start, but must remove the existing document before inserting the new attempt.
+            subscriptionWorkItemRepository.deletePermanentlyFailedById(existing.id).flatMap {
+              case true => startNewSaWorkItem(arn, subscriptionRequest, adminCredId, groupId)
+              case false =>
+                // If the document wasn't deleted it has likely been updated concurrently; treat as "in progress".
+                Future.failed(UpstreamErrorResponse("SA subscription already in progress", 409, 409))
+            }
+          case None => startNewSaWorkItem(arn, subscriptionRequest, adminCredId, groupId)
+        }
+    }
+
+  private def startNewSaWorkItem(
+    arn: Arn,
+    subscriptionRequest: SaSubscriptionRequest,
+    adminCredId: CredId,
+    groupId: GroupId
+  )(using request: RequestHeader): Future[Done] =
+    // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
+    val (optSessionId, optBearerToken) = maybeCaptureStubHeaders()
+    subscriptionWorkItemRepository
+      .pushNew(
+        SubscriptionWorkItem(
+          arn = arn,
+          subscriptionRequest = subscriptionRequest,
+          regime = LegacyRegime.SA,
+          agentReference = None,
+          groupId = Some(groupId),
+          adminCredId = Some(adminCredId),
+          sessionId = optSessionId,
+          bearerToken = optBearerToken
+        )
+      )
+      .map(_ => Done)
+      .recoverWith { case NonFatal(error) if isDuplicateKeyException(error) =>
+        // `findByArnAndRegime` is not enough under concurrency: two requests can race and the loser will hit the unique
+        // (arn, regime) index. Return the intended conflict response in that case.
+        Future.failed(UpstreamErrorResponse("SA subscription already in progress", 409, 409))
+      }
+
   def handleRoboticsCallback(
     callback: SubscriptionCallback
-  ): Future[Boolean] =
+  ): Future[SubscriptionService.CallbackHandling] =
     callback.status match {
-      case CallbackSuccess => subscriptionWorkItemRepository.addAgentReference(callback.agentId, callback.requestId)
+      case CallbackSuccess =>
+        // Callback success does not mean subscription is complete; it unblocks the next workflow stage.
+        // We set the agentReference and return the work item to ToDo so the post-callback worker (APB-10570)
+        // can pick it up.
+        subscriptionWorkItemRepository.addAgentReference(callback.agentId, callback.requestId).map {
+          case true => SubscriptionService.CallbackHandling.Handled
+          case false => SubscriptionService.CallbackHandling.NotFound
+        }
       case CallbackFailure =>
-        logger.error(s"[handleRoboticsCallback] Robotics callback for requestId ${callback.requestId} returned failed status, reason: '${callback.requestMessage}', marking work item as permanently failed")
-        subscriptionWorkItemRepository.markAsPermanentlyFailed(callback.requestId)
+        subscriptionWorkItemRepository.handleFailureCallback(callback.requestId).map {
+          case SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed =>
+            logger.error(s"[handleRoboticsCallback] Robotics callback for requestId ${callback.requestId} returned failed status, reason: '${callback.requestMessage}', marking work item as permanently failed")
+            SubscriptionService.CallbackHandling.Handled
+          case SubscriptionWorkItemRepository.FailureCallbackHandling.AlreadyPermanentlyFailed =>
+            logger.warn(s"[handleRoboticsCallback] Duplicate failure callback for requestId ${callback.requestId}, work item already PermanentlyFailed")
+            SubscriptionService.CallbackHandling.Handled
+          case SubscriptionWorkItemRepository.FailureCallbackHandling.IgnoredAlreadySucceeded =>
+            logger.warn(s"[handleRoboticsCallback] Ignoring failure callback for requestId ${callback.requestId} because success has already been recorded")
+            SubscriptionService.CallbackHandling.Handled
+          case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound =>
+            SubscriptionService.CallbackHandling.NotFound
+        }
     }
 
   def getSubscriptionInfo(
     arn: Arn,
     groupId: GroupId,
     regimes: Seq[LegacyRegime]
-  )(implicit requestHeader: RequestHeader): Future[Seq[SubscriptionInfo]] = Future.sequence(regimes.map { regime =>
+  )(using requestHeader: RequestHeader): Future[Seq[SubscriptionInfo]] = Future.sequence(regimes.map { regime =>
     subscriptionWorkItemRepository.findByArnAndRegime(arn, regime).flatMap {
       case Some(workItem) =>
         Future.successful(
@@ -127,3 +218,8 @@ extends Logging:
         }
     }
   })
+
+object SubscriptionService:
+  enum CallbackHandling:
+    case Handled
+    case NotFound

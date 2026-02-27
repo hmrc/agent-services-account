@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-sbt run
+sbt -Dwork-item-jobs.sa-robotics.enabled=true run

@@ -26,6 +26,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import play.api.mvc.RequestHeader
 import play.api.Logging
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
@@ -38,29 +39,37 @@ class LegacySubscriptionController @Inject() (
   legacySubscriptionService: SubscriptionService,
   cc: ControllerComponents,
   authActions: AuthActions
-)(implicit ec: ExecutionContext)
+)(using ec: ExecutionContext)
 extends BackendController(cc)
 with Logging:
 
   def startSubscription(regime: LegacyRegime): Action[AnyContent] = authActions.authorisedWithArnAndCredId {
-    implicit request => arn => adminCredId => groupId =>
+    request => arn => adminCredId => groupId =>
+      given RequestHeader = request
       request.body.asJson.map(_.validate[SubscriptionRequest](SubscriptionRequest.reads(regime))) match {
-        case Some(JsSuccess(request: PayeSubscriptionRequest, _)) =>
+        case Some(JsSuccess(payeRequest: PayeSubscriptionRequest, _)) =>
           legacySubscriptionService.startPayeSubscription(
             arn,
-            request,
+            payeRequest,
             adminCredId,
             groupId
           ).map(_ => Ok)
-        case Some(JsSuccess(request: SaSubscriptionRequest, _)) => Future.successful(NotImplemented)
-        case Some(JsSuccess(request: CtSubscriptionRequest, _)) => Future.successful(NotImplemented)
+        case Some(JsSuccess(saRequest: SaSubscriptionRequest, _)) =>
+          legacySubscriptionService.startSaSubscription(
+            arn,
+            saRequest,
+            adminCredId,
+            groupId
+          ).map(_ => Ok)
+        case Some(JsSuccess(_: CtSubscriptionRequest, _)) => Future.successful(NotImplemented)
         case Some(JsError(errors)) => Future.successful(BadRequest(s"Invalid subscription request, reason: $errors"))
         case _ => Future.successful(BadRequest("Missing subscription request JSON"))
       }
   }
 
   def subscriptionInfo(regimes: Seq[LegacyRegime]): Action[AnyContent] = authActions.authorisedWithArnAndGroupId {
-    implicit request => (arn, groupId) =>
+    request => (arn, groupId) =>
+      given RequestHeader = request
       legacySubscriptionService.getSubscriptionInfo(
         arn = arn,
         groupId = groupId,
@@ -69,10 +78,10 @@ with Logging:
   }
 
   def roboticsCallback(): Action[SubscriptionCallback] =
-    Action.async(parse.json[SubscriptionCallback]) { implicit request =>
+    Action.async(parse.json[SubscriptionCallback]) { request =>
       legacySubscriptionService.handleRoboticsCallback(request.body).map {
-        case true => NoContent
-        case false =>
+        case SubscriptionService.CallbackHandling.Handled => NoContent
+        case SubscriptionService.CallbackHandling.NotFound =>
           val msg = s"Did not find a work item with requestId: ${request.body.requestId}"
           logger.error(s"[roboticsCallback] $msg")
           NotFound(msg)

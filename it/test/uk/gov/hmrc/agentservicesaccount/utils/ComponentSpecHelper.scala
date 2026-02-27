@@ -79,12 +79,15 @@ with GuiceOneServerPerSuite:
     "microservice.services.agent-mapping.port" -> mockPort,
     "microservice.services.enrolment-store-proxy.host" -> mockHost,
     "microservice.services.enrolment-store-proxy.port" -> mockPort,
+    "microservice.services.robotics.host" -> mockHost,
+    "microservice.services.robotics.port" -> mockPort,
     "microservice.services.citizen-details.host" -> mockHost,
     "microservice.services.citizen-details.port" -> mockPort,
     "microservice.services.email.port" -> mockPort,
     "microservice.services.email.host" -> mockHost,
     "microservice.services.dms-submission.host" -> mockHost,
-    "microservice.services.dms-submission.port" -> mockPort
+    "microservice.services.dms-submission.port" -> mockPort,
+    "work-item-jobs.sa-robotics.enabled" -> "false"
   )
 
   implicit val ws: WSClient = app.injector.instanceOf[WSClient]

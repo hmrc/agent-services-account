@@ -24,7 +24,9 @@ import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.json.JsonEncryption.stringEncrypterDecrypter
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
+import java.time.Instant
 import java.util.UUID
 
 case class SubscriptionWorkItem(
@@ -35,13 +37,14 @@ case class SubscriptionWorkItem(
   groupId: Option[GroupId] = None,
   adminCredId: Option[CredId] = None,
   requestId: String = UUID.randomUUID().toString,
+  roboticsInvokedAt: Option[Instant] = None,
   sessionId: Option[String] = None, // Local stub-only: ESP stubs require X-Session-ID; keep None for QA/Prod.
   bearerToken: Option[String] = None // Local stub-only: ESP stubs require Authorization; never persist in QA/Prod.
 )
 
 object SubscriptionWorkItem:
 
-  private def mongoReads(implicit crypto: Encrypter & Decrypter) = (__ \ "regime").read[LegacyRegime].flatMap { regime =>
+  private def mongoReads(using crypto: Encrypter & Decrypter) = (__ \ "regime").read[LegacyRegime].flatMap { regime =>
     (
       (__ \ "arn").read[Arn] and
         (__ \ "subscriptionRequest").read[String](stringEncrypterDecrypter).map[SubscriptionRequest](string =>
@@ -52,12 +55,13 @@ object SubscriptionWorkItem:
         (__ \ "groupId").readNullable[GroupId] and
         (__ \ "adminCredId").readNullable[CredId] and
         (__ \ "requestId").read[String] and
+        (__ \ "roboticsInvokedAt").readNullable[Instant](MongoJavatimeFormats.instantFormat) and
         (__ \ "sessionId").readNullable[String] and
         (__ \ "bearerToken").readNullable[String]
     )(SubscriptionWorkItem.apply)
   }
 
-  private def mongoWrites(implicit crypto: Encrypter & Decrypter): Writes[SubscriptionWorkItem] =
+  private def mongoWrites(using crypto: Encrypter & Decrypter): Writes[SubscriptionWorkItem] =
     (
       (__ \ "arn").write[Arn] and
         (__ \ "subscriptionRequest").write[String](stringEncrypterDecrypter).contramap[SubscriptionRequest](subscriptionRequest =>
@@ -68,8 +72,9 @@ object SubscriptionWorkItem:
         (__ \ "groupId").writeNullable[GroupId] and
         (__ \ "adminCredId").writeNullable[CredId] and
         (__ \ "requestId").write[String] and
+        (__ \ "roboticsInvokedAt").writeNullable[Instant](MongoJavatimeFormats.instantFormat) and
         (__ \ "sessionId").writeNullable[String] and
         (__ \ "bearerToken").writeNullable[String]
     )(o => Tuple.fromProductTyped(o))
 
-  def mongoFormat(implicit crypto: Encrypter & Decrypter): Format[SubscriptionWorkItem] = Format(mongoReads, mongoWrites)
+  def mongoFormat(using crypto: Encrypter & Decrypter): Format[SubscriptionWorkItem] = Format(mongoReads, mongoWrites)
