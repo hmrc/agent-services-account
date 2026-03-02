@@ -73,6 +73,8 @@ with GuiceOneServerPerSuite:
     "microservice.services.agent-epaye-registration.port" -> mockPort,
     "microservice.services.des.host" -> mockHost,
     "microservice.services.des.port" -> mockPort,
+    "microservice.services.hip.host" -> mockHost,
+    "microservice.services.hip.port" -> mockPort,
     "microservice.services.agent-assurance.host" -> mockHost,
     "microservice.services.agent-assurance.port" -> mockPort,
     "microservice.services.agent-mapping.host" -> mockHost,

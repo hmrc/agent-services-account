@@ -522,6 +522,13 @@ trait DesStubs {
     )
   }
 
+  def verifyDESWasNotCalled(arn: Arn): Unit = verify(
+    0,
+    getRequestedFor(
+      urlMatching(s"/registration/agents/${arn.value}.*")
+    )
+  )
+
   private def registrationData(isIndividual: Boolean) =
     if (isIndividual)
       registrationDataForIndividual

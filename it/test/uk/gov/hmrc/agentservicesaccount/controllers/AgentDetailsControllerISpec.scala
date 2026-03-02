@@ -37,6 +37,7 @@ extends ComponentSpecHelper
 with AgentAuthStubs
 with AgentMappingStubs
 with DesStubs
+with HipStubs
 with InternalAuthStub
 with CitizenDetailsStubs
 with AgentAssuranceStubs
@@ -56,7 +57,8 @@ with EmailStub {
     "agent.entity.cache.expires" -> "1 seconds",
     "agent.entity-check.lock.expires" -> "1 seconds",
     "agent.automap.lock.expires" -> "1 seconds",
-    "agent.entity-check.email.lock.expires" -> "1 seconds"
+    "agent.entity-check.email.lock.expires" -> "1 seconds",
+    "features.get-agent-record-via-hip" -> false
   )
 
   val testArn = Arn("AARN0000002")
@@ -145,6 +147,7 @@ with EmailStub {
       givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
       givenCitizenIsAlive(testSaUtr)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
+      givenAutoMappingCallSucceeds(testArn)
 
       val response: WSResponse = get(clientUrl(testArn))
 
@@ -159,11 +162,11 @@ with EmailStub {
 
     "trigger auto-mapping when agent record is fetched" in {
       retry(5) {
-        givenAutoMappingCallSucceeds(testArn)
         stubInternalAuthorised()
         givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
         givenCitizenIsAlive(testSaUtr)
         givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
+        givenAutoMappingCallSucceeds(testArn)
 
         val response: WSResponse = get(clientUrl(testArn))
 
@@ -173,7 +176,7 @@ with EmailStub {
           isAnIndividual = true
         )
         response.status shouldBe OK
-        verifyAutoMappingCallWasMade(testArn, times=1)
+        verifyAutoMappingCallWasMade(testArn, times = 1)
       }
     }
 
@@ -183,7 +186,6 @@ with EmailStub {
         givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
         givenCitizenIsAlive(testSaUtr)
         givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
-
         givenAutoMappingCallSucceeds(testArn)
 
         get(clientUrl(testArn)).status shouldBe OK
@@ -221,6 +223,7 @@ with EmailStub {
           testUtr,
           List("Agent is deceased", "Agent is on the 'Refuse To Deal With' list")
         ))
+        givenAutoMappingCallSucceeds(testArn)
 
         val response: WSResponse = get(clientUrl(testArn))
 
@@ -328,6 +331,7 @@ with EmailStub {
           testUtr1,
           List("Agent is on the 'Refuse To Deal With' list")
         ))
+        givenAutoMappingCallSucceeds(testArn2)
 
         val response = get(agentUrl)
 
