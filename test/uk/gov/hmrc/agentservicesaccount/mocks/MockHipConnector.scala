@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,31 @@
 
 package uk.gov.hmrc.agentservicesaccount.mocks
 
-import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers.{eq => meq}
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq as meq}
+import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.{DesConnector, HipConnector}
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 
 import scala.concurrent.Future
 
-trait MockDesConnector
+trait MockHipConnector
 extends MockitoSugar { this: TestSuite =>
 
-  val mockDesConnector: DesConnector = mock[DesConnector]
+  val mockHipConnector: HipConnector = mock[HipConnector]
 
-  def mockDesGetAgentRecord(arn: Arn)(response: AgentDetailsDesResponse): Unit = {
+  def mockHipGetAgentRecord(arn: Arn)(response: AgentDetailsDesResponse): Unit = {
     when(
-      mockDesConnector.getAgentRecord(meq(arn))(using any[RequestHeader])
+      mockHipConnector.getAgentRecord(meq(arn))(using any[RequestHeader])
     ).thenReturn(Future.successful(response))
   }
 
-  def mockDesGetAgentRecordFailure(arn: Arn)(ex: Throwable): Unit = {
+  def mockHipGetAgentRecordFailure(arn: Arn)(ex: Throwable): Unit = {
     when(
-      mockDesConnector.getAgentRecord(meq(arn))(using any[RequestHeader])
+      mockHipConnector.getAgentRecord(meq(arn))(using any[RequestHeader])
     ).thenReturn(Future.failed(ex))
   }
 

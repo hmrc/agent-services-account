@@ -17,13 +17,18 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentservicesaccount.connectors.{AgentAssuranceConnector, AgentMappingConnector, CitizenDetailsConnector, DesConnector}
+import uk.gov.hmrc.agentservicesaccount.connectors.AgentAssuranceConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.AgentMappingConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.CitizenDetailsConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
 import uk.gov.hmrc.agentservicesaccount.models.agententity.EmailCheckExceptions
 import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckException
 import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckResult
 import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
+import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.AgentCheckOutcome
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
@@ -42,7 +47,9 @@ import scala.concurrent.Future
 
 @Singleton
 class AgentDetailsService @Inject() (
+  appConfig: AppConfig,
   desConnector: DesConnector,
+  hipConnector: HipConnector,
   citizenConnector: CitizenDetailsConnector,
   agentAssuranceConnector: AgentAssuranceConnector,
   agentMappingConnector: AgentMappingConnector,
@@ -56,7 +63,11 @@ class AgentDetailsService @Inject() (
   )(using request: RequestHeader): Future[EntityCheckResult] = {
 
     for {
-      agentRecord <- desConnector.getAgentRecord(arn)
+      agentRecord <-
+        if (appConfig.getAgentRecordViaHIP)
+          hipConnector.getAgentRecord(arn)
+        else
+          desConnector.getAgentRecord(arn)
 
       _ = mongoLockService.automapLock(arn) {
         agentMappingConnector.performAutoMapping(arn)

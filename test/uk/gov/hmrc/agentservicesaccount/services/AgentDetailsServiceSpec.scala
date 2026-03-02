@@ -16,6 +16,10 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
+import org.mockito.Mockito.never
+import org.mockito.Mockito.reset
+import org.mockito.Mockito.verify
+import org.mockito.ArgumentMatchers.{eq => meq}
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.mvc.Request
 import play.api.test.FakeRequest
@@ -25,7 +29,8 @@ import uk.gov.hmrc.agentservicesaccount.helpers.TestConstants.*
 import uk.gov.hmrc.agentservicesaccount.mocks.*
 import uk.gov.hmrc.agentservicesaccount.models.UtrChecksResponse
 import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException.EntityDeceasedCheckFailed
-import uk.gov.hmrc.agentservicesaccount.models.agententity.{EntityCheckException, EntityCheckResult}
+import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckException
+import uk.gov.hmrc.agentservicesaccount.models.agententity.EntityCheckResult
 import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException.AgentIsOnRefuseToDealList
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.domain.SaUtr
@@ -39,6 +44,7 @@ class AgentDetailsServiceSpec
 extends UnitSpec
 with CleanMongoCollectionSupport
 with MockDesConnector
+with MockHipConnector
 with MockCitizenDetailsConnector
 with MockAppConfig
 with MockEmailService
@@ -56,7 +62,9 @@ with IntegrationPatience {
 
   val service =
     new AgentDetailsService(
+      ac,
       mockDesConnector,
+      mockHipConnector,
       mockCitizenDetailsConnector,
       mockAgentAssuranceConnector,
       mockAgentMappingConnector,
@@ -64,6 +72,24 @@ with IntegrationPatience {
       mockEmailService,
       mockAuditService
     )
+
+  val serviceHip =
+    new AgentDetailsService(
+      mockAppConfigHip,
+      mockDesConnector,
+      mockHipConnector,
+      mockCitizenDetailsConnector,
+      mockAgentAssuranceConnector,
+      mockAgentMappingConnector,
+      mongoLockService,
+      mockEmailService,
+      mockAuditService
+    )
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockDesConnector, mockHipConnector)
+  }
 
   "verifyAgent" should {
     "return Some(SuspensionDetails) when the agent is suspended" in {
@@ -77,7 +103,7 @@ with IntegrationPatience {
         businessName = None
       )
 
-      mockGetAgentRecord(testArn)(agentDetailsDesResponse)
+      mockDesGetAgentRecord(testArn)(agentDetailsDesResponse)
       mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
@@ -96,7 +122,7 @@ with IntegrationPatience {
         businessName = None
       )
 
-      mockGetAgentRecord(testArn)(agentDetailsDesResponse)
+      mockDesGetAgentRecord(testArn)(agentDetailsDesResponse)
       mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
@@ -120,7 +146,7 @@ with IntegrationPatience {
         businessName = None
       )
 
-      mockGetAgentRecord(testArn)(agentDetailsDesResponse)
+      mockDesGetAgentRecord(testArn)(agentDetailsDesResponse)
       mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
       mockGetCitizenDeceasedFlag(SaUtr(testUtr.value))(Some(EntityDeceasedCheckFailed))
       mockSendEntityCheckNotification()
@@ -130,6 +156,41 @@ with IntegrationPatience {
 
       result shouldBe EntityCheckResult(agentDetailsDesResponse, Seq(EntityDeceasedCheckFailed))
 
+    }
+
+    "call DES connector when feature switch is disabled" in {
+      val utrChecksResponse = UtrChecksResponse(
+        isManuallyAssured = false,
+        isRefusalToDealWith = true,
+        businessName = None
+      )
+      mockDesGetAgentRecord(testArn)(testAgentDetailsDesResponse)
+      mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
+      mockSendEntityCheckNotification()
+      mockAuditEntityCheckFailureNotificationSent()
+
+      service.getAgentDetailsWithChecks(testArn).futureValue
+
+      verify(mockDesConnector).getAgentRecord(testArn)
+      verify(mockHipConnector, never()).getAgentRecord(testArn)
+    }
+
+    "call HIP connector when feature switch is enabled" in {
+
+      val utrChecksResponse = UtrChecksResponse(
+        isManuallyAssured = false,
+        isRefusalToDealWith = true,
+        businessName = None
+      )
+      mockHipGetAgentRecord(testArn)(testAgentDetailsDesResponse)
+      mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
+      mockSendEntityCheckNotification()
+      mockAuditEntityCheckFailureNotificationSent()
+
+      serviceHip.getAgentDetailsWithChecks(testArn).futureValue
+
+      verify(mockHipConnector).getAgentRecord(testArn)
+      verify(mockDesConnector, never()).getAgentRecord(testArn)
     }
   }
 
