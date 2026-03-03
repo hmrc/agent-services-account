@@ -34,6 +34,7 @@ import uk.gov.hmrc.http.StringContextOps
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import java.net.URL
+import java.time.temporal.ChronoUnit.SECONDS
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -83,7 +84,7 @@ with Logging {
       "Authorization" -> s"Basic $authToken",
       "correlationid" -> UUID.randomUUID().toString,
       "X-Originating-System" -> originatingSystem,
-      "X-Receipt-Date" -> java.time.Instant.now().toString,
+      "X-Receipt-Date" -> java.time.Instant.now().truncatedTo(SECONDS).toString,
       "X-Transmitting-System" -> transmittingSystem
     )
   }
