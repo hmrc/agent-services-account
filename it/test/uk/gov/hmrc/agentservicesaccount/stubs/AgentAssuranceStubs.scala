@@ -26,7 +26,7 @@ trait AgentAssuranceStubs {
 
   def givenAgentUtrCheckWithRefusalToDealWithTrue(utr: Utr): Unit =
     stubFor(
-      get(urlEqualTo(s"/agent-assurance/restricted-collection-check/utr/${utr.value}?nameRequired=false"))
+      get(urlEqualTo(s"/agent-assurance/managed-utrs/utr/${utr.value}?nameRequired=true"))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -36,7 +36,7 @@ trait AgentAssuranceStubs {
 
   def givenAgentUtrCheckWithRefusalToDealWithFalse(utr: Utr): Unit =
     stubFor(
-      get(urlEqualTo(s"/agent-assurance/restricted-collection-check/utr/${utr.value}?nameRequired=false"))
+      get(urlEqualTo(s"/agent-assurance/managed-utrs/utr/${utr.value}?nameRequired=true"))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -47,7 +47,7 @@ trait AgentAssuranceStubs {
   
   def givenAgentUtrCheckReturnsError(utr: Utr, status: Int): Unit =
     stubFor(
-      get(urlEqualTo(s"/agent-assurance/restricted-collection-check/utr/${utr.value}?nameRequired=false"))
+      get(urlEqualTo(s"/agent-assurance/managed-utrs/utr/${utr.value}?nameRequired=true"))
         .willReturn(
           aResponse()
             .withStatus(status)
@@ -59,7 +59,7 @@ trait AgentAssuranceStubs {
       verify(
         count,
         getRequestedFor(
-          urlEqualTo(s"/agent-assurance/restricted-collection-check/utr/${utr.value}?nameRequired=false")
+          urlEqualTo(s"/agent-assurance/managed-utrs/utr/${utr.value}?nameRequired=true")
         )
       )
     }

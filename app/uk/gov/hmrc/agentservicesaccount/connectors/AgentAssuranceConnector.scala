@@ -39,7 +39,7 @@ class AgentAssuranceConnector @Inject() (
   val baseUrl = appConfig.agentAssuranceBaseUrl
 
   def getAgentUtrChecks(utr: Utr)(using request: RequestHeader): Future[UtrChecksResponse] = {
-    val url = url"$baseUrl/agent-assurance/restricted-collection-check/utr/${utr.value}?nameRequired=false"
+    val url = url"$baseUrl/agent-assurance/managed-utrs/utr/${utr.value}?nameRequired=true"
     http
       .get(url)
       .execute[UtrChecksResponse]
