@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.agentservicesaccount.modules
+package uk.gov.hmrc.agentservicesaccount.config
 
-import com.google.inject.AbstractModule
-import com.google.inject.Provides
-import uk.gov.hmrc.agentservicesaccount.config.{AppConfig, KnownFactsJobConfig}
-import uk.gov.hmrc.agentservicesaccount.services.PayeKnownFactsScheduler
+import scala.concurrent.duration.FiniteDuration
 
-import javax.inject.Singleton
-
-class PayeKnownFactsModule
-extends AbstractModule:
-
-  override def configure(): Unit = bind(classOf[PayeKnownFactsScheduler]).asEagerSingleton()
-
-  @Provides
-  @Singleton
-  def providePayeKnownFactsJobConfig(appConfig: AppConfig): KnownFactsJobConfig = appConfig.payeKnownFactsJobConfig
+final case class KnownFactsJobConfig(
+  initialDelay: FiniteDuration,
+  interval: FiniteDuration,
+  retryInterval: FiniteDuration,
+  maxAttempts: Int
+)

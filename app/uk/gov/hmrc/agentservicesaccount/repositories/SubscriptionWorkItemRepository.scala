@@ -114,7 +114,8 @@ with Logging:
       .map(_.headOption)
   }
 
-  def pullOutstandingPaye(
+  def pullOutstandingForRegime(
+    regime: LegacyRegime,
     failedBefore: Instant,
     availableBefore: Instant
   ): Future[Option[WorkItem[SubscriptionWorkItem]]] = {
@@ -130,7 +131,7 @@ with Logging:
 
     def baseFilter(status: ProcessingStatus): org.bson.conversions.Bson = Filters.and(
       Filters.equal(workItemFields.status, status),
-      Filters.equal(s"${workItemFields.item}.regime", LegacyRegime.PAYE.toString),
+      Filters.equal(s"${workItemFields.item}.regime", regime.toString),
       Filters.exists(s"${workItemFields.item}.agentReference", true)
     )
 

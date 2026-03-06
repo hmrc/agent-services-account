@@ -27,22 +27,24 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class PayeKnownFactsScheduler @Inject() (
+class SaKnownFactsScheduler @Inject() (
   actorSystem: ActorSystem,
   jobConfig: KnownFactsJobConfig,
-  worker: PayeKnownFactsWorker,
+  worker: SaKnownFactsWorker,
   lifecycle: ApplicationLifecycle
-)(using
-  ec: ExecutionContext
-)
-extends Logging:
+)(using ec: ExecutionContext)
+extends Logging {
 
   private val scheduled =
     actorSystem.scheduler.scheduleAtFixedRate(
-      initialDelay = jobConfig.initialDelay,
-      interval = jobConfig.interval
+      jobConfig.initialDelay,
+      jobConfig.interval
     )(() =>
-      worker.runOnce().recover { case error => logger.error("Paye known facts scheduler run failed", error) }
+      worker.runOnce().recover {
+        case error => logger.error("SA known facts scheduler failed", error)
+      }
     )
 
   lifecycle.addStopHook(() => Future.successful(scheduled.cancel()))
+
+}
