@@ -42,7 +42,7 @@ class RoboticsInvocationConnector @Inject() (
   ec: ExecutionContext
 ) extends Logging:
 
-  private val baseUrl: String = appConfig.roboticsBaseUrl
+  private val baseUrl: String = appConfig.hipBaseUrl
 
   def invoke(payload: JsObject, correlationId: CorrelationId)(using HeaderCarrier): Future[Unit] =
     http

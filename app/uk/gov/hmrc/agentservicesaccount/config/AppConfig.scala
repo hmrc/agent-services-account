@@ -54,7 +54,6 @@ class AppConfig @Inject() (
   val agentMaintainerEmail: String = config.get[String]("agent-maintainer-email")
   val agentEpayeRegistrationBaseUrl: String = baseUrl("agent-epaye-registration")
   val agentMappingBaseUrl: String = baseUrl("agent-mapping")
-  val roboticsBaseUrl: String = baseUrl("robotics")
 
   val internalAuthBaseUrl: String = servicesConfig.baseUrl("internal-auth")
   val internalAuthToken: String = servicesConfig.getString("internal-auth.token")
