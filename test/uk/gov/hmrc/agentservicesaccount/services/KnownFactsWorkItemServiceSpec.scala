@@ -21,6 +21,8 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as eqTo
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.when
+import org.mockito.Mockito.reset
+import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
@@ -35,11 +37,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 
-class PayeKnownFactsWorkItemServiceSpec
-extends UnitSpec:
+class KnownFactsWorkItemServiceSpec
+extends UnitSpec
+with BeforeAndAfterEach:
 
   private val repository = mock[SubscriptionWorkItemRepository]
-  private val service = new PayeKnownFactsWorkItemService(repository)
+  private val service = new KnownFactsWorkItemService(repository)
 
   private val subscriptionRequest = PayeSubscriptionRequest(
     agentName = "Agent Name",
@@ -72,14 +75,23 @@ extends UnitSpec:
     )
   )
 
-  "PayeKnownFactsWorkItemService" should {
+  "KnownFactsWorkItemService" should {
     "pull outstanding items for PAYE" in {
-      when(repository.pullOutstandingPaye(any[Instant], any[Instant]))
+      when(repository.pullOutstandingForRegime(any[LegacyRegime], any[Instant], any[Instant]))
         .thenReturn(Future.successful(None))
 
-      service.pullOutstanding(10.seconds).futureValue
+      service.pullOutstanding(LegacyRegime.PAYE, 10.seconds).futureValue
 
-      verify(repository).pullOutstandingPaye(any[Instant], any[Instant])
+      verify(repository).pullOutstandingForRegime(any[LegacyRegime], any[Instant], any[Instant])
+    }
+
+    "pull outstanding items for SA" in {
+      when(repository.pullOutstandingForRegime(any[LegacyRegime], any[Instant], any[Instant]))
+        .thenReturn(Future.successful(None))
+
+      service.pullOutstanding(LegacyRegime.SA, 10.seconds).futureValue
+
+      verify(repository).pullOutstandingForRegime(any[LegacyRegime], any[Instant], any[Instant])
     }
 
     "reschedule items by marking them failed with a next run time" in {
@@ -117,3 +129,7 @@ extends UnitSpec:
       verify(repository).complete(eqTo(workItem.id), eqTo(ProcessingStatus.PermanentlyFailed))
     }
   }
+
+  override def beforeEach(): Unit =
+    super.beforeEach()
+    reset(repository)

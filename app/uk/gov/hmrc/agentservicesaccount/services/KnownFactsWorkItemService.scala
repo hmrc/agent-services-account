@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
+import uk.gov.hmrc.agentservicesaccount.models.subscription.{LegacyRegime, SubscriptionWorkItem}
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem
@@ -30,15 +30,19 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 @Singleton
-class PayeKnownFactsWorkItemService @Inject() (
+class KnownFactsWorkItemService @Inject() (
   repository: SubscriptionWorkItemRepository
 )(using
   ec: ExecutionContext
 ):
 
-  def pullOutstanding(retryInterval: FiniteDuration): Future[Option[WorkItem[SubscriptionWorkItem]]] =
+  def pullOutstanding(
+    regime: LegacyRegime,
+    retryInterval: FiniteDuration
+  ): Future[Option[WorkItem[SubscriptionWorkItem]]] =
     val now = Instant.now()
-    repository.pullOutstandingPaye(
+    repository.pullOutstandingForRegime(
+      regime,
       failedBefore = now.minus(Duration.ofMillis(retryInterval.toMillis)),
       availableBefore = now
     )

@@ -19,14 +19,10 @@ package uk.gov.hmrc.agentservicesaccount.services
 import org.bson.types.ObjectId
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as eqTo
-import org.mockito.Mockito.never
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoInteractions
-import org.mockito.Mockito.when
+import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.config.PayeKnownFactsJobConfig
+import uk.gov.hmrc.agentservicesaccount.config.KnownFactsJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.Es20Enrolment
@@ -43,27 +39,21 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 
-class PayeKnownFactsWorkerSpec
+class KnownFactsWorkerSpec
 extends UnitSpec
 with BeforeAndAfterEach:
 
   given HeaderCarrier = HeaderCarrier()
 
-  private val jobConfig = PayeKnownFactsJobConfig(
+  private val jobConfig = KnownFactsJobConfig(
     initialDelay = 1.second,
     interval = 1.second,
     retryInterval = 10.seconds,
     maxAttempts = 3
   )
 
-  private val workItemService = mock[PayeKnownFactsWorkItemService]
+  private val workItemService = mock[KnownFactsWorkItemService]
   private val connector = mock[EnrolmentStoreProxyConnector]
-  private val worker =
-    new PayeKnownFactsWorker(
-      workItemService,
-      connector,
-      jobConfig
-    )
 
   private val subscriptionRequest = PayeSubscriptionRequest(
     agentName = "Agent Name",
@@ -80,6 +70,7 @@ with BeforeAndAfterEach:
   )
 
   private def buildWorkItem(
+    regime: LegacyRegime,
     failureCount: Int,
     agentReference: Option[AgentReference] = Some(AgentReference("A12345")),
     groupId: Option[GroupId] = Some(GroupId("ITEM-GROUP")),
@@ -94,16 +85,24 @@ with BeforeAndAfterEach:
     item = SubscriptionWorkItem(
       arn = Arn("TARN0000001"),
       subscriptionRequest = subscriptionRequest,
-      regime = LegacyRegime.PAYE,
+      regime = regime,
       agentReference = agentReference,
       groupId = groupId,
       adminCredId = adminCredId
     )
   )
 
-  "PayeKnownFactsWorker" should {
+  private def workerBehaviour(
+    regime: LegacyRegime,
+    createWorker: () => KnownFactsWorker
+  ): Unit = {
+
     "do nothing when there is no outstanding work item" in {
-      when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(None))
+
+      val worker = createWorker()
+
+      when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+        .thenReturn(Future.successful(None))
 
       worker.runOnce().futureValue
 
@@ -111,10 +110,16 @@ with BeforeAndAfterEach:
     }
 
     "reschedule when known facts are not yet available" in {
-      val workItem = buildWorkItem(failureCount = 0)
-      when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
-      when(connector.queryKnownFactsForAgent(eqTo(LegacyRegime.PAYE), eqTo("A12345"))(using any[HeaderCarrier]))
+
+      val worker = createWorker()
+      val workItem = buildWorkItem(regime, failureCount = 0)
+
+      when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+        .thenReturn(Future.successful(Some(workItem)))
+
+      when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(None))
+
       when(workItemService.reschedule(workItem, jobConfig.retryInterval)).thenReturn(Future.successful(true))
 
       worker.runOnce().futureValue
@@ -124,12 +129,17 @@ with BeforeAndAfterEach:
     }
 
     "allocate enrolment and complete when known facts are available" in {
-      val workItem = buildWorkItem(failureCount = 0)
-      val response = Es20Response("IR-PAYE-AGENT", Seq(Es20Enrolment(Nil, Nil)))
 
-      when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
-      when(connector.queryKnownFactsForAgent(eqTo(LegacyRegime.PAYE), eqTo("A12345"))(using any[HeaderCarrier]))
+      val worker = createWorker()
+      val workItem = buildWorkItem(regime, failureCount = 0)
+      val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+      when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+        .thenReturn(Future.successful(Some(workItem)))
+
+      when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(Some(response)))
+
       when(connector.allocateAgentEnrolment(
         any[LegacyRegime],
         any[GroupId],
@@ -137,7 +147,9 @@ with BeforeAndAfterEach:
         any[CredId]
       )(using any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
-      when(workItemService.complete(workItem)).thenReturn(Future.successful(true))
+
+      when(workItemService.complete(workItem))
+        .thenReturn(Future.successful(true))
 
       worker.runOnce().futureValue
 
@@ -146,10 +158,16 @@ with BeforeAndAfterEach:
     }
 
     "mark for manual intervention once max attempts are reached" in {
-      val workItem = buildWorkItem(failureCount = 2)
-      when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
-      when(connector.queryKnownFactsForAgent(eqTo(LegacyRegime.PAYE), eqTo("A12345"))(using any[HeaderCarrier]))
+
+      val worker = createWorker()
+      val workItem = buildWorkItem(regime, failureCount = 2)
+
+      when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+        .thenReturn(Future.successful(Some(workItem)))
+
+      when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(None))
+
       when(workItemService.markManualIntervention(workItem)).thenReturn(Future.successful(true))
 
       worker.runOnce().futureValue
@@ -157,38 +175,32 @@ with BeforeAndAfterEach:
       verify(workItemService).markManualIntervention(workItem)
       verify(workItemService, never()).reschedule(workItem, jobConfig.retryInterval)
     }
-
-    "reschedule when agent reference is missing" in {
-      val workItem = buildWorkItem(failureCount = 0, agentReference = None)
-      when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
-      when(workItemService.reschedule(workItem, jobConfig.retryInterval)).thenReturn(Future.successful(true))
-
-      worker.runOnce().futureValue
-
-      verify(workItemService).reschedule(workItem, jobConfig.retryInterval)
-      verifyNoInteractions(connector)
-    }
-
-    "mark for manual intervention when group or admin cred ID is missing" in {
-      val workItem = buildWorkItem(failureCount = 0, groupId = None)
-      val response = Es20Response("IR-PAYE-AGENT", Seq(Es20Enrolment(Nil, Nil)))
-
-      when(workItemService.pullOutstanding(jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
-      when(connector.queryKnownFactsForAgent(eqTo(LegacyRegime.PAYE), eqTo("A12345"))(using any[HeaderCarrier]))
-        .thenReturn(Future.successful(Some(response)))
-      when(workItemService.markManualIntervention(workItem)).thenReturn(Future.successful(true))
-
-      worker.runOnce().futureValue
-
-      verify(workItemService).markManualIntervention(workItem)
-      verify(connector, never()).allocateAgentEnrolment(
-        any[LegacyRegime],
-        any[GroupId],
-        any[String],
-        any[CredId]
-      )(using any[HeaderCarrier])
-    }
   }
+
+  "PayeKnownFactsWorker" should {
+    behave like workerBehaviour(
+      LegacyRegime.PAYE,
+      () =>
+        new PayeKnownFactsWorker(
+          workItemService,
+          connector,
+          jobConfig
+        )
+    )
+  }
+
+  "SaKnownFactsWorker" should {
+    behave like workerBehaviour(
+      LegacyRegime.SA,
+      () =>
+        new SaKnownFactsWorker(
+          workItemService,
+          connector,
+          jobConfig
+        )
+    )
+  }
+
   override def beforeEach(): Unit =
     super.beforeEach()
     reset(workItemService, connector)

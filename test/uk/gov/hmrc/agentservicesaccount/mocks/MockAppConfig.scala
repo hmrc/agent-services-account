@@ -71,17 +71,29 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.get[Int](meq("work-item-jobs.paye-known-facts.max-attempts"))(any()))
       .thenReturn(3)
 
-  when(mockConfig.get[Boolean](meq("stubs-compatibility-mode"))(any()))
-    .thenReturn(false)
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.initial-delay"))(any()))
+      .thenReturn(1.second)
 
-  when(mockConfig.get[Boolean](meq("work-item-jobs.sa-robotics.enabled"))(any()))
-    .thenReturn(false)
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.interval"))(any()))
+      .thenReturn(1.second)
 
-  when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.sa-robotics.initial-delay"))(any()))
-    .thenReturn(1.second)
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.retry-interval"))(any()))
+      .thenReturn(1.second)
 
-  when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.sa-robotics.interval"))(any()))
-    .thenReturn(1.second)
+    when(mockConfig.get[Int](meq("work-item-jobs.sa-known-facts.max-attempts"))(any()))
+      .thenReturn(3)
+
+    when(mockConfig.get[Boolean](meq("stubs-compatibility-mode"))(any()))
+      .thenReturn(false)
+
+    when(mockConfig.get[Boolean](meq("work-item-jobs.sa-robotics.enabled"))(any()))
+      .thenReturn(false)
+
+    when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.sa-robotics.initial-delay"))(any()))
+      .thenReturn(1.second)
+
+    when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.sa-robotics.interval"))(any()))
+      .thenReturn(1.second)
 
     when(mockConfig.get[Boolean](meq("features.get-agent-record-via-hip"))(any()))
       .thenReturn(false)

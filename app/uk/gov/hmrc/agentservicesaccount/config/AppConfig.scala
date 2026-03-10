@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentservicesaccount.config
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.duration.*
 
 import play.api.Configuration
@@ -76,9 +75,18 @@ class AppConfig @Inject() (
   val dmsSubmissionSource: String = servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.source")
   val dmsSubmissionUrl: String = dmsBaseUrl + "/dms-submission/submit"
 
-  val payeKnownFactsJobConfig: PayeKnownFactsJobConfig =
+  val payeKnownFactsJobConfig: KnownFactsJobConfig =
     val prefix = "work-item-jobs.paye-known-facts"
-    PayeKnownFactsJobConfig(
+    KnownFactsJobConfig(
+      initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
+      interval = config.get[Duration](s"$prefix.interval").toMillis.millis,
+      retryInterval = config.get[Duration](s"$prefix.retry-interval").toMillis.millis,
+      maxAttempts = config.get[Int](s"$prefix.max-attempts")
+    )
+
+  val saKnownFactsJobConfig: KnownFactsJobConfig =
+    val prefix = "work-item-jobs.sa-known-facts"
+    KnownFactsJobConfig(
       initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
       interval = config.get[Duration](s"$prefix.interval").toMillis.millis,
       retryInterval = config.get[Duration](s"$prefix.retry-interval").toMillis.millis,
