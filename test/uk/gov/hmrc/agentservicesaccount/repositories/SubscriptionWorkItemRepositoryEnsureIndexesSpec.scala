@@ -22,7 +22,8 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class SubscriptionWorkItemRepositoryEnsureIndexesSpec extends UnitSpec {
+class SubscriptionWorkItemRepositoryEnsureIndexesSpec
+extends UnitSpec {
 
   given ExecutionContext = ExecutionContext.global
   private val testLogger = Logger("SubscriptionWorkItemRepositoryEnsureIndexesSpec")
@@ -66,5 +67,5 @@ class SubscriptionWorkItemRepositoryEnsureIndexesSpec extends UnitSpec {
         .futureValue
     }
   }
-}
 
+}

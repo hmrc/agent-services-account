@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentservicesaccount.mocks
 
-import org.mockito.ArgumentMatchers.{any, eq as meq}
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq as meq
 import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar

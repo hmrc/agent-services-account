@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import uk.gov.hmrc.agentservicesaccount.models.subscription.{LegacyRegime, SubscriptionWorkItem}
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem

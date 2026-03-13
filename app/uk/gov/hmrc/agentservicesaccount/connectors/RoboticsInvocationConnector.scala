@@ -40,31 +40,34 @@ class RoboticsInvocationConnector @Inject() (
   http: HttpClientV2
 )(using
   ec: ExecutionContext
-) extends Logging:
+)
+extends Logging:
 
   private val baseUrl: String = appConfig.hipBaseUrl
 
-  def invoke(payload: JsObject, correlationId: CorrelationId)(using HeaderCarrier): Future[Unit] =
-    http
-      .post(url"$baseUrl/RTServer/rest/nice/rti/ra/invocation")
-      .setHeader("correlationId" -> correlationId.value)
-      .withBody(payload)
-      .execute[HttpResponse]
-      .map { response =>
-        response.status match {
-          case status if status / 100 == 2 =>
-            // Spec and stubs currently return 200. Guard against HIP/proxy layers returning other 2xx (e.g. 202/204),
-            // because treating those as errors would cause unnecessary retries and potentially duplicate submissions.
-            if status != OK then
-              logger.warn(s"[RoboticsInvocationConnector][invoke] Received $status from robotics invocation endpoint (correlationId=${correlationId.value})")
-            ()
-          case status =>
-            // Do not include the outbound payload in exception messages; this may be logged by callers and could
-            // contain PII (e.g. postcode). Use correlationId for traceability instead.
-            throw UpstreamErrorResponse(
-              s"Unexpected response from robotics invocation endpoint (status=$status, correlationId=${correlationId.value})",
-              status,
-              status
-            )
-        }
+  def invoke(
+    payload: JsObject,
+    correlationId: CorrelationId
+  )(using HeaderCarrier): Future[Unit] = http
+    .post(url"$baseUrl/RTServer/rest/nice/rti/ra/invocation")
+    .setHeader("correlationId" -> correlationId.value)
+    .withBody(payload)
+    .execute[HttpResponse]
+    .map { response =>
+      response.status match {
+        case status if status / 100 == 2 =>
+          // Spec and stubs currently return 200. Guard against HIP/proxy layers returning other 2xx (e.g. 202/204),
+          // because treating those as errors would cause unnecessary retries and potentially duplicate submissions.
+          if status != OK then
+            logger.warn(s"[RoboticsInvocationConnector][invoke] Received $status from robotics invocation endpoint (correlationId=${correlationId.value})")
+          ()
+        case status =>
+          // Do not include the outbound payload in exception messages; this may be logged by callers and could
+          // contain PII (e.g. postcode). Use correlationId for traceability instead.
+          throw UpstreamErrorResponse(
+            s"Unexpected response from robotics invocation endpoint (status=$status, correlationId=${correlationId.value})",
+            status,
+            status
+          )
       }
+    }

@@ -76,16 +76,17 @@ with BeforeAndAfterEach:
 
   "pullOutstandingRobotics" should {
     "re-pull a stale InProgress item when it has not yet been invoked (crash recovery)" in {
-      val workItem = repository
-        .pushNew(
-          SubscriptionWorkItem(
-            arn = testArn,
-            subscriptionRequest = request,
-            regime = LegacyRegime.SA,
-            agentReference = None
+      val workItem =
+        repository
+          .pushNew(
+            SubscriptionWorkItem(
+              arn = testArn,
+              subscriptionRequest = request,
+              regime = LegacyRegime.SA,
+              agentReference = None
+            )
           )
-        )
-        .futureValue
+          .futureValue
 
       repository.markAs(workItem.id, InProgress).futureValue
 
@@ -106,16 +107,17 @@ with BeforeAndAfterEach:
     }
 
     "not re-pull a stale InProgress item once it has been invoked (avoid duplicate submissions while awaiting callback)" in {
-      val workItem = repository
-        .pushNew(
-          SubscriptionWorkItem(
-            arn = testArn,
-            subscriptionRequest = request,
-            regime = LegacyRegime.SA,
-            agentReference = None
+      val workItem =
+        repository
+          .pushNew(
+            SubscriptionWorkItem(
+              arn = testArn,
+              subscriptionRequest = request,
+              regime = LegacyRegime.SA,
+              agentReference = None
+            )
           )
-        )
-        .futureValue
+          .futureValue
 
       repository.markAs(workItem.id, InProgress).futureValue
 
@@ -137,16 +139,17 @@ with BeforeAndAfterEach:
     }
 
     "not pick Deferred items for invocation retry" in {
-      val workItem = repository
-        .pushNew(
-          SubscriptionWorkItem(
-            arn = testArn,
-            subscriptionRequest = request,
-            regime = LegacyRegime.SA,
-            agentReference = None
+      val workItem =
+        repository
+          .pushNew(
+            SubscriptionWorkItem(
+              arn = testArn,
+              subscriptionRequest = request,
+              regime = LegacyRegime.SA,
+              agentReference = None
+            )
           )
-        )
-        .futureValue
+          .futureValue
 
       repository.markAs(workItem.id, Deferred).futureValue
 
@@ -156,16 +159,17 @@ with BeforeAndAfterEach:
     }
 
     "not overwrite a callback transition when attempting to mark an item Deferred" in {
-      val workItem = repository
-        .pushNew(
-          SubscriptionWorkItem(
-            arn = testArn,
-            subscriptionRequest = request,
-            regime = LegacyRegime.SA,
-            agentReference = None
+      val workItem =
+        repository
+          .pushNew(
+            SubscriptionWorkItem(
+              arn = testArn,
+              subscriptionRequest = request,
+              regime = LegacyRegime.SA,
+              agentReference = None
+            )
           )
-        )
-        .futureValue
+          .futureValue
 
       repository.markAs(workItem.id, InProgress).futureValue
       repository.addAgentReference(AgentReference("XS123"), requestId = workItem.item.requestId).futureValue.shouldBe(true)
@@ -182,17 +186,18 @@ with BeforeAndAfterEach:
   "addAgentReference" should {
     "ignore duplicate success callbacks once an agentReference has been set (do not move back to ToDo)" in {
       val requestId = "dup-success-callback-request-id"
-      val workItem = repository
-        .pushNew(
-          SubscriptionWorkItem(
-            arn = testArn,
-            subscriptionRequest = request,
-            regime = LegacyRegime.SA,
-            agentReference = None,
-            requestId = requestId
+      val workItem =
+        repository
+          .pushNew(
+            SubscriptionWorkItem(
+              arn = testArn,
+              subscriptionRequest = request,
+              regime = LegacyRegime.SA,
+              agentReference = None,
+              requestId = requestId
+            )
           )
-        )
-        .futureValue
+          .futureValue
 
       repository.markAs(workItem.id, InProgress).futureValue
       repository.markRoboticsInvoked(workItem.id, Instant.now()).futureValue.shouldBe(true)

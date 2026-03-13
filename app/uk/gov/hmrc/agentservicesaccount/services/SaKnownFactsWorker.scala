@@ -20,18 +20,19 @@ import uk.gov.hmrc.agentservicesaccount.config.KnownFactsJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class SaKnownFactsWorker @Inject()(
+class SaKnownFactsWorker @Inject() (
   workItemService: KnownFactsWorkItemService,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   jobConfig: KnownFactsJobConfig
 )(using ec: ExecutionContext)
-  extends KnownFactsWorker(
-      regime = LegacyRegime.SA,
-      workItemService,
-      enrolmentStoreProxyConnector,
-      jobConfig
-  )
+extends KnownFactsWorker(
+  regime = LegacyRegime.SA,
+  workItemService,
+  enrolmentStoreProxyConnector,
+  jobConfig
+)

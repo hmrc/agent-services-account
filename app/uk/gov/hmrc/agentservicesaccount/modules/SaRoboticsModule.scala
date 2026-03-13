@@ -32,4 +32,3 @@ extends AbstractModule:
   @Provides
   @Singleton
   def provideSaRoboticsJobConfig(appConfig: AppConfig): RoboticsJobConfig = appConfig.saRoboticsJobConfig
-

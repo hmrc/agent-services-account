@@ -50,4 +50,3 @@ extends Logging:
       None
 
   lifecycle.addStopHook(() => Future.successful(scheduled.foreach(_.cancel())))
-

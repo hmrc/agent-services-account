@@ -30,21 +30,19 @@ trait HipStubs {
         okJson(
           s"""
               {
-                "AgentSubscriptionDisplay_Response": {
-                  "success": {
-                    "processingDate": "2025-02-25",
-                    "utr": $utr,
-                    "name": "ABC Accountants",
-                    "addr1": "Matheson House",
-                    "addr2": "Grange Central",
-                    "addr3": "Town Centre",
-                    "addr4": "Telford",
-                    "postcode": "TF3 4ER",
-                    "country": "GB",
-                    "phone": "07345678901",
-                    "email": "abc@xyz.com",
-                    "suspensionStatus": "T"
-                  }
+                "success": {
+                  "processingDate": "2025-02-25",
+                  "utr": $utr,
+                  "name": "ABC Accountants",
+                  "addr1": "Matheson House",
+                  "addr2": "Grange Central",
+                  "addr3": "Town Centre",
+                  "addr4": "Telford",
+                  "postcode": "TF3 4ER",
+                  "country": "GB",
+                  "phone": "07345678901",
+                  "email": "abc@xyz.com",
+                  "suspensionStatus": "T"
                 }
               }
             """

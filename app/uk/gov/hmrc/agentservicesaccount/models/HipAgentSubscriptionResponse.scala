@@ -19,11 +19,7 @@ package uk.gov.hmrc.agentservicesaccount.models
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
 
-case class HipAgentSubscriptionDisplayResponse(
-  AgentSubscriptionDisplay_Response: HipAgentSubscriptionContainer
-)
-
-case class HipAgentSubscriptionContainer(
+case class HipAgentSubscriptionResponse(
   success: HipAgentSubscriptionSuccess
 )
 
@@ -43,7 +39,7 @@ case class HipAgentSubscriptionSuccess(
   regime: Option[Seq[String]]
 )
 
-object HipAgentSubscriptionDisplayResponse {
+object HipAgentSubscriptionResponse {
 
   private def readNullableString(path: JsPath): Reads[Option[String]] = path.readNullable[String].map {
     case Some(s) if s.trim.isEmpty => None
@@ -73,11 +69,7 @@ object HipAgentSubscriptionDisplayResponse {
         (__ \ "regime").readNullable[Seq[String]].map(_.filter(_.nonEmpty))
     )(HipAgentSubscriptionSuccess.apply)
 
-  given Reads[HipAgentSubscriptionContainer] = (__ \ "success").read[HipAgentSubscriptionSuccess]
-    .map(HipAgentSubscriptionContainer.apply)
-
-  given Reads[HipAgentSubscriptionDisplayResponse] = (__ \ "AgentSubscriptionDisplay_Response")
-    .read[HipAgentSubscriptionContainer]
-    .map(HipAgentSubscriptionDisplayResponse.apply)
+  given Reads[HipAgentSubscriptionResponse] = (__ \ "success").read[HipAgentSubscriptionSuccess]
+    .map(HipAgentSubscriptionResponse.apply)
 
 }

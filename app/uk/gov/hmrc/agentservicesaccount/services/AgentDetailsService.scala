@@ -69,9 +69,10 @@ class AgentDetailsService @Inject() (
         else
           desConnector.getAgentRecord(arn)
 
-      _ = mongoLockService.automapLock(arn) {
-        agentMappingConnector.performAutoMapping(arn)
-      }
+      _ =
+        mongoLockService.automapLock(arn) {
+          agentMappingConnector.performAutoMapping(arn)
+        }
 
       entityChecksResult <- agentRecord.uniqueTaxReference
         .map(getEntityChecks(
