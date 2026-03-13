@@ -30,9 +30,9 @@ class PayeKnownFactsWorker @Inject() (
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   jobConfig: KnownFactsJobConfig
 )(using ec: ExecutionContext)
-  extends KnownFactsWorker(
-      regime = LegacyRegime.PAYE,
-      workItemService,
-      enrolmentStoreProxyConnector,
-      jobConfig
-  )
+extends KnownFactsWorker(
+  regime = LegacyRegime.PAYE,
+  workItemService,
+  enrolmentStoreProxyConnector,
+  jobConfig
+)

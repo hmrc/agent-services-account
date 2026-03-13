@@ -20,12 +20,13 @@ object RoboticsIds:
 
   opaque type RequestId = String
   object RequestId:
+
     def apply(value: String): RequestId = value
     extension (id: RequestId) def value: String = id
 
   opaque type CorrelationId = String
   object CorrelationId:
+
     def apply(value: String): CorrelationId = value
     def fromRequestId(requestId: RequestId): CorrelationId = requestId.value
     extension (id: CorrelationId) def value: String = id
-

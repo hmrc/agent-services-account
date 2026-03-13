@@ -56,7 +56,12 @@ with BeforeAndAfterEach:
   private val connector = mock[RoboticsInvocationConnector]
   private val appConfig = mock[AppConfig]
 
-  private val worker = new SaRoboticsWorker(workItemService, connector, appConfig)
+  private val worker =
+    new SaRoboticsWorker(
+      workItemService,
+      connector,
+      appConfig
+    )
 
   private val ukRequest = SaSubscriptionRequest(
     agentName = "Agent Name",
@@ -78,24 +83,26 @@ with BeforeAndAfterEach:
     address = ukRequest.address.copy(postCode = None)
   )
 
-  private def buildWorkItem(request: SaSubscriptionRequest, requestId: String = "req-123"): WorkItem[SubscriptionWorkItem] =
-    WorkItem(
-      id = new ObjectId(),
-      receivedAt = Instant.now(),
-      updatedAt = Instant.now(),
-      availableAt = Instant.now(),
-      status = ProcessingStatus.InProgress,
-      failureCount = 0,
-      item = SubscriptionWorkItem(
-        arn = Arn("TARN0000001"),
-        subscriptionRequest = request,
-        regime = LegacyRegime.SA,
-        agentReference = None,
-        requestId = requestId,
-        sessionId = Some("session-123"),
-        bearerToken = Some("Bearer test-token")
-      )
+  private def buildWorkItem(
+    request: SaSubscriptionRequest,
+    requestId: String = "req-123"
+  ): WorkItem[SubscriptionWorkItem] = WorkItem(
+    id = new ObjectId(),
+    receivedAt = Instant.now(),
+    updatedAt = Instant.now(),
+    availableAt = Instant.now(),
+    status = ProcessingStatus.InProgress,
+    failureCount = 0,
+    item = SubscriptionWorkItem(
+      arn = Arn("TARN0000001"),
+      subscriptionRequest = request,
+      regime = LegacyRegime.SA,
+      agentReference = None,
+      requestId = requestId,
+      sessionId = Some("session-123"),
+      bearerToken = Some("Bearer test-token")
     )
+  )
 
   "SaRoboticsWorker" should {
     "do nothing when there is no outstanding work item" in {
@@ -116,8 +123,7 @@ with BeforeAndAfterEach:
         "postcode" -> "AA1 1AA",
         "operationRequired" -> Operation.CREATE.toString
       )
-      val expectedPayload: JsObject =
-        Json.toJsObject(RoboticsInvocationRequest.fromOperationData(Json.stringify(expectedOperationData)))
+      val expectedPayload: JsObject = Json.toJsObject(RoboticsInvocationRequest.fromOperationData(Json.stringify(expectedOperationData)))
       val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
 
       when(appConfig.stubsCompatibilityMode).thenReturn(true)
@@ -159,8 +165,7 @@ with BeforeAndAfterEach:
           )
         )
       )
-      val expectedPayload: JsObject =
-        Json.toJsObject(RoboticsInvocationRequest.fromOperationData(Json.stringify(expectedOperationData)))
+      val expectedPayload: JsObject = Json.toJsObject(RoboticsInvocationRequest.fromOperationData(Json.stringify(expectedOperationData)))
       val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
 
       when(appConfig.stubsCompatibilityMode).thenReturn(false)
@@ -197,4 +202,8 @@ with BeforeAndAfterEach:
 
   override protected def beforeEach(): Unit =
     super.beforeEach()
-    reset(workItemService, connector, appConfig)
+    reset(
+      workItemService,
+      connector,
+      appConfig
+    )

@@ -77,21 +77,37 @@ with BeforeAndAfterEach:
 
   "KnownFactsWorkItemService" should {
     "pull outstanding items for PAYE" in {
-      when(repository.pullOutstandingForRegime(any[LegacyRegime], any[Instant], any[Instant]))
+      when(repository.pullOutstandingForRegime(
+        any[LegacyRegime],
+        any[Instant],
+        any[Instant]
+      ))
         .thenReturn(Future.successful(None))
 
       service.pullOutstanding(LegacyRegime.PAYE, 10.seconds).futureValue
 
-      verify(repository).pullOutstandingForRegime(any[LegacyRegime], any[Instant], any[Instant])
+      verify(repository).pullOutstandingForRegime(
+        any[LegacyRegime],
+        any[Instant],
+        any[Instant]
+      )
     }
 
     "pull outstanding items for SA" in {
-      when(repository.pullOutstandingForRegime(any[LegacyRegime], any[Instant], any[Instant]))
+      when(repository.pullOutstandingForRegime(
+        any[LegacyRegime],
+        any[Instant],
+        any[Instant]
+      ))
         .thenReturn(Future.successful(None))
 
       service.pullOutstanding(LegacyRegime.SA, 10.seconds).futureValue
 
-      verify(repository).pullOutstandingForRegime(any[LegacyRegime], any[Instant], any[Instant])
+      verify(repository).pullOutstandingForRegime(
+        any[LegacyRegime],
+        any[Instant],
+        any[Instant]
+      )
     }
 
     "reschedule items by marking them failed with a next run time" in {

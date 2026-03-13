@@ -18,7 +18,8 @@ package uk.gov.hmrc.agentservicesaccount.modules
 
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
-import uk.gov.hmrc.agentservicesaccount.config.{AppConfig, KnownFactsJobConfig}
+import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.config.KnownFactsJobConfig
 import uk.gov.hmrc.agentservicesaccount.services.PayeKnownFactsScheduler
 
 import javax.inject.Singleton

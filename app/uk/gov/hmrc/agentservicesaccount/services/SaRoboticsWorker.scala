@@ -58,19 +58,21 @@ extends Logging:
   // entity type is captured and the contract is finalised.
   private val defaultEntityType: String = "Sole Trader"
 
-  def runOnce(now: Instant = Instant.now()): Future[Unit] =
-    workItemService.pullOutstanding(now).flatMap {
-      case None => Future.unit
-      case Some(workItem) =>
-        process(workItem, now).recoverWith { case NonFatal(error) =>
-          logger.warn(s"SA robotics invocation failed for work item ${workItem.id}", error)
-          // Guard against overwriting a successful callback transition (agentReference set + status moved back to ToDo)
-          // if the invoke failed/timed out locally after the upstream had already accepted the request.
-          workItemService.markDeferred(workItem).map(_ => ())
-        }
-    }
+  def runOnce(now: Instant = Instant.now()): Future[Unit] = workItemService.pullOutstanding(now).flatMap {
+    case None => Future.unit
+    case Some(workItem) =>
+      process(workItem, now).recoverWith { case NonFatal(error) =>
+        logger.warn(s"SA robotics invocation failed for work item ${workItem.id}", error)
+        // Guard against overwriting a successful callback transition (agentReference set + status moved back to ToDo)
+        // if the invoke failed/timed out locally after the upstream had already accepted the request.
+        workItemService.markDeferred(workItem).map(_ => ())
+      }
+  }
 
-  private def process(workItem: WorkItem[SubscriptionWorkItem], now: Instant): Future[Unit] =
+  private def process(
+    workItem: WorkItem[SubscriptionWorkItem],
+    now: Instant
+  ): Future[Unit] =
     workItem.item.regime match
       case LegacyRegime.SA =>
         workItem.item.subscriptionRequest match
@@ -146,7 +148,5 @@ extends Logging:
               // We only set this after a successful outbound call to keep crash-recovery behaviour for items that were
               // claimed (InProgress) but never actually invoked.
               .flatMap(_ => workItemService.markInvoked(workItem, invokedAt = now).map(_ => ()))
-          case other =>
-            Future.failed(new RuntimeException(s"Unexpected subscription request type for SA robotics invocation: ${other.getClass.getName}"))
-      case other =>
-        Future.failed(new RuntimeException(s"Unexpected regime in SA robotics worker: $other"))
+          case other => Future.failed(new RuntimeException(s"Unexpected subscription request type for SA robotics invocation: ${other.getClass.getName}"))
+      case other => Future.failed(new RuntimeException(s"Unexpected regime in SA robotics worker: $other"))

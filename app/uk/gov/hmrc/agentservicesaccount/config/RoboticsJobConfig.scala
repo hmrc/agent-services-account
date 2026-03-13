@@ -23,4 +23,3 @@ final case class RoboticsJobConfig(
   initialDelay: FiniteDuration,
   interval: FiniteDuration
 )
-

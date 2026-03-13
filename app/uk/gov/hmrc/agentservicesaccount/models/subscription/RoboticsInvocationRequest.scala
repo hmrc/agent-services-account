@@ -42,21 +42,20 @@ object RoboticsInvocationRequest:
   // Contract note: HIP robotics invocation expects operation data in `workflowData.arguments[*].value` as a JSON
   // string, not a nested JSON object.
   // Reference: https://confluence.tools.tax.service.gov.uk/pages/viewpage.action?pageId=1194459607
-  def fromOperationData(operationDataJsonString: String): RoboticsInvocationRequest =
-    RoboticsInvocationRequest(
-      requestData = Seq(
-        RoboticsInvocationRequestData(
-          workflowData = RoboticsWorkflowData(
-            arguments = Seq(
-              RoboticsArgument(
-                `type` = "string",
-                value = operationDataJsonString
-              )
+  def fromOperationData(operationDataJsonString: String): RoboticsInvocationRequest = RoboticsInvocationRequest(
+    requestData = Seq(
+      RoboticsInvocationRequestData(
+        workflowData = RoboticsWorkflowData(
+          arguments = Seq(
+            RoboticsArgument(
+              `type` = "string",
+              value = operationDataJsonString
             )
           )
         )
       )
     )
+  )
 
   given Writes[RoboticsArgument] = Json.writes[RoboticsArgument]
   given Writes[RoboticsWorkflowData] = Json.writes[RoboticsWorkflowData]

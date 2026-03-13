@@ -67,4 +67,3 @@ extends UnitSpec:
       val requestData = (payload \ "requestData").as[JsArray]
       val arguments = ((requestData.value.head \ "workflowData") \ "arguments").as[JsArray]
       (arguments.value.head \ "value").get shouldBe JsString(operationDataJsonString)
-

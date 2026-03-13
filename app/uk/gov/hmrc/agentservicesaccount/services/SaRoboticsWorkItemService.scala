@@ -34,14 +34,14 @@ class SaRoboticsWorkItemService @Inject() (
   ec: ExecutionContext
 ):
 
-  def pullOutstanding(now: Instant): Future[Option[WorkItem[SubscriptionWorkItem]]] =
-    repository.pullOutstandingRobotics(
-      regime = LegacyRegime.SA,
-      availableBefore = now
-    )
+  def pullOutstanding(now: Instant): Future[Option[WorkItem[SubscriptionWorkItem]]] = repository.pullOutstandingRobotics(
+    regime = LegacyRegime.SA,
+    availableBefore = now
+  )
 
-  def markDeferred(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] =
-    repository.markAsDeferredIfStillAwaitingInvocation(workItem.id)
+  def markDeferred(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] = repository.markAsDeferredIfStillAwaitingInvocation(workItem.id)
 
-  def markInvoked(workItem: WorkItem[SubscriptionWorkItem], invokedAt: Instant): Future[Boolean] =
-    repository.markRoboticsInvoked(workItem.id, invokedAt = invokedAt)
+  def markInvoked(
+    workItem: WorkItem[SubscriptionWorkItem],
+    invokedAt: Instant
+  ): Future[Boolean] = repository.markRoboticsInvoked(workItem.id, invokedAt = invokedAt)

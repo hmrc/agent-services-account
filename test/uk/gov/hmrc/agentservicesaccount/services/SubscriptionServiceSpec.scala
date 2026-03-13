@@ -244,14 +244,15 @@ with BeforeAndAfterEach {
       when(appConfig.stubsCompatibilityMode).thenReturn(false)
       when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
 
-      val failedItem = repository.pushNew(
-        SubscriptionWorkItem(
-          arn = testArn,
-          subscriptionRequest = saSubscriptionRequest,
-          regime = LegacyRegime.SA,
-          agentReference = None
-        )
-      ).futureValue
+      val failedItem =
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = testArn,
+            subscriptionRequest = saSubscriptionRequest,
+            regime = LegacyRegime.SA,
+            agentReference = None
+          )
+        ).futureValue
 
       repository.markAs(failedItem.id, PermanentlyFailed).futureValue
 
@@ -283,8 +284,7 @@ with BeforeAndAfterEach {
         override def findByArnAndRegime(
           arn: Arn,
           regime: LegacyRegime
-        ): Future[Option[uk.gov.hmrc.mongo.workitem.WorkItem[SubscriptionWorkItem]]] =
-          Future.successful(None)
+        ): Future[Option[uk.gov.hmrc.mongo.workitem.WorkItem[SubscriptionWorkItem]]] = Future.successful(None)
 
       val raceRepository = new RaceSubscriptionWorkItemRepository
       val service =
@@ -338,27 +338,29 @@ with BeforeAndAfterEach {
         )
 
       val requestId = "sa-callback-success-request-id"
-      val workItem = repository.pushNew(
-        SubscriptionWorkItem(
-          arn = testArn,
-          subscriptionRequest = saSubscriptionRequest,
-          regime = LegacyRegime.SA,
-          agentReference = None,
-          requestId = requestId
-        )
-      ).futureValue
+      val workItem =
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = testArn,
+            subscriptionRequest = saSubscriptionRequest,
+            regime = LegacyRegime.SA,
+            agentReference = None,
+            requestId = requestId
+          )
+        ).futureValue
       repository.markAs(workItem.id, InProgress).futureValue
 
-      val updated = service.handleRoboticsCallback(
-        SubscriptionCallback(
-          requestId = requestId,
-          targetSystem = TargetSystem.CESA,
-          operationRequired = Operation.CREATE,
-          agentId = testAgentRef,
-          status = CallbackStatus.CallbackSuccess,
-          requestMessage = "ok"
-        )
-      ).futureValue
+      val updated =
+        service.handleRoboticsCallback(
+          SubscriptionCallback(
+            requestId = requestId,
+            targetSystem = TargetSystem.CESA,
+            operationRequired = Operation.CREATE,
+            agentId = testAgentRef,
+            status = CallbackStatus.CallbackSuccess,
+            requestMessage = "ok"
+          )
+        ).futureValue
 
       updated shouldBe SubscriptionService.CallbackHandling.Handled
       val persisted = repository.coll.find().first().toFuture().futureValue
@@ -381,27 +383,29 @@ with BeforeAndAfterEach {
         )
 
       val requestId = "sa-callback-success-after-failure-request-id"
-      val workItem = repository.pushNew(
-        SubscriptionWorkItem(
-          arn = testArn,
-          subscriptionRequest = saSubscriptionRequest,
-          regime = LegacyRegime.SA,
-          agentReference = None,
-          requestId = requestId
-        )
-      ).futureValue
+      val workItem =
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = testArn,
+            subscriptionRequest = saSubscriptionRequest,
+            regime = LegacyRegime.SA,
+            agentReference = None,
+            requestId = requestId
+          )
+        ).futureValue
       repository.markAs(workItem.id, PermanentlyFailed).futureValue
 
-      val updated = service.handleRoboticsCallback(
-        SubscriptionCallback(
-          requestId = requestId,
-          targetSystem = TargetSystem.CESA,
-          operationRequired = Operation.CREATE,
-          agentId = testAgentRef,
-          status = CallbackStatus.CallbackSuccess,
-          requestMessage = "ok"
-        )
-      ).futureValue
+      val updated =
+        service.handleRoboticsCallback(
+          SubscriptionCallback(
+            requestId = requestId,
+            targetSystem = TargetSystem.CESA,
+            operationRequired = Operation.CREATE,
+            agentId = testAgentRef,
+            status = CallbackStatus.CallbackSuccess,
+            requestMessage = "ok"
+          )
+        ).futureValue
 
       updated shouldBe SubscriptionService.CallbackHandling.Handled
       val persisted = repository.coll.find().first().toFuture().futureValue
@@ -424,15 +428,16 @@ with BeforeAndAfterEach {
         )
 
       val requestId = "sa-callback-failure-after-success-request-id"
-      val workItem = repository.pushNew(
-        SubscriptionWorkItem(
-          arn = testArn,
-          subscriptionRequest = saSubscriptionRequest,
-          regime = LegacyRegime.SA,
-          agentReference = None,
-          requestId = requestId
-        )
-      ).futureValue
+      val workItem =
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = testArn,
+            subscriptionRequest = saSubscriptionRequest,
+            regime = LegacyRegime.SA,
+            agentReference = None,
+            requestId = requestId
+          )
+        ).futureValue
       repository.markAs(workItem.id, InProgress).futureValue
 
       service.handleRoboticsCallback(
@@ -446,16 +451,17 @@ with BeforeAndAfterEach {
         )
       ).futureValue shouldBe SubscriptionService.CallbackHandling.Handled
 
-      val updated = service.handleRoboticsCallback(
-        SubscriptionCallback(
-          requestId = requestId,
-          targetSystem = TargetSystem.CESA,
-          operationRequired = Operation.CREATE,
-          agentId = testAgentRef,
-          status = CallbackStatus.CallbackFailure,
-          requestMessage = "boom"
-        )
-      ).futureValue
+      val updated =
+        service.handleRoboticsCallback(
+          SubscriptionCallback(
+            requestId = requestId,
+            targetSystem = TargetSystem.CESA,
+            operationRequired = Operation.CREATE,
+            agentId = testAgentRef,
+            status = CallbackStatus.CallbackFailure,
+            requestMessage = "boom"
+          )
+        ).futureValue
 
       updated shouldBe SubscriptionService.CallbackHandling.Handled
       val persisted = repository.coll.find().first().toFuture().futureValue
@@ -463,4 +469,5 @@ with BeforeAndAfterEach {
       persisted.item.agentReference shouldBe Some(testAgentRef)
     }
   }
+
 }

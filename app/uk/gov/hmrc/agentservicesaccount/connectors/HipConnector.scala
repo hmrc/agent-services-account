@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
-import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionDisplayResponse
+import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.http.StringContextOps
@@ -69,13 +69,13 @@ with Logging {
 
   private def getWithHipHeadersWithRetry(
     url: URL
-  )(using request: RequestHeader): Future[HipAgentSubscriptionDisplayResponse] = {
+  )(using request: RequestHeader): Future[HipAgentSubscriptionResponse] = {
 
-    retryFor[HipAgentSubscriptionDisplayResponse](s"HIP get $url")(retryCondition) {
+    retryFor[HipAgentSubscriptionResponse](s"HIP get $url")(retryCondition) {
       httpV2
         .get(url)
         .setHeader(hipHeaders*)
-        .executeAndDeserialise[HipAgentSubscriptionDisplayResponse]
+        .executeAndDeserialise[HipAgentSubscriptionResponse]
     }
   }
 
@@ -90,10 +90,10 @@ with Logging {
   }
 
   private def mapHipToDesModel(
-    hipResponse: HipAgentSubscriptionDisplayResponse
+    hipResponse: HipAgentSubscriptionResponse
   ): AgentDetailsDesResponse = {
 
-    val s = hipResponse.AgentSubscriptionDisplay_Response.success
+    val s = hipResponse.success
     val suspension = SuspensionDetails(
       suspensionStatus = s.suspensionStatus == "T",
       regimes = s.regime.filter(_.nonEmpty).map(_.toSet)

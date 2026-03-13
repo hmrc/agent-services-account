@@ -19,30 +19,33 @@ package uk.gov.hmrc.agentservicesaccount.services
 import play.api.Logging
 import uk.gov.hmrc.agentservicesaccount.config.KnownFactsJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.agentservicesaccount.models.subscription.{LegacyRegime, SubscriptionWorkItem}
-import uk.gov.hmrc.http.{Authorization, HeaderCarrier, SessionId}
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
+import uk.gov.hmrc.http.Authorization
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.SessionId
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-abstract class KnownFactsWorker (
+abstract class KnownFactsWorker(
   regime: LegacyRegime,
   workItemService: KnownFactsWorkItemService,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   jobConfig: KnownFactsJobConfig
 )(using ec: ExecutionContext)
-  extends Logging {
+extends Logging {
 
-  def runOnce(): Future[Unit] =
-    workItemService.pullOutstanding(regime, jobConfig.retryInterval).flatMap {
-      case None => Future.unit
-      case Some(workItem) =>
-        process(workItem).recoverWith { case NonFatal(error) =>
-          logger.warn(s"$regime known facts failed for work item ${workItem.id}", error)
-          handleFailure(workItem)
-        }
-    }
+  def runOnce(): Future[Unit] = workItemService.pullOutstanding(regime, jobConfig.retryInterval).flatMap {
+    case None => Future.unit
+    case Some(workItem) =>
+      process(workItem).recoverWith { case NonFatal(error) =>
+        logger.warn(s"$regime known facts failed for work item ${workItem.id}", error)
+        handleFailure(workItem)
+      }
+  }
 
   private def process(workItem: WorkItem[SubscriptionWorkItem]): Future[Unit] =
     workItem.item.agentReference match {
@@ -60,28 +63,28 @@ abstract class KnownFactsWorker (
             sessionId = workItem.item.sessionId.map(SessionId.apply)
           )
           enrolmentStoreProxyConnector.queryKnownFactsForAgent(regime, agentReference.value).flatMap {
-              case None =>
-                logger.info(s"$regime known facts not available yet for work item: ${workItem.id}")
-                handleFailure(workItem)
-              case Some(_) =>
-                (workItem.item.groupId, workItem.item.adminCredId) match {
-                  case (Some(groupId), Some(adminCredId)) =>
-                    enrolmentStoreProxyConnector
-                      .allocateAgentEnrolment(
-                        regime = regime,
-                        groupId = groupId,
-                        agentReference = agentReference.value,
-                        adminCredId = adminCredId
-                      )
-                      .flatMap { _ =>
-                        logger.info(s"$regime enrolment allocated for work item: ${workItem.id}")
-                        workItemService.complete(workItem).map(_ => ())
-                      }
-                  case _ =>
-                    logger.warn(s"$regime known facts work item ${workItem.id} missing group or admin cred ID")
-                    workItemService.markManualIntervention(workItem).map(_ => ())
-                }
-            }
+            case None =>
+              logger.info(s"$regime known facts not available yet for work item: ${workItem.id}")
+              handleFailure(workItem)
+            case Some(_) =>
+              (workItem.item.groupId, workItem.item.adminCredId) match {
+                case (Some(groupId), Some(adminCredId)) =>
+                  enrolmentStoreProxyConnector
+                    .allocateAgentEnrolment(
+                      regime = regime,
+                      groupId = groupId,
+                      agentReference = agentReference.value,
+                      adminCredId = adminCredId
+                    )
+                    .flatMap { _ =>
+                      logger.info(s"$regime enrolment allocated for work item: ${workItem.id}")
+                      workItemService.complete(workItem).map(_ => ())
+                    }
+                case _ =>
+                  logger.warn(s"$regime known facts work item ${workItem.id} missing group or admin cred ID")
+                  workItemService.markManualIntervention(workItem).map(_ => ())
+              }
+          }
     }
 
   private def handleFailure(workItem: WorkItem[SubscriptionWorkItem]): Future[Unit] =
@@ -91,4 +94,5 @@ abstract class KnownFactsWorker (
       workItemService.reschedule(workItem, jobConfig.retryInterval).map(_ => ())
 
   private def shouldStopRetrying(workItem: WorkItem[SubscriptionWorkItem]): Boolean = workItem.failureCount >= jobConfig.maxAttempts
+
 }

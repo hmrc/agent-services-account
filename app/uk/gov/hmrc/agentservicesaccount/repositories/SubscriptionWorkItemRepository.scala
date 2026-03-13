@@ -92,14 +92,13 @@ with Logging:
     dropLegacyUniqueArnIndexIfPresent().flatMap(_ => super.ensureIndexes())
 
   // Protected for unit testing of the "fail fast" migration behaviour.
-  protected def dropLegacyUniqueArnIndexIfPresent(): Future[Unit] =
-    SubscriptionWorkItemRepository.dropLegacyUniqueArnIndexIfPresent(
-      listIndexNames = coll.listIndexes().toFuture().map { indexes =>
-        indexes.flatMap(_.get("name").map(_.asString().getValue))
-      },
-      dropIndex = name => coll.dropIndex(name).toFuture().map(_ => ()),
-      logger = SubscriptionWorkItemRepository.indexMigrationLogger
-    )
+  protected def dropLegacyUniqueArnIndexIfPresent(): Future[Unit] = SubscriptionWorkItemRepository.dropLegacyUniqueArnIndexIfPresent(
+    listIndexNames = coll.listIndexes().toFuture().map { indexes =>
+      indexes.flatMap(_.get("name").map(_.asString().getValue))
+    },
+    dropIndex = name => coll.dropIndex(name).toFuture().map(_ => ()),
+    logger = SubscriptionWorkItemRepository.indexMigrationLogger
+  )
 
   def findByArnAndRegime(
     arn: Arn,
@@ -255,14 +254,13 @@ with Logging:
           }
       }
 
-  def deletePermanentlyFailedById(workItemId: ObjectId): Future[Boolean] =
-    coll.deleteOne(
-      Filters.and(
-        Filters.equal("_id", workItemId),
-        Filters.equal(workItemFields.status, PermanentlyFailed)
-      )
-    ).toFuture()
-      .map(_.getDeletedCount > 0)
+  def deletePermanentlyFailedById(workItemId: ObjectId): Future[Boolean] = coll.deleteOne(
+    Filters.and(
+      Filters.equal("_id", workItemId),
+      Filters.equal(workItemFields.status, PermanentlyFailed)
+    )
+  ).toFuture()
+    .map(_.getDeletedCount > 0)
 
   def markAsDeferredIfStillAwaitingInvocation(workItemId: ObjectId): Future[Boolean] =
     // Guard against a race where the outbound invoke fails/times out locally but the upstream has accepted it and a
@@ -283,61 +281,61 @@ with Logging:
       .toFuture()
       .map(_.getModifiedCount > 0)
 
-  def markRoboticsInvoked(workItemId: ObjectId, invokedAt: Instant = now()): Future[Boolean] =
-    coll
-      .updateOne(
-        Filters.equal("_id", workItemId),
-        Updates.combine(
-          Updates.set(s"${workItemFields.item}.roboticsInvokedAt", invokedAt),
-          Updates.set(workItemFields.updatedAt, now())
-        )
+  def markRoboticsInvoked(
+    workItemId: ObjectId,
+    invokedAt: Instant = now()
+  ): Future[Boolean] = coll
+    .updateOne(
+      Filters.equal("_id", workItemId),
+      Updates.combine(
+        Updates.set(s"${workItemFields.item}.roboticsInvokedAt", invokedAt),
+        Updates.set(workItemFields.updatedAt, now())
       )
-      .toFuture()
-      .map(_.getModifiedCount > 0)
+    )
+    .toFuture()
+    .map(_.getModifiedCount > 0)
 
-  def handleFailureCallback(requestId: String): Future[SubscriptionWorkItemRepository.FailureCallbackHandling] =
-    coll
-      .updateOne(
-        Filters.and(
-          Filters.equal("item.requestId", requestId),
-          // Guard against overwriting a successful callback transition.
-          Filters.exists(s"${workItemFields.item}.agentReference", false),
-          Filters.or(
-            Filters.equal(workItemFields.status, ProcessingStatus.ToDo),
-            Filters.equal(workItemFields.status, ProcessingStatus.InProgress),
-            Filters.equal(workItemFields.status, ProcessingStatus.Failed),
-            Filters.equal(workItemFields.status, ProcessingStatus.Deferred)
-          )
-        ),
-        Updates.combine(
-          Updates.set(workItemFields.status, PermanentlyFailed),
-          Updates.set(workItemFields.updatedAt, now())
+  def handleFailureCallback(requestId: String): Future[SubscriptionWorkItemRepository.FailureCallbackHandling] = coll
+    .updateOne(
+      Filters.and(
+        Filters.equal("item.requestId", requestId),
+        // Guard against overwriting a successful callback transition.
+        Filters.exists(s"${workItemFields.item}.agentReference", false),
+        Filters.or(
+          Filters.equal(workItemFields.status, ProcessingStatus.ToDo),
+          Filters.equal(workItemFields.status, ProcessingStatus.InProgress),
+          Filters.equal(workItemFields.status, ProcessingStatus.Failed),
+          Filters.equal(workItemFields.status, ProcessingStatus.Deferred)
         )
+      ),
+      Updates.combine(
+        Updates.set(workItemFields.status, PermanentlyFailed),
+        Updates.set(workItemFields.updatedAt, now())
       )
-      .toFuture()
-      .flatMap { update =>
-        if update.getModifiedCount > 0 then Future.successful(SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed)
-        else
-          findByRequestId(requestId).map {
-            case Some(workItem) if workItem.status == PermanentlyFailed =>
-              SubscriptionWorkItemRepository.FailureCallbackHandling.AlreadyPermanentlyFailed
-            case Some(workItem) if workItem.item.agentReference.isDefined || workItem.status == ProcessingStatus.Succeeded =>
-              SubscriptionWorkItemRepository.FailureCallbackHandling.IgnoredAlreadySucceeded
-            case _ => SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound
-          }
-      }
-
-  def markAsPermanentlyFailed(requestId: String): Future[Boolean] =
-    handleFailureCallback(requestId).map {
-      case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound => false
-      case _ => true
+    )
+    .toFuture()
+    .flatMap { update =>
+      if update.getModifiedCount > 0 then Future.successful(SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed)
+      else
+        findByRequestId(requestId).map {
+          case Some(workItem) if workItem.status == PermanentlyFailed => SubscriptionWorkItemRepository.FailureCallbackHandling.AlreadyPermanentlyFailed
+          case Some(workItem) if workItem.item.agentReference.isDefined || workItem.status == ProcessingStatus.Succeeded =>
+            SubscriptionWorkItemRepository.FailureCallbackHandling.IgnoredAlreadySucceeded
+          case _ => SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound
+        }
     }
 
+  def markAsPermanentlyFailed(requestId: String): Future[Boolean] = handleFailureCallback(requestId).map {
+    case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound => false
+    case _ => true
+  }
+
 object SubscriptionWorkItemRepository:
-  private[repositories] val indexMigrationLogger: Logger =
-    Logger("uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository")
+
+  private[repositories] val indexMigrationLogger: Logger = Logger("uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository")
 
   enum FailureCallbackHandling:
+
     case MarkedPermanentlyFailed
     case AlreadyPermanentlyFailed
     case IgnoredAlreadySucceeded
@@ -347,19 +345,18 @@ object SubscriptionWorkItemRepository:
     listIndexNames: => Future[Seq[String]],
     dropIndex: String => Future[Unit],
     logger: Logger
-  )(using ExecutionContext): Future[Unit] =
-    listIndexNames
-      .flatMap { names =>
-        val hasLegacyUniqueArn = names.contains("uniqueArn")
-        if hasLegacyUniqueArn then
-          logger.warn("[SubscriptionWorkItemRepository][ensureIndexes] Dropping legacy uniqueArn index in favour of uniqueArnRegime")
-          dropIndex("uniqueArn")
-        else
-          Future.unit
-      }
-      .recoverWith { case NonFatal(error) =>
-        // This migration is required for correctness: leaving the legacy uniqueArn index in place blocks cross-regime
-        // subscriptions (e.g. PAYE + SA) by incorrectly enforcing uniqueness on arn alone.
-        logger.error("[SubscriptionWorkItemRepository][ensureIndexes] Failed to check/drop legacy uniqueArn index", error)
-        Future.failed(error)
-      }
+  )(using ExecutionContext): Future[Unit] = listIndexNames
+    .flatMap { names =>
+      val hasLegacyUniqueArn = names.contains("uniqueArn")
+      if hasLegacyUniqueArn then
+        logger.warn("[SubscriptionWorkItemRepository][ensureIndexes] Dropping legacy uniqueArn index in favour of uniqueArnRegime")
+        dropIndex("uniqueArn")
+      else
+        Future.unit
+    }
+    .recoverWith { case NonFatal(error) =>
+      // This migration is required for correctness: leaving the legacy uniqueArn index in place blocks cross-regime
+      // subscriptions (e.g. PAYE + SA) by incorrectly enforcing uniqueness on arn alone.
+      logger.error("[SubscriptionWorkItemRepository][ensureIndexes] Failed to check/drop legacy uniqueArn index", error)
+      Future.failed(error)
+    }

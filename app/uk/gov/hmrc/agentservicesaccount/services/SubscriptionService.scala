@@ -67,8 +67,7 @@ extends Logging:
   private def isDuplicateKeyException(error: Throwable): Boolean =
     error match
       case e: MongoWriteException => e.getError.getCode == 11000 || e.getError.getMessage.contains("E11000")
-      case e: MongoBulkWriteException =>
-        e.getWriteErrors.asScala.exists(we => we.getCode == 11000 || we.getMessage.contains("E11000"))
+      case e: MongoBulkWriteException => e.getWriteErrors.asScala.exists(we => we.getCode == 11000 || we.getMessage.contains("E11000"))
       case e: MongoCommandException => e.getErrorCode == 11000 || e.getErrorMessage.contains("E11000")
       case e => Option(e.getMessage).exists(_.contains("E11000"))
 
@@ -102,27 +101,50 @@ extends Logging:
     subscriptionRequest: SaSubscriptionRequest,
     adminCredId: CredId,
     groupId: GroupId
-  )(using request: RequestHeader): Future[Done] =
-    enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).flatMap { enrolments =>
-      val alreadyEnrolled = enrolments.exists(e => e.service == LegacyRegime.SA.enrolmentKey && e.state == "Activated")
-      if alreadyEnrolled then
-        Future.failed(UpstreamErrorResponse("Already enrolled for SA", 409, 409))
-      else
-        subscriptionWorkItemRepository.findByArnAndRegime(arn, LegacyRegime.SA).flatMap {
-          case Some(existing) if existing.status != PermanentlyFailed =>
-            Future.failed(UpstreamErrorResponse("SA subscription already in progress", 409, 409))
-          case Some(existing) =>
-            // SA work items are uniquely keyed by (arn, regime). When a previous attempt is PermanentlyFailed we allow
-            // the user to re-start, but must remove the existing document before inserting the new attempt.
-            subscriptionWorkItemRepository.deletePermanentlyFailedById(existing.id).flatMap {
-              case true => startNewSaWorkItem(arn, subscriptionRequest, adminCredId, groupId)
-              case false =>
-                // If the document wasn't deleted it has likely been updated concurrently; treat as "in progress".
-                Future.failed(UpstreamErrorResponse("SA subscription already in progress", 409, 409))
-            }
-          case None => startNewSaWorkItem(arn, subscriptionRequest, adminCredId, groupId)
-        }
-    }
+  )(using request: RequestHeader): Future[Done] = enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).flatMap { enrolments =>
+    val alreadyEnrolled = enrolments.exists(e => e.service == LegacyRegime.SA.enrolmentKey && e.state == "Activated")
+    if alreadyEnrolled then
+      Future.failed(UpstreamErrorResponse(
+        "Already enrolled for SA",
+        409,
+        409
+      ))
+    else
+      subscriptionWorkItemRepository.findByArnAndRegime(arn, LegacyRegime.SA).flatMap {
+        case Some(existing) if existing.status != PermanentlyFailed =>
+          Future.failed(UpstreamErrorResponse(
+            "SA subscription already in progress",
+            409,
+            409
+          ))
+        case Some(existing) =>
+          // SA work items are uniquely keyed by (arn, regime). When a previous attempt is PermanentlyFailed we allow
+          // the user to re-start, but must remove the existing document before inserting the new attempt.
+          subscriptionWorkItemRepository.deletePermanentlyFailedById(existing.id).flatMap {
+            case true =>
+              startNewSaWorkItem(
+                arn,
+                subscriptionRequest,
+                adminCredId,
+                groupId
+              )
+            case false =>
+              // If the document wasn't deleted it has likely been updated concurrently; treat as "in progress".
+              Future.failed(UpstreamErrorResponse(
+                "SA subscription already in progress",
+                409,
+                409
+              ))
+          }
+        case None =>
+          startNewSaWorkItem(
+            arn,
+            subscriptionRequest,
+            adminCredId,
+            groupId
+          )
+      }
+  }
 
   private def startNewSaWorkItem(
     arn: Arn,
@@ -146,10 +168,15 @@ extends Logging:
         )
       )
       .map(_ => Done)
-      .recoverWith { case NonFatal(error) if isDuplicateKeyException(error) =>
-        // `findByArnAndRegime` is not enough under concurrency: two requests can race and the loser will hit the unique
-        // (arn, regime) index. Return the intended conflict response in that case.
-        Future.failed(UpstreamErrorResponse("SA subscription already in progress", 409, 409))
+      .recoverWith {
+        case NonFatal(error) if isDuplicateKeyException(error) =>
+          // `findByArnAndRegime` is not enough under concurrency: two requests can race and the loser will hit the unique
+          // (arn, regime) index. Return the intended conflict response in that case.
+          Future.failed(UpstreamErrorResponse(
+            "SA subscription already in progress",
+            409,
+            409
+          ))
       }
 
   def handleRoboticsCallback(
@@ -175,8 +202,7 @@ extends Logging:
           case SubscriptionWorkItemRepository.FailureCallbackHandling.IgnoredAlreadySucceeded =>
             logger.warn(s"[handleRoboticsCallback] Ignoring failure callback for requestId ${callback.requestId} because success has already been recorded")
             SubscriptionService.CallbackHandling.Handled
-          case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound =>
-            SubscriptionService.CallbackHandling.NotFound
+          case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound => SubscriptionService.CallbackHandling.NotFound
         }
     }
 
@@ -221,5 +247,6 @@ extends Logging:
 
 object SubscriptionService:
   enum CallbackHandling:
+
     case Handled
     case NotFound
