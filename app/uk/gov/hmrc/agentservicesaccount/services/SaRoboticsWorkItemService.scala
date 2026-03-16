@@ -30,9 +30,7 @@ import scala.concurrent.Future
 @Singleton
 class SaRoboticsWorkItemService @Inject() (
   repository: SubscriptionWorkItemRepository
-)(using
-  ec: ExecutionContext
-):
+)(using ExecutionContext):
 
   def pullOutstanding(now: Instant): Future[Option[WorkItem[SubscriptionWorkItem]]] = repository.pullOutstandingRobotics(
     regime = LegacyRegime.SA,
@@ -45,3 +43,15 @@ class SaRoboticsWorkItemService @Inject() (
     workItem: WorkItem[SubscriptionWorkItem],
     invokedAt: Instant
   ): Future[Boolean] = repository.markRoboticsInvoked(workItem.id, invokedAt = invokedAt)
+
+  def markPermanentlyFailed(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] =
+
+    val requestId = workItem.item.requestId
+    repository.markAsPermanentlyFailed(requestId)
+
+  def markAsFailed(
+    workItem: WorkItem[SubscriptionWorkItem],
+    failedCounter: Int
+  ): Future[Boolean] =
+    val requestId = workItem.item.requestId
+    repository.markAsFailed(requestId, failedCounter)

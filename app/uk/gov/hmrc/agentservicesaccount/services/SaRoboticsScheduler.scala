@@ -43,7 +43,7 @@ extends Logging:
         actorSystem.scheduler.scheduleAtFixedRate(
           initialDelay = jobConfig.initialDelay,
           interval = jobConfig.interval
-        )(() => worker.runOnce().recover { case error => logger.error("SA robotics scheduler run failed", error) })
+        )(() => worker.runOnce(jobConfig.maxAttempts).recover { case error => logger.error("SA robotics scheduler run failed", error) })
       Some(s)
     else
       logger.warn("SA robotics scheduler disabled by config")

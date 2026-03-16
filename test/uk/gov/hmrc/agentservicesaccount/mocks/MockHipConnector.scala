@@ -23,7 +23,6 @@ import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 

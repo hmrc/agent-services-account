@@ -42,7 +42,7 @@ with MockAppConfig {
   val html = "<html><head></head><body></body></html>"
   val now: Instant = Instant.now
   implicit val appConfig: AppConfig = mockAppConfig
-  implicit val req: Request[_] = FakeRequest()
+  implicit val req: Request[?] = FakeRequest()
 
   val service = new DmsService(mockDmsConnector, appConfig)
 

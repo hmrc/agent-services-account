@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Seconds, Span}
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
 trait HipStubs {
 

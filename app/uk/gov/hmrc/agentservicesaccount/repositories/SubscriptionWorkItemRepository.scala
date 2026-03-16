@@ -49,6 +49,8 @@ import uk.gov.hmrc.mongo.workitem.WorkItemRepository
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.*
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.Failed
+
 import scala.util.control.NonFatal
 
 @Singleton
@@ -326,9 +328,26 @@ with Logging:
     }
 
   def markAsPermanentlyFailed(requestId: String): Future[Boolean] = handleFailureCallback(requestId).map {
-    case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound => false
+    case SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed => false
     case _ => true
   }
+
+  def markAsFailed(
+    workItemId: String,
+    failedCounter: Int,
+    invokedAt: Instant = now()
+  ): Future[Boolean] = coll
+    .updateOne(
+      Filters.equal("_id", workItemId),
+      Updates.combine(
+        Updates.set(workItemFields.status, Failed),
+        Updates.set(workItemFields.failureCount, failedCounter),
+        Updates.set(s"${workItemFields.item}.roboticsInvokedAt", invokedAt),
+        Updates.set(workItemFields.updatedAt, now())
+      )
+    )
+    .toFuture()
+    .map(_.getModifiedCount > 0)
 
 object SubscriptionWorkItemRepository:
 
@@ -338,6 +357,7 @@ object SubscriptionWorkItemRepository:
 
     case MarkedPermanentlyFailed
     case AlreadyPermanentlyFailed
+    case MarkedFailed
     case IgnoredAlreadySucceeded
     case NotFound
 
