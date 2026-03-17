@@ -187,7 +187,10 @@ extends Logging:
         // Callback success does not mean subscription is complete; it unblocks the next workflow stage.
         // We set the agentReference and return the work item to ToDo so the post-callback worker (APB-10570)
         // can pick it up.
-        subscriptionWorkItemRepository.addAgentReference(callback.agentId, callback.requestId).map {
+        subscriptionWorkItemRepository.addAgentReference(
+          callback.agentId.getOrElse(throw new RuntimeException("missing agentId after validating model")),
+          callback.requestId
+        ).map {
           case true => SubscriptionService.CallbackHandling.Handled
           case false => SubscriptionService.CallbackHandling.NotFound
         }

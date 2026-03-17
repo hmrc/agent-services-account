@@ -23,7 +23,7 @@ case class SubscriptionCallback(
   requestId: String,
   targetSystem: TargetSystem,
   operationRequired: Operation,
-  agentId: AgentReference,
+  agentId: Option[AgentReference],
   status: CallbackStatus,
   requestMessage: String
 )

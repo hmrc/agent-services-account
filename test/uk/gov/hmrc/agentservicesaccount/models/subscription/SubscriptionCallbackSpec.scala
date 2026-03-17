@@ -32,7 +32,7 @@ extends UnitSpec:
     requestId = "test-request-id",
     targetSystem = CESA,
     operationRequired = CREATE,
-    agentId = AgentReference("ABC123"),
+    agentId = Some(AgentReference("ABC123")),
     status = CallbackSuccess,
     requestMessage = "test-message"
   )
@@ -41,7 +41,7 @@ extends UnitSpec:
     requestId = "test-request-id",
     targetSystem = COTAX,
     operationRequired = UPDATE,
-    agentId = AgentReference("ABC123"),
+    agentId = Some(AgentReference("ABC123")),
     status = CallbackFailure,
     requestMessage = "test-message"
   )

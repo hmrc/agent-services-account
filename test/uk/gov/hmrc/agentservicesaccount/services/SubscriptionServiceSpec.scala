@@ -356,7 +356,7 @@ with BeforeAndAfterEach {
             requestId = requestId,
             targetSystem = TargetSystem.CESA,
             operationRequired = Operation.CREATE,
-            agentId = testAgentRef,
+            agentId = Some(testAgentRef),
             status = CallbackStatus.CallbackSuccess,
             requestMessage = "ok"
           )
@@ -401,7 +401,7 @@ with BeforeAndAfterEach {
             requestId = requestId,
             targetSystem = TargetSystem.CESA,
             operationRequired = Operation.CREATE,
-            agentId = testAgentRef,
+            agentId = Some(testAgentRef),
             status = CallbackStatus.CallbackSuccess,
             requestMessage = "ok"
           )
@@ -445,7 +445,7 @@ with BeforeAndAfterEach {
           requestId = requestId,
           targetSystem = TargetSystem.CESA,
           operationRequired = Operation.CREATE,
-          agentId = testAgentRef,
+          agentId = Some(testAgentRef),
           status = CallbackStatus.CallbackSuccess,
           requestMessage = "ok"
         )
@@ -457,7 +457,7 @@ with BeforeAndAfterEach {
             requestId = requestId,
             targetSystem = TargetSystem.CESA,
             operationRequired = Operation.CREATE,
-            agentId = testAgentRef,
+            agentId = Some(testAgentRef),
             status = CallbackStatus.CallbackFailure,
             requestMessage = "boom"
           )
