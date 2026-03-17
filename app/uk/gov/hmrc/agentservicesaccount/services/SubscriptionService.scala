@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import com.mongodb.MongoBulkWriteException
-import com.mongodb.MongoCommandException
-import com.mongodb.MongoWriteException
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import org.apache.pekko.Done
+import org.mongodb.scala.MongoException
 import play.api.Logging
+import play.api.http.Status.CONFLICT
+import play.api.http.Status.TOO_MANY_REQUESTS
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
@@ -45,9 +45,6 @@ import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 
-import scala.jdk.CollectionConverters.*
-import scala.util.control.NonFatal
-
 @Singleton
 class SubscriptionService @Inject() (
   agentEpayeRegistrationConnector: AgentEpayeRegistrationConnector,
@@ -64,120 +61,134 @@ extends Logging:
     else
       (None, None)
 
-  private def isDuplicateKeyException(error: Throwable): Boolean =
-    error match
-      case e: MongoWriteException => e.getError.getCode == 11000 || e.getError.getMessage.contains("E11000")
-      case e: MongoBulkWriteException => e.getWriteErrors.asScala.exists(we => we.getCode == 11000 || we.getMessage.contains("E11000"))
-      case e: MongoCommandException => e.getErrorCode == 11000 || e.getErrorMessage.contains("E11000")
-      case e => Option(e.getMessage).exists(_.contains("E11000"))
+  private def checkExistingEnrolments(
+    regime: LegacyRegime,
+    groupId: GroupId
+  )(using request: RequestHeader): Future[Done] = enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).map { enrolments =>
+    if enrolments.exists(e => e.service == regime.enrolmentKey && e.state == "Activated") then
+      throw UpstreamErrorResponse(
+        message = s"Already enrolled for ${regime.toString}",
+        statusCode = CONFLICT,
+        reportAs = CONFLICT
+      )
+    else Done
+  }
 
-  def startPayeSubscription(
+  private def checkExistingWorkItem(
+    arn: Arn,
+    regime: LegacyRegime
+  ): Future[Done] = subscriptionWorkItemRepository.findByArnAndRegime(arn, regime).flatMap {
+    case Some(existing) if existing.status != PermanentlyFailed =>
+      throw UpstreamErrorResponse(
+        message = s"${regime.toString} subscription already in progress",
+        statusCode = CONFLICT,
+        reportAs = CONFLICT
+      )
+    case Some(existing) =>
+      // Work items are uniquely keyed by (arn, regime). When a previous attempt is PermanentlyFailed we allow
+      // the user to re-start, but must remove the existing document before inserting the new attempt.
+      subscriptionWorkItemRepository.deletePermanentlyFailedById(existing.id).map {
+        case true => Done
+        case false =>
+          // If the document wasn't deleted it has likely been updated concurrently; treat as "in progress".
+          throw UpstreamErrorResponse(
+            message = s"${regime.toString} subscription already in progress",
+            statusCode = CONFLICT,
+            reportAs = CONFLICT
+          )
+      }
+    case None => Future.successful(Done)
+  }
+
+  def startSubscriptionProcess(
+    arn: Arn,
+    subscriptionRequest: SubscriptionRequest,
+    regime: LegacyRegime,
+    adminCredId: CredId,
+    groupId: GroupId
+  )(using request: RequestHeader): Future[Done] =
+    for {
+      _ <- checkExistingEnrolments(
+        regime,
+        groupId
+      )
+      _ <- checkExistingWorkItem(arn, regime)
+      workItem <-
+        subscriptionRequest match {
+          case request: PayeSubscriptionRequest =>
+            createPayeWorkItem(
+              arn,
+              request,
+              adminCredId,
+              groupId
+            )
+          case request: (SaSubscriptionRequest | CtSubscriptionRequest) =>
+            Future.successful(createWorkItem(
+              arn,
+              request,
+              regime,
+              adminCredId,
+              groupId
+            ))
+        }
+      result <- subscriptionWorkItemRepository
+        .pushNew(workItem)
+        .map(_ => Done)
+        .recoverWith {
+          case e: MongoException if e.getMessage.contains("E11000") =>
+            // `findByArnAndRegime` is not enough under concurrency: two requests can race and the loser will hit the unique
+            // (arn, regime) index. Return the intended conflict response in that case.
+            Future.failed(UpstreamErrorResponse(
+              "SA subscription already in progress",
+              TOO_MANY_REQUESTS,
+              TOO_MANY_REQUESTS
+            ))
+        }
+    } yield result
+
+  private def createPayeWorkItem(
     arn: Arn,
     subscriptionRequest: PayeSubscriptionRequest,
     adminCredId: CredId,
     groupId: GroupId
-  )(using request: RequestHeader): Future[Done] = agentEpayeRegistrationConnector.register(subscriptionRequest).flatMap { agentReference =>
+  )(using request: RequestHeader): Future[SubscriptionWorkItem] =
+    // PAYE allows us to create an agent reference up front, so we can create the work item that skips te callback process
+    agentEpayeRegistrationConnector.register(subscriptionRequest).map { agentReference =>
+      // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
+      val (optSessionId, optBearerToken) = maybeCaptureStubHeaders()
+
+      SubscriptionWorkItem(
+        arn = arn,
+        subscriptionRequest = subscriptionRequest,
+        regime = PAYE,
+        agentReference = Some(agentReference),
+        groupId = Some(groupId),
+        adminCredId = Some(adminCredId),
+        sessionId = optSessionId,
+        bearerToken = optBearerToken
+      )
+    }
+
+  private def createWorkItem(
+    arn: Arn,
+    subscriptionRequest: SubscriptionRequest,
+    regime: LegacyRegime,
+    adminCredId: CredId,
+    groupId: GroupId
+  )(using request: RequestHeader): SubscriptionWorkItem =
     // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
     val (optSessionId, optBearerToken) = maybeCaptureStubHeaders()
 
-    subscriptionWorkItemRepository
-      .pushNew(
-        SubscriptionWorkItem(
-          arn = arn,
-          subscriptionRequest = subscriptionRequest,
-          regime = PAYE,
-          agentReference = Some(agentReference),
-          groupId = Some(groupId),
-          adminCredId = Some(adminCredId),
-          sessionId = optSessionId,
-          bearerToken = optBearerToken
-        )
-      )
-      .map(_ => Done)
-  }
-
-  def startSaSubscription(
-    arn: Arn,
-    subscriptionRequest: SaSubscriptionRequest,
-    adminCredId: CredId,
-    groupId: GroupId
-  )(using request: RequestHeader): Future[Done] = enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).flatMap { enrolments =>
-    val alreadyEnrolled = enrolments.exists(e => e.service == LegacyRegime.SA.enrolmentKey && e.state == "Activated")
-    if alreadyEnrolled then
-      Future.failed(UpstreamErrorResponse(
-        "Already enrolled for SA",
-        409,
-        409
-      ))
-    else
-      subscriptionWorkItemRepository.findByArnAndRegime(arn, LegacyRegime.SA).flatMap {
-        case Some(existing) if existing.status != PermanentlyFailed =>
-          Future.failed(UpstreamErrorResponse(
-            "SA subscription already in progress",
-            409,
-            409
-          ))
-        case Some(existing) =>
-          // SA work items are uniquely keyed by (arn, regime). When a previous attempt is PermanentlyFailed we allow
-          // the user to re-start, but must remove the existing document before inserting the new attempt.
-          subscriptionWorkItemRepository.deletePermanentlyFailedById(existing.id).flatMap {
-            case true =>
-              startNewSaWorkItem(
-                arn,
-                subscriptionRequest,
-                adminCredId,
-                groupId
-              )
-            case false =>
-              // If the document wasn't deleted it has likely been updated concurrently; treat as "in progress".
-              Future.failed(UpstreamErrorResponse(
-                "SA subscription already in progress",
-                409,
-                409
-              ))
-          }
-        case None =>
-          startNewSaWorkItem(
-            arn,
-            subscriptionRequest,
-            adminCredId,
-            groupId
-          )
-      }
-  }
-
-  private def startNewSaWorkItem(
-    arn: Arn,
-    subscriptionRequest: SaSubscriptionRequest,
-    adminCredId: CredId,
-    groupId: GroupId
-  )(using request: RequestHeader): Future[Done] =
-    // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
-    val (optSessionId, optBearerToken) = maybeCaptureStubHeaders()
-    subscriptionWorkItemRepository
-      .pushNew(
-        SubscriptionWorkItem(
-          arn = arn,
-          subscriptionRequest = subscriptionRequest,
-          regime = LegacyRegime.SA,
-          agentReference = None,
-          groupId = Some(groupId),
-          adminCredId = Some(adminCredId),
-          sessionId = optSessionId,
-          bearerToken = optBearerToken
-        )
-      )
-      .map(_ => Done)
-      .recoverWith {
-        case NonFatal(error) if isDuplicateKeyException(error) =>
-          // `findByArnAndRegime` is not enough under concurrency: two requests can race and the loser will hit the unique
-          // (arn, regime) index. Return the intended conflict response in that case.
-          Future.failed(UpstreamErrorResponse(
-            "SA subscription already in progress",
-            409,
-            409
-          ))
-      }
+    SubscriptionWorkItem(
+      arn = arn,
+      subscriptionRequest = subscriptionRequest,
+      regime = regime,
+      agentReference = None,
+      groupId = Some(groupId),
+      adminCredId = Some(adminCredId),
+      sessionId = optSessionId,
+      bearerToken = optBearerToken
+    )
 
   def handleRoboticsCallback(
     callback: SubscriptionCallback
