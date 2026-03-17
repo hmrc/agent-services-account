@@ -92,24 +92,27 @@ with AgentAuthStubs:
     "return 200 after successfully calling OPRA and creating a new work item for PAYE regime" in:
       isLoggedInAsASAgent(testArn)
 
+      givenEs3CallSucceeds(testGroupId)()
       givenEpayeRegisterCallSucceeds(testPayeSubscriptionRequest)(testAgentReference)
 
       val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testPayeSubscriptionRequest)
 
       response.status shouldBe 200
-      repository.coll.find().headOption().futureValue.nonEmpty shouldBe true
+      repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(PAYE)
+      repository.coll.find().headOption().futureValue.flatMap(_.item.agentReference) shouldBe Some(testAgentReference)
 
     "throw error after a failed OPRA call without creating a new work item for PAYE regime" in:
       isLoggedInAsASAgent(testArn)
 
+      givenEs3CallSucceeds(testGroupId)()
       givenEpayeRegisterCallFails(testPayeSubscriptionRequest)
 
       val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testPayeSubscriptionRequest)
 
       response.status shouldBe 400
-      repository.coll.find().headOption().futureValue.flatMap(_.item.agentReference) shouldBe None
+      repository.coll.find().headOption().futureValue shouldBe None
 
-    "return 501 for SA regime" in:
+    "return 200 for SA regime" in:
       isLoggedInAsASAgent(testArn)
 
       givenEs3CallSucceeds(testGroupId)()
@@ -118,12 +121,14 @@ with AgentAuthStubs:
       response.status shouldBe 200
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(SA)
 
-    "return 501 for CT regime" in:
+    "return 200 for CT regime" in:
       isLoggedInAsASAgent(testArn)
 
+      givenEs3CallSucceeds(testGroupId)()
       val response = post(s"/legacy-subscription-request/$CT")(testCtSubscriptionRequest)
 
-      response.status shouldBe 501
+      response.status shouldBe 200
+      repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(CT)
 
   "GET /legacy-subscription-info" should:
     "return 200 with the correct information for an in progress work item" in:
