@@ -171,7 +171,7 @@ extends Logging:
 
   private def createWorkItem(
     arn: Arn,
-    subscriptionRequest: SubscriptionRequest,
+    subscriptionRequest: SaSubscriptionRequest | CtSubscriptionRequest,
     regime: LegacyRegime,
     adminCredId: CredId,
     groupId: GroupId
