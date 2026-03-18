@@ -270,7 +270,7 @@ with AgentAuthStubs:
         requestId = requestId,
         targetSystem = CESA,
         operationRequired = CREATE,
-        agentId = testAgentReference,
+        agentId = Some(testAgentReference),
         status = CallbackSuccess,
         requestMessage = "test-message"
       )
@@ -300,7 +300,7 @@ with AgentAuthStubs:
         requestId = requestId,
         targetSystem = CESA,
         operationRequired = CREATE,
-        agentId = testAgentReference,
+        agentId = Some(testAgentReference),
         status = CallbackSuccess,
         requestMessage = "test-message"
       )
@@ -331,7 +331,7 @@ with AgentAuthStubs:
         requestId = requestId,
         targetSystem = COTAX,
         operationRequired = CREATE,
-        agentId = AgentReference(""),
+        agentId = None,
         status = CallbackFailure,
         requestMessage = "test-message"
       )
@@ -354,7 +354,7 @@ with AgentAuthStubs:
         requestId = requestId,
         targetSystem = COTAX,
         operationRequired = CREATE,
-        agentId = AgentReference(""),
+        agentId = None,
         status = CallbackFailure,
         requestMessage = "test-message"
       )
@@ -372,13 +372,28 @@ with AgentAuthStubs:
       response.status shouldBe 204
       repository.coll.find().headOption().futureValue.map(_.status) shouldBe Some(PermanentlyFailed)
 
+    "return 400 when a successful callback does not contain an 'agentId'" in :
+      val requestId = UUID.randomUUID().toString
+      val testCallbackRequest = SubscriptionCallback(
+        requestId = requestId,
+        targetSystem = CESA,
+        operationRequired = CREATE,
+        agentId = None,
+        status = CallbackSuccess,
+        requestMessage = "test-message"
+      )
+
+      val response = post(s"/robotics/callback")(testCallbackRequest)
+
+      response.status shouldBe 400
+
     "return 404 when no work item is found for the given correlationId" in:
       val requestId = UUID.randomUUID().toString
       val testCallbackRequest = SubscriptionCallback(
         requestId = requestId,
         targetSystem = CESA,
         operationRequired = CREATE,
-        agentId = testAgentReference,
+        agentId = Some(testAgentReference),
         status = CallbackSuccess,
         requestMessage = "test-message"
       )
