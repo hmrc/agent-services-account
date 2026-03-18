@@ -29,6 +29,7 @@ import uk.gov.hmrc.agentservicesaccount.models.Es20Enrolment
 import uk.gov.hmrc.agentservicesaccount.models.Es20Response
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
@@ -51,6 +52,7 @@ with BeforeAndAfterEach:
     retryInterval = 10.seconds,
     maxAttempts = 3
   )
+  private val regime = PAYE
 
   private val workItemService = mock[KnownFactsWorkItemService]
   private val connector = mock[EnrolmentStoreProxyConnector]
@@ -92,26 +94,27 @@ with BeforeAndAfterEach:
     )
   )
 
-  private def workerBehaviour(
-    regime: LegacyRegime,
-    createWorker: () => KnownFactsWorker
-  ): Unit = {
+  override def beforeEach(): Unit =
+    super.beforeEach()
+    reset(workItemService, connector)
 
+  private val worker =
+    new KnownFactsWorker(
+      workItemService = workItemService,
+      enrolmentStoreProxyConnector = connector
+    )
+
+  "KnownFactsWorker" should {
     "do nothing when there is no outstanding work item" in {
-
-      val worker = createWorker()
-
       when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
         .thenReturn(Future.successful(None))
 
-      worker.runOnce().futureValue
+      worker.runOnce(using jobConfig, regime).futureValue
 
       verifyNoInteractions(connector)
     }
 
     "reschedule when known facts are not yet available" in {
-
-      val worker = createWorker()
       val workItem = buildWorkItem(regime, failureCount = 0)
 
       when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
@@ -122,15 +125,13 @@ with BeforeAndAfterEach:
 
       when(workItemService.reschedule(workItem, jobConfig.retryInterval)).thenReturn(Future.successful(true))
 
-      worker.runOnce().futureValue
+      worker.runOnce(using jobConfig, regime).futureValue
 
       verify(workItemService).reschedule(workItem, jobConfig.retryInterval)
       verify(workItemService, never()).complete(workItem)
     }
 
     "allocate enrolment and complete when known facts are available" in {
-
-      val worker = createWorker()
       val workItem = buildWorkItem(regime, failureCount = 0)
       val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
@@ -151,15 +152,13 @@ with BeforeAndAfterEach:
       when(workItemService.complete(workItem))
         .thenReturn(Future.successful(true))
 
-      worker.runOnce().futureValue
+      worker.runOnce(using jobConfig, regime).futureValue
 
       verify(workItemService).complete(workItem)
       verify(workItemService, never()).reschedule(workItem, jobConfig.retryInterval)
     }
 
     "mark for manual intervention once max attempts are reached" in {
-
-      val worker = createWorker()
       val workItem = buildWorkItem(regime, failureCount = 2)
 
       when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
@@ -170,37 +169,9 @@ with BeforeAndAfterEach:
 
       when(workItemService.markManualIntervention(workItem)).thenReturn(Future.successful(true))
 
-      worker.runOnce().futureValue
+      worker.runOnce(using jobConfig, regime).futureValue
 
       verify(workItemService).markManualIntervention(workItem)
       verify(workItemService, never()).reschedule(workItem, jobConfig.retryInterval)
     }
   }
-
-  "PayeKnownFactsWorker" should {
-    behave like workerBehaviour(
-      LegacyRegime.PAYE,
-      () =>
-        new PayeKnownFactsWorker(
-          workItemService,
-          connector,
-          jobConfig
-        )
-    )
-  }
-
-  "SaKnownFactsWorker" should {
-    behave like workerBehaviour(
-      LegacyRegime.SA,
-      () =>
-        new SaKnownFactsWorker(
-          workItemService,
-          connector,
-          jobConfig
-        )
-    )
-  }
-
-  override def beforeEach(): Unit =
-    super.beforeEach()
-    reset(workItemService, connector)

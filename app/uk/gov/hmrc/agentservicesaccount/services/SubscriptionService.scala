@@ -139,7 +139,7 @@ extends Logging:
             // `findByArnAndRegime` is not enough under concurrency: two requests can race and the loser will hit the unique
             // (arn, regime) index. Return the intended conflict response in that case.
             Future.failed(UpstreamErrorResponse(
-              "SA subscription already in progress",
+              s"${regime.toString} subscription already in progress",
               TOO_MANY_REQUESTS,
               TOO_MANY_REQUESTS
             ))
@@ -152,7 +152,7 @@ extends Logging:
     adminCredId: CredId,
     groupId: GroupId
   )(using request: RequestHeader): Future[SubscriptionWorkItem] =
-    // PAYE allows us to create an agent reference up front, so we can create the work item that skips te callback process
+    // PAYE allows us to create an agent reference and trigger known fact setup up front, so we can create the work item that skips the callback process
     agentEpayeRegistrationConnector.register(subscriptionRequest).map { agentReference =>
       // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
       val (optSessionId, optBearerToken) = maybeCaptureStubHeaders()

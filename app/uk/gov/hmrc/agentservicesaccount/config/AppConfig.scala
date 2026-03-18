@@ -101,4 +101,21 @@ class AppConfig @Inject() (
       maxAttempts = config.get[Int](s"$prefix.max-attempts")
     )
 
+  val ctKnownFactsJobConfig: KnownFactsJobConfig =
+    val prefix = "work-item-jobs.ct-known-facts"
+    KnownFactsJobConfig(
+      initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
+      interval = config.get[Duration](s"$prefix.interval").toMillis.millis,
+      retryInterval = config.get[Duration](s"$prefix.retry-interval").toMillis.millis,
+      maxAttempts = config.get[Int](s"$prefix.max-attempts")
+    )
+
+  val ctRoboticsJobConfig: RoboticsJobConfig =
+    val prefix = "work-item-jobs.ct-robotics"
+    RoboticsJobConfig(
+      enabled = config.get[Boolean](s"$prefix.enabled"),
+      initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
+      interval = config.get[Duration](s"$prefix.interval").toMillis.millis
+    )
+
   private def baseUrl(key: String) = servicesConfig.baseUrl(key)

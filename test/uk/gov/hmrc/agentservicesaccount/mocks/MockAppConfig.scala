@@ -95,6 +95,27 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.sa-robotics.interval"))(any()))
       .thenReturn(1.second)
 
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.initial-delay"))(any()))
+      .thenReturn(1.second)
+
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.interval"))(any()))
+      .thenReturn(1.second)
+
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.retry-interval"))(any()))
+      .thenReturn(1.second)
+
+    when(mockConfig.get[Int](meq("work-item-jobs.ct-known-facts.max-attempts"))(any()))
+      .thenReturn(3)
+
+    when(mockConfig.get[Boolean](meq("work-item-jobs.ct-robotics.enabled"))(any()))
+      .thenReturn(false)
+
+    when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.ct-robotics.initial-delay"))(any()))
+      .thenReturn(1.second)
+
+    when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.cct-robotics.interval"))(any()))
+      .thenReturn(1.second)
+
     when(mockConfig.get[Boolean](meq("features.get-agent-record-via-hip"))(any()))
       .thenReturn(false)
 

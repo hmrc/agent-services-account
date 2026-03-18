@@ -26,19 +26,24 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.SessionId
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-abstract class KnownFactsWorker(
-  regime: LegacyRegime,
+@Singleton
+class KnownFactsWorker @Inject() (
   workItemService: KnownFactsWorkItemService,
-  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
-  jobConfig: KnownFactsJobConfig
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector
 )(using ec: ExecutionContext)
-extends Logging {
+extends Logging:
 
-  def runOnce(): Future[Unit] = workItemService.pullOutstanding(regime, jobConfig.retryInterval).flatMap {
+  def runOnce(using
+    jobConfig: KnownFactsJobConfig,
+    regime: LegacyRegime
+  ): Future[Unit] = workItemService.pullOutstanding(regime, jobConfig.retryInterval).flatMap {
     case None => Future.unit
     case Some(workItem) =>
       process(workItem).recoverWith { case NonFatal(error) =>
@@ -47,7 +52,10 @@ extends Logging {
       }
   }
 
-  private def process(workItem: WorkItem[SubscriptionWorkItem]): Future[Unit] =
+  private def process(workItem: WorkItem[SubscriptionWorkItem])(using
+    jobConfig: KnownFactsJobConfig,
+    regime: LegacyRegime
+  ): Future[Unit] =
     workItem.item.agentReference match {
       case None =>
         logger.warn(s"$regime work item missing agent reference: ${workItem.id}")
@@ -87,12 +95,11 @@ extends Logging {
           }
     }
 
-  private def handleFailure(workItem: WorkItem[SubscriptionWorkItem]): Future[Unit] =
+  private def handleFailure(workItem: WorkItem[SubscriptionWorkItem])(using jobConfig: KnownFactsJobConfig): Future[Unit] =
     if workItem.failureCount + 1 >= jobConfig.maxAttempts then
       workItemService.markManualIntervention(workItem).map(_ => ())
     else
       workItemService.reschedule(workItem, jobConfig.retryInterval).map(_ => ())
 
-  private def shouldStopRetrying(workItem: WorkItem[SubscriptionWorkItem]): Boolean = workItem.failureCount >= jobConfig.maxAttempts
-
-}
+  private def shouldStopRetrying(workItem: WorkItem[SubscriptionWorkItem])(using jobConfig: KnownFactsJobConfig): Boolean =
+    workItem.failureCount >= jobConfig.maxAttempts
