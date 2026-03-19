@@ -32,6 +32,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem
 import uk.gov.hmrc.http.Authorization
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.SessionId
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
@@ -156,9 +157,21 @@ extends Logging:
               // Persist a marker so we don't re-invoke this work item once it's "in flight" and awaiting callback.
               // We only set this after a successful outbound call to keep crash-recovery behaviour for items that were
               // claimed (InProgress) but never actually invoked.
-              .flatMap(_ => workItemService.markInvoked(workItem, invokedAt = now).map(_ => ()))
+              .flatMap(_ =>
+                workItemService.saveToDatabase(
+                  workItem.id,
+                  Succeeded,
+                  workItem.failureCount,
+                  now
+                ).map(_ => ())
+              )
               .recoverWith {
-                case ex => handleInvokeFailure(workItem, maxAttempts)
+                case ex =>
+                  handleInvokeFailure(
+                    workItem,
+                    maxAttempts,
+                    now
+                  )
               }
           case other => Future.failed(new RuntimeException(s"Unexpected subscription request type for SA robotics invocation: ${other.getClass.getName}"))
       case other => Future.failed(new RuntimeException(s"Unexpected regime in SA robotics worker: $other"))
@@ -166,16 +179,27 @@ extends Logging:
 
   def handleInvokeFailure(
     workItem: WorkItem[SubscriptionWorkItem],
-    maxAttempts: Int
+    maxAttempts: Int,
+    invokedAt: Instant
   ): Future[Unit] =
 
     // Read current and compute next attempt
     val nextAttempts: Int = workItem.failureCount + 1
     if (nextAttempts >= maxAttempts)
       workItemService
-        .markPermanentlyFailed(workItem)
+        .saveToDatabase(
+          workItem.id,
+          PermanentlyFailed,
+          nextAttempts,
+          invokedAt
+        )
         .map(_ => ())
     else
       workItemService
-        .markAsFailed(workItem, nextAttempts)
+        .saveToDatabase(
+          workItem.id,
+          Failed,
+          nextAttempts,
+          invokedAt
+        )
         .map(_ => ())

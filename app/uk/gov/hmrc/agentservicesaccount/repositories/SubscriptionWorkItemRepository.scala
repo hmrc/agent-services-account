@@ -48,9 +48,7 @@ import uk.gov.hmrc.mongo.workitem.WorkItemFields
 import uk.gov.hmrc.mongo.workitem.WorkItemRepository
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.*
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.Failed
-
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import scala.util.control.NonFatal
 
 @Singleton
@@ -283,20 +281,6 @@ with Logging:
       .toFuture()
       .map(_.getModifiedCount > 0)
 
-  def markRoboticsInvoked(
-    workItemId: ObjectId,
-    invokedAt: Instant = now()
-  ): Future[Boolean] = coll
-    .updateOne(
-      Filters.equal("_id", workItemId),
-      Updates.combine(
-        Updates.set(s"${workItemFields.item}.roboticsInvokedAt", invokedAt),
-        Updates.set(workItemFields.updatedAt, now())
-      )
-    )
-    .toFuture()
-    .map(_.getModifiedCount > 0)
-
   def handleFailureCallback(requestId: String): Future[SubscriptionWorkItemRepository.FailureCallbackHandling] = coll
     .updateOne(
       Filters.and(
@@ -327,20 +311,16 @@ with Logging:
         }
     }
 
-  def markAsPermanentlyFailed(requestId: String): Future[Boolean] = handleFailureCallback(requestId).map {
-    case SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed => false
-    case _ => true
-  }
-
-  def markAsFailed(
-    workItemId: String,
+  def saveStatusToDatabase(
+    workItemId: ObjectId,
+    status: ProcessingStatus,
     failedCounter: Int,
     invokedAt: Instant = now()
   ): Future[Boolean] = coll
     .updateOne(
       Filters.equal("_id", workItemId),
       Updates.combine(
-        Updates.set(workItemFields.status, Failed),
+        Updates.set(workItemFields.status, status),
         Updates.set(workItemFields.failureCount, failedCounter),
         Updates.set(s"${workItemFields.item}.roboticsInvokedAt", invokedAt),
         Updates.set(workItemFields.updatedAt, now())

@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
+import org.mongodb.scala.bson.ObjectId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
@@ -39,19 +41,14 @@ class SaRoboticsWorkItemService @Inject() (
 
   def markDeferred(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] = repository.markAsDeferredIfStillAwaitingInvocation(workItem.id)
 
-  def markInvoked(
-    workItem: WorkItem[SubscriptionWorkItem],
+  def saveToDatabase(
+    workItemId: ObjectId,
+    status: ProcessingStatus,
+    failedCounter: Int,
     invokedAt: Instant
-  ): Future[Boolean] = repository.markRoboticsInvoked(workItem.id, invokedAt = invokedAt)
-
-  def markPermanentlyFailed(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] =
-
-    val requestId = workItem.item.requestId
-    repository.markAsPermanentlyFailed(requestId)
-
-  def markAsFailed(
-    workItem: WorkItem[SubscriptionWorkItem],
-    failedCounter: Int
-  ): Future[Boolean] =
-    val requestId = workItem.item.requestId
-    repository.markAsFailed(requestId, failedCounter)
+  ): Future[Boolean] = repository.saveStatusToDatabase(
+    workItemId,
+    status,
+    failedCounter,
+    invokedAt
+  )

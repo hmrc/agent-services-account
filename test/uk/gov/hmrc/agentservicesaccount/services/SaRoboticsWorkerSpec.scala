@@ -31,7 +31,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.Correlat
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
@@ -82,7 +82,7 @@ with BeforeAndAfterEach:
     receivedAt = Instant.now(),
     updatedAt = Instant.now(),
     availableAt = Instant.now(),
-    status = ProcessingStatus.InProgress,
+    status = InProgress,
     failureCount = failureCount,
     item = SubscriptionWorkItem(
       arn = Arn("TARN0000001"),
@@ -123,12 +123,22 @@ with BeforeAndAfterEach:
       when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(Some(workItem)))
       when(connector.invoke(eqTo(expectedPayload), any[CorrelationId])(using any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
-      when(workItemService.markInvoked(workItem, now)).thenReturn(Future.successful(true))
+      when(workItemService.saveToDatabase(
+        workItem.id,
+        Succeeded,
+        workItem.failureCount,
+        now
+      )).thenReturn(Future.successful(true))
 
       worker.runOnce(maxAttempts, now).futureValue
 
       verify(connector).invoke(eqTo(expectedPayload), any[CorrelationId])(using hcCaptor.capture())
-      verify(workItemService).markInvoked(workItem, now)
+      verify(workItemService).saveToDatabase(
+        workItem.id,
+        Succeeded,
+        workItem.failureCount,
+        now
+      )
 
       hcCaptor.getValue.authorization.map(_.value) shouldBe Some("Bearer test-token")
       hcCaptor.getValue.sessionId.map(_.value) shouldBe Some("session-123")
@@ -166,12 +176,22 @@ with BeforeAndAfterEach:
       when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(Some(workItem)))
       when(connector.invoke(eqTo(expectedPayload), any[CorrelationId])(using any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
-      when(workItemService.markInvoked(workItem, now)).thenReturn(Future.successful(true))
+      when(workItemService.saveToDatabase(
+        workItem.id,
+        Succeeded,
+        workItem.failureCount,
+        now
+      )).thenReturn(Future.successful(true))
 
       worker.runOnce(maxAttempts, now).futureValue
 
       verify(connector).invoke(eqTo(expectedPayload), any[CorrelationId])(using hcCaptor.capture())
-      verify(workItemService).markInvoked(workItem, now)
+      verify(workItemService).saveToDatabase(
+        workItem.id,
+        Succeeded,
+        workItem.failureCount,
+        now
+      )
 
       hcCaptor.getValue.authorization shouldBe None
       hcCaptor.getValue.sessionId shouldBe None
@@ -190,7 +210,12 @@ with BeforeAndAfterEach:
       worker.runOnce(maxAttempts, now).futureValue
 
       verify(workItemService).markDeferred(workItem)
-      verify(workItemService, never()).markInvoked(workItem, now)
+      verify(workItemService, never()).saveToDatabase(
+        workItem.id,
+        Failed,
+        workItem.failureCount,
+        now
+      )
     }
 
     "mark the work item PermanentlyFailed when workItem reaches maximum retries" in {
@@ -206,11 +231,22 @@ with BeforeAndAfterEach:
       when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(Some(workItem)))
       when(connector.invoke(any[JsObject], any[CorrelationId])(using any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("boom")))
-      when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(true))
+      when(workItemService.markDeferred(workItem)).thenReturn(Future.successful(true))
+      when(workItemService.saveToDatabase(
+        workItem.id,
+        PermanentlyFailed,
+        maxAttempts,
+        now
+      )).thenReturn(Future.successful(true))
 
       worker.runOnce(maxAttempts, now).futureValue
 
-      verify(workItemService).markPermanentlyFailed(workItem)
+      verify(workItemService).saveToDatabase(
+        workItem.id,
+        PermanentlyFailed,
+        4,
+        now
+      )
     }
   }
 

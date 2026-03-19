@@ -200,7 +200,12 @@ with BeforeAndAfterEach:
           .futureValue
 
       repository.markAs(workItem.id, InProgress).futureValue
-      repository.markRoboticsInvoked(workItem.id, Instant.now()).futureValue.shouldBe(true)
+      repository.saveStatusToDatabase(
+        workItem.id,
+        InProgress,
+        workItem.failureCount,
+        Instant.now()
+      ).futureValue.shouldBe(true)
       repository.addAgentReference(AgentReference("XS123"), requestId = requestId).futureValue.shouldBe(true)
 
       // Simulate the post-callback worker claiming the item.
