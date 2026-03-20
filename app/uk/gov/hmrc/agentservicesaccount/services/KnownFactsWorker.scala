@@ -58,7 +58,8 @@ extends Logging:
   ): Future[Unit] =
     workItem.item.agentReference match {
       case None =>
-        logger.warn(s"$regime work item missing agent reference: ${workItem.id}")
+        logger.warn(s"$regime work item missing agent reference: ${workItem.id}" +
+          s"(this should not be possible as the mongo query requires an agent reference to be present)")
         handleFailure(workItem)
       case Some(agentReference) =>
         if shouldStopRetrying(workItem) then
@@ -75,23 +76,17 @@ extends Logging:
               logger.info(s"$regime known facts not available yet for work item: ${workItem.id}")
               handleFailure(workItem)
             case Some(_) =>
-              (workItem.item.groupId, workItem.item.adminCredId) match {
-                case (Some(groupId), Some(adminCredId)) =>
-                  enrolmentStoreProxyConnector
-                    .allocateAgentEnrolment(
-                      regime = regime,
-                      groupId = groupId,
-                      agentReference = agentReference.value,
-                      adminCredId = adminCredId
-                    )
-                    .flatMap { _ =>
-                      logger.info(s"$regime enrolment allocated for work item: ${workItem.id}")
-                      workItemService.complete(workItem).map(_ => ())
-                    }
-                case _ =>
-                  logger.warn(s"$regime known facts work item ${workItem.id} missing group or admin cred ID")
-                  workItemService.markManualIntervention(workItem).map(_ => ())
-              }
+              enrolmentStoreProxyConnector
+                .allocateAgentEnrolment(
+                  regime = regime,
+                  groupId = workItem.item.groupId,
+                  agentReference = agentReference.value,
+                  adminCredId = workItem.item.adminCredId
+                )
+                .flatMap { _ =>
+                  logger.info(s"$regime enrolment allocated for work item: ${workItem.id}")
+                  workItemService.complete(workItem).map(_ => ())
+                }
           }
     }
 

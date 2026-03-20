@@ -23,6 +23,8 @@ import org.mongodb.scala.model.Updates
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentservicesaccount.models.CredId
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SaSubscriptionRequest
@@ -54,6 +56,8 @@ with BeforeAndAfterEach:
   )
   private val repository = new SubscriptionWorkItemRepository(repoConfig, mongoComponent)
 
+  private val testGroupId = GroupId("test-group-id")
+  private val testAdminCredId = CredId("test-cred-id")
   private val testArn = Arn("AARN0000001")
   private val request = SaSubscriptionRequest(
     agentName = "Test Agency",
@@ -83,7 +87,9 @@ with BeforeAndAfterEach:
               arn = testArn,
               subscriptionRequest = request,
               regime = LegacyRegime.SA,
-              agentReference = None
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
             )
           )
           .futureValue
@@ -114,7 +120,9 @@ with BeforeAndAfterEach:
               arn = testArn,
               subscriptionRequest = request,
               regime = LegacyRegime.SA,
-              agentReference = None
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
             )
           )
           .futureValue
@@ -146,7 +154,9 @@ with BeforeAndAfterEach:
               arn = testArn,
               subscriptionRequest = request,
               regime = LegacyRegime.SA,
-              agentReference = None
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
             )
           )
           .futureValue
@@ -166,7 +176,9 @@ with BeforeAndAfterEach:
               arn = testArn,
               subscriptionRequest = request,
               regime = LegacyRegime.SA,
-              agentReference = None
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
             )
           )
           .futureValue
@@ -194,7 +206,9 @@ with BeforeAndAfterEach:
               subscriptionRequest = request,
               regime = LegacyRegime.SA,
               agentReference = None,
-              requestId = requestId
+              requestId = requestId,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
             )
           )
           .futureValue

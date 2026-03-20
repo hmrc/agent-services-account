@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class SaRoboticsWorkItemService @Inject() (
+class RoboticsWorkItemService @Inject() (
   repository: SubscriptionWorkItemRepository
 )(using ExecutionContext):
 

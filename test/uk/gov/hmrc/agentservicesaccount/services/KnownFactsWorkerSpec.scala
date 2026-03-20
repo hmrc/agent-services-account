@@ -75,8 +75,8 @@ with BeforeAndAfterEach:
     regime: LegacyRegime,
     failureCount: Int,
     agentReference: Option[AgentReference] = Some(AgentReference("A12345")),
-    groupId: Option[GroupId] = Some(GroupId("ITEM-GROUP")),
-    adminCredId: Option[CredId] = Some(CredId("ITEM-ADMIN"))
+    groupId: GroupId = GroupId("ITEM-GROUP"),
+    adminCredId: CredId = CredId("ITEM-ADMIN")
   ) = WorkItem(
     id = new ObjectId(),
     receivedAt = Instant.now(),

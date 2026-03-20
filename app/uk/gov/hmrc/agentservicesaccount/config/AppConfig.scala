@@ -115,7 +115,8 @@ class AppConfig @Inject() (
     RoboticsJobConfig(
       enabled = config.get[Boolean](s"$prefix.enabled"),
       initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
-      interval = config.get[Duration](s"$prefix.interval").toMillis.millis
+      interval = config.get[Duration](s"$prefix.interval").toMillis.millis,
+      maxAttempts = config.get[Int](s"$prefix.max-attempts")
     )
 
   private def baseUrl(key: String) = servicesConfig.baseUrl(key)

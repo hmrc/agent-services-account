@@ -79,11 +79,11 @@ extends Logging:
     regime: LegacyRegime
   ): Future[Done] = subscriptionWorkItemRepository.findByArnAndRegime(arn, regime).flatMap {
     case Some(existing) if existing.status != PermanentlyFailed =>
-      throw UpstreamErrorResponse(
+      Future.failed(UpstreamErrorResponse(
         message = s"${regime.toString} subscription already in progress",
         statusCode = CONFLICT,
         reportAs = CONFLICT
-      )
+      ))
     case Some(existing) =>
       // Work items are uniquely keyed by (arn, regime). When a previous attempt is PermanentlyFailed we allow
       // the user to re-start, but must remove the existing document before inserting the new attempt.
@@ -162,8 +162,8 @@ extends Logging:
         subscriptionRequest = subscriptionRequest,
         regime = PAYE,
         agentReference = Some(agentReference),
-        groupId = Some(groupId),
-        adminCredId = Some(adminCredId),
+        groupId = groupId,
+        adminCredId = adminCredId,
         sessionId = optSessionId,
         bearerToken = optBearerToken
       )
@@ -184,8 +184,8 @@ extends Logging:
       subscriptionRequest = subscriptionRequest,
       regime = regime,
       agentReference = None,
-      groupId = Some(groupId),
-      adminCredId = Some(adminCredId),
+      groupId = groupId,
+      adminCredId = adminCredId,
       sessionId = optSessionId,
       bearerToken = optBearerToken
     )

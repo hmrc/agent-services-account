@@ -283,7 +283,9 @@ with BeforeAndAfterEach {
               arn = testArn,
               subscriptionRequest = saSubscriptionRequest,
               regime = LegacyRegime.SA,
-              agentReference = None
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
             )
           ).futureValue
 
@@ -330,7 +332,9 @@ with BeforeAndAfterEach {
             arn = testArn,
             subscriptionRequest = saSubscriptionRequest,
             regime = LegacyRegime.SA,
-            agentReference = None
+            agentReference = None,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
           )
         ).futureValue
 
@@ -434,7 +438,9 @@ with BeforeAndAfterEach {
               arn = testArn,
               subscriptionRequest = saSubscriptionRequest,
               regime = LegacyRegime.CT,
-              agentReference = None
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
             )
           ).futureValue
 
@@ -481,7 +487,9 @@ with BeforeAndAfterEach {
             arn = testArn,
             subscriptionRequest = saSubscriptionRequest,
             regime = LegacyRegime.CT,
-            agentReference = None
+            agentReference = None,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
           )
         ).futureValue
 
@@ -523,7 +531,9 @@ with BeforeAndAfterEach {
             subscriptionRequest = saSubscriptionRequest,
             regime = LegacyRegime.SA,
             agentReference = None,
-            requestId = requestId
+            requestId = requestId,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
           )
         ).futureValue
       repository.markAs(workItem.id, InProgress).futureValue
@@ -568,7 +578,9 @@ with BeforeAndAfterEach {
             subscriptionRequest = saSubscriptionRequest,
             regime = LegacyRegime.SA,
             agentReference = None,
-            requestId = requestId
+            requestId = requestId,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
           )
         ).futureValue
       repository.markAs(workItem.id, PermanentlyFailed).futureValue
@@ -613,7 +625,9 @@ with BeforeAndAfterEach {
             subscriptionRequest = saSubscriptionRequest,
             regime = LegacyRegime.SA,
             agentReference = None,
-            requestId = requestId
+            requestId = requestId,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
           )
         ).futureValue
       repository.markAs(workItem.id, InProgress).futureValue

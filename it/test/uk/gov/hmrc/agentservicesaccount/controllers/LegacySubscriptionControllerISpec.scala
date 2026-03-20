@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
@@ -62,6 +63,7 @@ with AgentAuthStubs:
     line4 = Some("Line 4"),
     postCode = Some(testPostCode)
   )
+  val testCredId = CredId("test-cred-id")
 
   val testAgentReference = AgentReference("AB1234")
 
@@ -138,7 +140,9 @@ with AgentAuthStubs:
         testArn,
         testSaSubscriptionRequest,
         SA,
-        None
+        None,
+        testGroupId,
+        testCredId
       )).futureValue
 
       val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
@@ -159,7 +163,9 @@ with AgentAuthStubs:
           testArn,
           testSaSubscriptionRequest,
           SA,
-          None
+          None,
+          testGroupId,
+          testCredId
         )).futureValue
 
       repository.markAs(model.id, PermanentlyFailed).futureValue
@@ -182,7 +188,9 @@ with AgentAuthStubs:
           testArn,
           testSaSubscriptionRequest,
           SA,
-          None
+          None,
+          testGroupId,
+          testCredId
         )).futureValue
 
       repository.markAs(model.id, Deferred).futureValue
@@ -245,7 +253,9 @@ with AgentAuthStubs:
         testArn,
         testSaSubscriptionRequest,
         SA,
-        None
+        None,
+        testGroupId,
+        testCredId
       )).futureValue
       givenEs3CallSucceeds(testGroupId)(CT)
       givenGetMappingsCallSucceeds(testArn, PAYE)(testAgentReference)
@@ -284,6 +294,8 @@ with AgentAuthStubs:
         subscriptionRequest = testSaSubscriptionRequest,
         regime = SA,
         agentReference = None,
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )).futureValue
       val expected = SubscriptionWorkItem(
@@ -291,6 +303,8 @@ with AgentAuthStubs:
         subscriptionRequest = testSaSubscriptionRequest,
         regime = SA,
         agentReference = Some(testAgentReference),
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )
 
@@ -314,6 +328,8 @@ with AgentAuthStubs:
         subscriptionRequest = testSaSubscriptionRequest,
         regime = SA,
         agentReference = None,
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )).futureValue
       val expected = SubscriptionWorkItem(
@@ -321,6 +337,8 @@ with AgentAuthStubs:
         subscriptionRequest = testSaSubscriptionRequest,
         regime = SA,
         agentReference = Some(testAgentReference),
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )
 
@@ -345,6 +363,8 @@ with AgentAuthStubs:
         subscriptionRequest = testCtSubscriptionRequest,
         regime = CT,
         agentReference = None,
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )).futureValue
 
@@ -368,6 +388,8 @@ with AgentAuthStubs:
         subscriptionRequest = testCtSubscriptionRequest,
         regime = CT,
         agentReference = None,
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )).futureValue
 

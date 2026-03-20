@@ -26,9 +26,13 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.config.RoboticsJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.RoboticsInvocationConnector
+import uk.gov.hmrc.agentservicesaccount.models.CredId
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
@@ -37,22 +41,25 @@ import uk.gov.hmrc.mongo.workitem.WorkItem
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.*
 
-class SaRoboticsWorkerSpec
+class RoboticsWorkerSpec
 extends UnitSpec
 with BeforeAndAfterEach:
 
-  private val workItemService = mock[SaRoboticsWorkItemService]
+  private val workItemService = mock[RoboticsWorkItemService]
   private val connector = mock[RoboticsInvocationConnector]
   private val appConfig = mock[AppConfig]
 
   private val worker =
-    new SaRoboticsWorker(
+    new RoboticsWorker(
       workItemService,
       connector,
       appConfig
     )
 
+  val testGroupId = GroupId("test-group-id")
+  val testAdminCredId = CredId("test-cred-id")
   private val ukRequest = SaSubscriptionRequest(
     agentName = "Agent Name",
     contactName = "Contact Name",
@@ -89,19 +96,29 @@ with BeforeAndAfterEach:
       subscriptionRequest = request,
       regime = LegacyRegime.SA,
       agentReference = None,
+      groupId = testGroupId,
+      adminCredId = testAdminCredId,
       requestId = requestId,
       sessionId = Some("session-123"),
       bearerToken = Some("Bearer test-token")
     )
   )
 
-  "SaRoboticsWorker" should {
+  private val jobConfig = RoboticsJobConfig(
+    enabled = true,
+    initialDelay = 1.second,
+    interval = 1.second,
+    maxAttempts = 3
+  )
+  private val regime = SA
+
+  "RoboticsWorker" should {
     "do nothing when there is no outstanding work item" in {
       val maxAttempts = 3
       val now = Instant.parse("2026-02-26T10:00:00Z")
       when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(None))
 
-      worker.runOnce(maxAttempts, now).futureValue
+      worker.runOnce(now)(using jobConfig, regime).futureValue
 
       verifyNoInteractions(connector)
     }
@@ -130,7 +147,7 @@ with BeforeAndAfterEach:
         now
       )).thenReturn(Future.successful(true))
 
-      worker.runOnce(maxAttempts, now).futureValue
+      worker.runOnce(now)(using jobConfig, regime).futureValue
 
       verify(connector).invoke(eqTo(expectedPayload), any[CorrelationId])(using hcCaptor.capture())
       verify(workItemService).saveToDatabase(
@@ -183,7 +200,7 @@ with BeforeAndAfterEach:
         now
       )).thenReturn(Future.successful(true))
 
-      worker.runOnce(maxAttempts, now).futureValue
+      worker.runOnce(now)(using jobConfig, regime).futureValue
 
       verify(connector).invoke(eqTo(expectedPayload), any[CorrelationId])(using hcCaptor.capture())
       verify(workItemService).saveToDatabase(
@@ -208,7 +225,7 @@ with BeforeAndAfterEach:
         .thenReturn(Future.failed(new RuntimeException("boom")))
       when(workItemService.markDeferred(workItem)).thenReturn(Future.successful(true))
 
-      worker.runOnce(maxAttempts, now).futureValue
+      worker.runOnce(now)(using jobConfig, regime).futureValue
 
       verify(workItemService).markDeferred(workItem)
       verify(workItemService, never()).saveToDatabase(
@@ -240,7 +257,7 @@ with BeforeAndAfterEach:
         now
       )).thenReturn(Future.successful(true))
 
-      worker.runOnce(maxAttempts, now).futureValue
+      worker.runOnce(now)(using jobConfig, regime).futureValue
 
       verify(workItemService).saveToDatabase(
         workItem.id,

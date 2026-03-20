@@ -113,7 +113,7 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.ct-robotics.initial-delay"))(any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.cct-robotics.interval"))(any()))
+    when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.ct-robotics.interval"))(any()))
       .thenReturn(1.second)
 
     when(mockConfig.get[Boolean](meq("features.get-agent-record-via-hip"))(any()))

@@ -33,7 +33,7 @@ import scala.concurrent.Future
 class SubscriptionScheduler @Inject() (
   actorSystem: ActorSystem,
   knownFactsWorker: KnownFactsWorker,
-  saRoboticsWorker: SaRoboticsWorker,
+  roboticsWorker: RoboticsWorker,
   appConfig: AppConfig,
   lifecycle: ApplicationLifecycle
 )(using
@@ -78,7 +78,7 @@ extends Logging:
           initialDelay = appConfig.saRoboticsJobConfig.initialDelay,
           interval = appConfig.saRoboticsJobConfig.interval
         )(() =>
-          saRoboticsWorker.runOnce().recover {
+          roboticsWorker.runOnce()(using appConfig.saRoboticsJobConfig, SA).recover {
             case error => logger.error("[SubscriptionScheduler] SA robotics scheduler run failed", error)
           }
         )
@@ -94,7 +94,7 @@ extends Logging:
           initialDelay = appConfig.ctRoboticsJobConfig.initialDelay,
           interval = appConfig.ctRoboticsJobConfig.interval
         )(() =>
-          saRoboticsWorker.runOnce().recover {
+          roboticsWorker.runOnce()(using appConfig.saRoboticsJobConfig, CT).recover {
             case error => logger.error("[SubscriptionScheduler] CT robotics scheduler run failed", error)
           }
         )

@@ -70,8 +70,8 @@ with BeforeAndAfterEach:
       subscriptionRequest = subscriptionRequest,
       regime = LegacyRegime.PAYE,
       agentReference = Some(AgentReference("A12345")),
-      groupId = Some(GroupId("ITEM-GROUP")),
-      adminCredId = Some(CredId("ITEM-ADMIN"))
+      groupId = GroupId("ITEM-GROUP"),
+      adminCredId = CredId("ITEM-ADMIN")
     )
   )
 
