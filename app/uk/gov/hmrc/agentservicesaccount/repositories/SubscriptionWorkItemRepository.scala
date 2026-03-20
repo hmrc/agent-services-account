@@ -337,7 +337,6 @@ object SubscriptionWorkItemRepository:
 
     case MarkedPermanentlyFailed
     case AlreadyPermanentlyFailed
-    case MarkedFailed
     case IgnoredAlreadySucceeded
     case NotFound
 

@@ -196,6 +196,7 @@ with BeforeAndAfterEach:
       hcCaptor.getValue.authorization shouldBe None
       hcCaptor.getValue.sessionId shouldBe None
     }
+
     "mark the work item deferred when invocation fails" in {
       val now = Instant.parse("2026-02-26T10:00:00Z")
       val maxAttempts = 3
@@ -224,7 +225,7 @@ with BeforeAndAfterEach:
       val workItem = buildWorkItem(
         ukRequest,
         requestId = "failed-req-123",
-        3
+        maxAttempts - 1
       )
 
       when(appConfig.stubsCompatibilityMode).thenReturn(false)
@@ -244,7 +245,7 @@ with BeforeAndAfterEach:
       verify(workItemService).saveToDatabase(
         workItem.id,
         PermanentlyFailed,
-        4,
+        maxAttempts,
         now
       )
     }
