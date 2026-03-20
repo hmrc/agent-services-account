@@ -21,5 +21,6 @@ import scala.concurrent.duration.FiniteDuration
 final case class RoboticsJobConfig(
   enabled: Boolean,
   initialDelay: FiniteDuration,
-  interval: FiniteDuration
+  interval: FiniteDuration,
+  maxAttempts: Int
 )

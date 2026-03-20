@@ -45,7 +45,7 @@ with MockitoSugar {
       val provider = new CacheProvider(mockCacheRepo, config)
 
       provider.cacheEnabled shouldBe false
-      provider.agentDetailsCache shouldBe a[DoNotCache[_]]
+      provider.agentDetailsCache shouldBe a[DoNotCache[?]]
     }
 
   }

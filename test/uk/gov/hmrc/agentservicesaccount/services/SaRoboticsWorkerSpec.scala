@@ -17,31 +17,21 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import org.bson.types.ObjectId
-import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as eqTo
-import org.mockito.Mockito.never
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoInteractions
-import org.mockito.Mockito.when
+import org.mockito.Mockito.*
+import org.mockito.ArgumentCaptor
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.RoboticsInvocationConnector
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
-import uk.gov.hmrc.agentservicesaccount.models.subscription.Operation
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
-import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsInvocationRequest
-import uk.gov.hmrc.agentservicesaccount.models.subscription.SaSubscriptionRequest
-import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionAddress
-import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
-import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem
+import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
@@ -85,14 +75,15 @@ with BeforeAndAfterEach:
 
   private def buildWorkItem(
     request: SaSubscriptionRequest,
-    requestId: String = "req-123"
+    requestId: String = "req-123",
+    failureCount: Int = 0
   ): WorkItem[SubscriptionWorkItem] = WorkItem(
     id = new ObjectId(),
     receivedAt = Instant.now(),
     updatedAt = Instant.now(),
     availableAt = Instant.now(),
-    status = ProcessingStatus.InProgress,
-    failureCount = 0,
+    status = InProgress,
+    failureCount = failureCount,
     item = SubscriptionWorkItem(
       arn = Arn("TARN0000001"),
       subscriptionRequest = request,
@@ -106,16 +97,18 @@ with BeforeAndAfterEach:
 
   "SaRoboticsWorker" should {
     "do nothing when there is no outstanding work item" in {
+      val maxAttempts = 3
       val now = Instant.parse("2026-02-26T10:00:00Z")
       when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(None))
 
-      worker.runOnce(now).futureValue
+      worker.runOnce(maxAttempts, now).futureValue
 
       verifyNoInteractions(connector)
     }
 
     "invoke robotics with stub-compatible payload and replay auth/session headers in stubs mode" in {
       val now = Instant.parse("2026-02-26T10:00:00Z")
+      val maxAttempts = 3
       val workItem = buildWorkItem(ukRequest, requestId = "stub-req-123")
       val expectedOperationData = Json.obj(
         "requestId" -> "stub-req-123",
@@ -130,12 +123,22 @@ with BeforeAndAfterEach:
       when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(Some(workItem)))
       when(connector.invoke(eqTo(expectedPayload), any[CorrelationId])(using any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
-      when(workItemService.markInvoked(workItem, now)).thenReturn(Future.successful(true))
+      when(workItemService.saveToDatabase(
+        workItem.id,
+        Succeeded,
+        workItem.failureCount,
+        now
+      )).thenReturn(Future.successful(true))
 
-      worker.runOnce(now).futureValue
+      worker.runOnce(maxAttempts, now).futureValue
 
       verify(connector).invoke(eqTo(expectedPayload), any[CorrelationId])(using hcCaptor.capture())
-      verify(workItemService).markInvoked(workItem, now)
+      verify(workItemService).saveToDatabase(
+        workItem.id,
+        Succeeded,
+        workItem.failureCount,
+        now
+      )
 
       hcCaptor.getValue.authorization.map(_.value) shouldBe Some("Bearer test-token")
       hcCaptor.getValue.sessionId.map(_.value) shouldBe Some("session-123")
@@ -143,6 +146,7 @@ with BeforeAndAfterEach:
 
     "invoke robotics with HIP payload shape for abroad requests in non-stub mode" in {
       val now = Instant.parse("2026-02-26T10:00:00Z")
+      val maxAttempts = 3
       val workItem = buildWorkItem(abroadRequestNoPostcode, requestId = "hip-req-123")
       val expectedOperationData = Json.obj(
         "schemaVersion" -> 1,
@@ -172,12 +176,22 @@ with BeforeAndAfterEach:
       when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(Some(workItem)))
       when(connector.invoke(eqTo(expectedPayload), any[CorrelationId])(using any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
-      when(workItemService.markInvoked(workItem, now)).thenReturn(Future.successful(true))
+      when(workItemService.saveToDatabase(
+        workItem.id,
+        Succeeded,
+        workItem.failureCount,
+        now
+      )).thenReturn(Future.successful(true))
 
-      worker.runOnce(now).futureValue
+      worker.runOnce(maxAttempts, now).futureValue
 
       verify(connector).invoke(eqTo(expectedPayload), any[CorrelationId])(using hcCaptor.capture())
-      verify(workItemService).markInvoked(workItem, now)
+      verify(workItemService).saveToDatabase(
+        workItem.id,
+        Succeeded,
+        workItem.failureCount,
+        now
+      )
 
       hcCaptor.getValue.authorization shouldBe None
       hcCaptor.getValue.sessionId shouldBe None
@@ -185,6 +199,7 @@ with BeforeAndAfterEach:
 
     "mark the work item deferred when invocation fails" in {
       val now = Instant.parse("2026-02-26T10:00:00Z")
+      val maxAttempts = 3
       val workItem = buildWorkItem(ukRequest, requestId = "failed-req-123")
 
       when(appConfig.stubsCompatibilityMode).thenReturn(false)
@@ -193,10 +208,46 @@ with BeforeAndAfterEach:
         .thenReturn(Future.failed(new RuntimeException("boom")))
       when(workItemService.markDeferred(workItem)).thenReturn(Future.successful(true))
 
-      worker.runOnce(now).futureValue
+      worker.runOnce(maxAttempts, now).futureValue
 
       verify(workItemService).markDeferred(workItem)
-      verify(workItemService, never()).markInvoked(workItem, now)
+      verify(workItemService, never()).saveToDatabase(
+        workItem.id,
+        Failed,
+        workItem.failureCount,
+        now
+      )
+    }
+
+    "mark the work item PermanentlyFailed when workItem reaches maximum retries" in {
+      val now = Instant.parse("2026-02-26T10:00:00Z")
+      val maxAttempts = 3
+      val workItem = buildWorkItem(
+        ukRequest,
+        requestId = "failed-req-123",
+        maxAttempts - 1
+      )
+
+      when(appConfig.stubsCompatibilityMode).thenReturn(false)
+      when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(Some(workItem)))
+      when(connector.invoke(any[JsObject], any[CorrelationId])(using any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+      when(workItemService.markDeferred(workItem)).thenReturn(Future.successful(true))
+      when(workItemService.saveToDatabase(
+        workItem.id,
+        PermanentlyFailed,
+        maxAttempts,
+        now
+      )).thenReturn(Future.successful(true))
+
+      worker.runOnce(maxAttempts, now).futureValue
+
+      verify(workItemService).saveToDatabase(
+        workItem.id,
+        PermanentlyFailed,
+        maxAttempts,
+        now
+      )
     }
   }
 

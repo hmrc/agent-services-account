@@ -32,7 +32,6 @@ import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.AgentCheckOutcome
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
-import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException.EntityDeceasedCheckFailed
 import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException.AgentIsOnRefuseToDealList
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.agentservicesaccount.models.agententity.DeceasedCheckException.*

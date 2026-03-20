@@ -196,16 +196,8 @@ extends Logging:
         }
       case CallbackFailure =>
         subscriptionWorkItemRepository.handleFailureCallback(callback.requestId).map {
-          case SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed =>
-            logger.error(s"[handleRoboticsCallback] Robotics callback for requestId ${callback.requestId} returned failed status, reason: '${callback.requestMessage}', marking work item as permanently failed")
-            SubscriptionService.CallbackHandling.Handled
-          case SubscriptionWorkItemRepository.FailureCallbackHandling.AlreadyPermanentlyFailed =>
-            logger.warn(s"[handleRoboticsCallback] Duplicate failure callback for requestId ${callback.requestId}, work item already PermanentlyFailed")
-            SubscriptionService.CallbackHandling.Handled
-          case SubscriptionWorkItemRepository.FailureCallbackHandling.IgnoredAlreadySucceeded =>
-            logger.warn(s"[handleRoboticsCallback] Ignoring failure callback for requestId ${callback.requestId} because success has already been recorded")
-            SubscriptionService.CallbackHandling.Handled
           case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound => SubscriptionService.CallbackHandling.NotFound
+          case _ => SubscriptionService.CallbackHandling.Handled
         }
     }
 

@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentservicesaccount.services
 import org.mockito.Mockito.never
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
-import org.mockito.ArgumentMatchers.{eq => meq}
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.mvc.Request
 import play.api.test.FakeRequest
@@ -55,8 +54,8 @@ with IntegrationPatience {
 
   implicit val ac: AppConfig = mockAppConfig
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
-  implicit val req: Request[_] = FakeRequest()
-//
+  implicit val req: Request[?] = FakeRequest()
+
   val mongoLockRepository = new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
   val mongoLockService = new MongoLockService(mongoLockRepository)
 

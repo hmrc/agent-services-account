@@ -32,6 +32,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem
 import uk.gov.hmrc.http.Authorization
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.SessionId
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
@@ -58,10 +59,17 @@ extends Logging:
   // entity type is captured and the contract is finalised.
   private val defaultEntityType: String = "Sole Trader"
 
-  def runOnce(now: Instant = Instant.now()): Future[Unit] = workItemService.pullOutstanding(now).flatMap {
+  def runOnce(
+    maxAttempts: Int,
+    now: Instant = Instant.now()
+  ): Future[Unit] = workItemService.pullOutstanding(now).flatMap {
     case None => Future.unit
     case Some(workItem) =>
-      process(workItem, now).recoverWith { case NonFatal(error) =>
+      process(
+        workItem,
+        maxAttempts,
+        now
+      ).recoverWith { case NonFatal(error) =>
         logger.warn(s"SA robotics invocation failed for work item ${workItem.id}", error)
         // Guard against overwriting a successful callback transition (agentReference set + status moved back to ToDo)
         // if the invoke failed/timed out locally after the upstream had already accepted the request.
@@ -71,8 +79,9 @@ extends Logging:
 
   private def process(
     workItem: WorkItem[SubscriptionWorkItem],
+    maxAttempts: Int,
     now: Instant
-  ): Future[Unit] =
+  ): Future[Unit] = {
     workItem.item.regime match
       case LegacyRegime.SA =>
         workItem.item.subscriptionRequest match
@@ -142,11 +151,55 @@ extends Logging:
                 HeaderCarrier()
             val requestId = RequestId(workItem.item.requestId)
             val correlationId = CorrelationId.fromRequestId(requestId)
+
             roboticsInvocationConnector
               .invoke(payload, correlationId = correlationId)
               // Persist a marker so we don't re-invoke this work item once it's "in flight" and awaiting callback.
               // We only set this after a successful outbound call to keep crash-recovery behaviour for items that were
               // claimed (InProgress) but never actually invoked.
-              .flatMap(_ => workItemService.markInvoked(workItem, invokedAt = now).map(_ => ()))
+              .flatMap(_ =>
+                workItemService.saveToDatabase(
+                  workItem.id,
+                  Succeeded,
+                  workItem.failureCount,
+                  now
+                ).map(_ => ())
+              )
+              .recoverWith {
+                case ex =>
+                  handleInvokeFailure(
+                    workItem,
+                    maxAttempts,
+                    now
+                  )
+              }
           case other => Future.failed(new RuntimeException(s"Unexpected subscription request type for SA robotics invocation: ${other.getClass.getName}"))
       case other => Future.failed(new RuntimeException(s"Unexpected regime in SA robotics worker: $other"))
+  }
+
+  def handleInvokeFailure(
+    workItem: WorkItem[SubscriptionWorkItem],
+    maxAttempts: Int,
+    invokedAt: Instant
+  ): Future[Unit] =
+
+    // Read current and compute next attempt
+    val nextAttempts: Int = workItem.failureCount + 1
+    if (nextAttempts >= maxAttempts)
+      workItemService
+        .saveToDatabase(
+          workItem.id,
+          PermanentlyFailed,
+          nextAttempts,
+          invokedAt
+        )
+        .map(_ => ())
+    else
+      workItemService
+        .saveToDatabase(
+          workItem.id,
+          Failed,
+          nextAttempts,
+          invokedAt
+        )
+        .map(_ => ())

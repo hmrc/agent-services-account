@@ -33,9 +33,7 @@ import scala.concurrent.duration.FiniteDuration
 @Singleton
 class KnownFactsWorkItemService @Inject() (
   repository: SubscriptionWorkItemRepository
-)(using
-  ec: ExecutionContext
-):
+)(using ExecutionContext):
 
   def pullOutstanding(
     regime: LegacyRegime,
