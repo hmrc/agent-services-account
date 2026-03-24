@@ -19,9 +19,16 @@ package uk.gov.hmrc.agentservicesaccount.models.subscription
 import play.api.libs.json.Format
 import uk.gov.hmrc.agentservicesaccount.utils.EnumFormat
 
+sealed trait UsesRobotics
 enum LegacyRegime:
 
-  case PAYE, SA, CT
+  case PAYE
+  case SA
+  extends LegacyRegime
+  with UsesRobotics
+  case CT
+  extends LegacyRegime
+  with UsesRobotics
 
   def enrolmentKey: String =
     this match {

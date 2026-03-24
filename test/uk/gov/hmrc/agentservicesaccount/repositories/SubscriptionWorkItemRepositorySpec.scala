@@ -107,9 +107,40 @@ with BeforeAndAfterEach:
         .toFuture()
         .futureValue
 
-      val pulled = repository.pullOutstandingRobotics(LegacyRegime.SA, availableBefore = Instant.now()).futureValue
+      val pulled =
+        repository.pullAwaitingRobotics(
+          LegacyRegime.SA,
+          availableBefore = Instant.now(),
+          failedBefore = Instant.now()
+        ).futureValue
 
       pulled.map(_.id).shouldBe(Some(workItem.id))
+    }
+    "not re-pull a stale InProgress item if it was updated recently" in {
+      val workItem =
+        repository
+          .pushNew(
+            SubscriptionWorkItem(
+              arn = testArn,
+              subscriptionRequest = request,
+              regime = LegacyRegime.SA,
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
+            )
+          )
+          .futureValue
+
+      repository.markAs(workItem.id, InProgress).futureValue
+
+      val pulled =
+        repository.pullAwaitingRobotics(
+          LegacyRegime.SA,
+          availableBefore = Instant.now(),
+          failedBefore = Instant.now()
+        ).futureValue
+
+      pulled.map(_.id).shouldBe(None)
     }
 
     "not re-pull a stale InProgress item once it has been invoked (avoid duplicate submissions while awaiting callback)" in {
@@ -141,57 +172,14 @@ with BeforeAndAfterEach:
         .toFuture()
         .futureValue
 
-      val pulled = repository.pullOutstandingRobotics(LegacyRegime.SA, availableBefore = Instant.now()).futureValue
+      val pulled =
+        repository.pullAwaitingRobotics(
+          LegacyRegime.SA,
+          availableBefore = Instant.now(),
+          failedBefore = Instant.now()
+        ).futureValue
 
       pulled.shouldBe(None)
-    }
-
-    "not pick Deferred items for invocation retry" in {
-      val workItem =
-        repository
-          .pushNew(
-            SubscriptionWorkItem(
-              arn = testArn,
-              subscriptionRequest = request,
-              regime = LegacyRegime.SA,
-              agentReference = None,
-              groupId = testGroupId,
-              adminCredId = testAdminCredId
-            )
-          )
-          .futureValue
-
-      repository.markAs(workItem.id, Deferred).futureValue
-
-      val pulled = repository.pullOutstandingRobotics(LegacyRegime.SA, availableBefore = Instant.now()).futureValue
-
-      pulled.shouldBe(None)
-    }
-
-    "not overwrite a callback transition when attempting to mark an item Deferred" in {
-      val workItem =
-        repository
-          .pushNew(
-            SubscriptionWorkItem(
-              arn = testArn,
-              subscriptionRequest = request,
-              regime = LegacyRegime.SA,
-              agentReference = None,
-              groupId = testGroupId,
-              adminCredId = testAdminCredId
-            )
-          )
-          .futureValue
-
-      repository.markAs(workItem.id, InProgress).futureValue
-      repository.addAgentReference(AgentReference("XS123"), requestId = workItem.item.requestId).futureValue.shouldBe(true)
-
-      val updated = repository.markAsDeferredIfStillAwaitingInvocation(workItem.id).futureValue
-      updated.shouldBe(false)
-
-      val after = repository.findByRequestId(workItem.item.requestId).futureValue.value
-      after.status.shouldBe(ToDo)
-      after.item.agentReference.value.shouldBe(AgentReference("XS123"))
     }
   }
 
@@ -213,22 +201,17 @@ with BeforeAndAfterEach:
           )
           .futureValue
 
-      repository.markAs(workItem.id, InProgress).futureValue
-      repository.saveStatusToDatabase(
-        workItem.id,
-        InProgress,
-        workItem.failureCount,
-        Instant.now()
-      ).futureValue.shouldBe(true)
-      repository.addAgentReference(AgentReference("XS123"), requestId = requestId).futureValue.shouldBe(true)
+      repository.addAgentReference(AgentReference("XS1234"), requestId = requestId).futureValue.shouldBe(true)
+      val afterFirstCallback = repository.findByRequestId(requestId).futureValue.value
+      afterFirstCallback.status.shouldBe(ToDo)
 
       // Simulate the post-callback worker claiming the item.
       repository.markAs(workItem.id, InProgress).futureValue
 
-      repository.addAgentReference(AgentReference("XS123"), requestId = requestId).futureValue.shouldBe(true)
+      repository.addAgentReference(AgentReference("XS1234"), requestId = requestId).futureValue.shouldBe(true)
 
       val after = repository.findByRequestId(requestId).futureValue.value
       after.status.shouldBe(InProgress)
-      after.item.agentReference.shouldBe(Some(AgentReference("XS123")))
+      after.item.agentReference.shouldBe(Some(AgentReference("XS1234")))
     }
   }

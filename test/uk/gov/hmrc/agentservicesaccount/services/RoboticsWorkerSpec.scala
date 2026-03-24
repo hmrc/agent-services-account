@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
+import org.apache.pekko.Done
 import org.bson.types.ObjectId
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as eqTo
@@ -26,7 +27,7 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.config.RoboticsJobConfig
+import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.RoboticsInvocationConnector
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
@@ -104,21 +105,20 @@ with BeforeAndAfterEach:
     )
   )
 
-  private val jobConfig = RoboticsJobConfig(
+  private val jobConfig = WorkItemJobConfig(
     enabled = true,
-    initialDelay = 1.second,
-    interval = 1.second,
+    schedulerDelay = 1.second,
+    schedulerInterval = 1.second,
+    retryInterval = 10.seconds,
     maxAttempts = 3
   )
   private val regime = SA
 
   "RoboticsWorker" should {
     "do nothing when there is no outstanding work item" in {
-      val maxAttempts = 3
-      val now = Instant.parse("2026-02-26T10:00:00Z")
-      when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(None))
+      when(workItemService.pullOutstanding(regime, jobConfig.retryInterval)).thenReturn(Future.successful(None))
 
-      worker.runOnce(now)(using jobConfig, regime).futureValue
+      worker.runOnce(using jobConfig, regime).futureValue
 
       verifyNoInteractions(connector)
     }
@@ -137,25 +137,15 @@ with BeforeAndAfterEach:
       val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
 
       when(appConfig.stubsCompatibilityMode).thenReturn(true)
-      when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(Some(workItem)))
+      when(workItemService.pullOutstanding(regime, jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
       when(connector.invoke(eqTo(expectedPayload), any[CorrelationId])(using any[HeaderCarrier]))
-        .thenReturn(Future.successful(()))
-      when(workItemService.saveToDatabase(
-        workItem.id,
-        Succeeded,
-        workItem.failureCount,
-        now
-      )).thenReturn(Future.successful(true))
+        .thenReturn(Future.successful(Done))
+      when(workItemService.markAsInvoked(workItem)).thenReturn(Future.successful(Done))
 
-      worker.runOnce(now)(using jobConfig, regime).futureValue
+      worker.runOnce(using jobConfig, regime).futureValue
 
       verify(connector).invoke(eqTo(expectedPayload), any[CorrelationId])(using hcCaptor.capture())
-      verify(workItemService).saveToDatabase(
-        workItem.id,
-        Succeeded,
-        workItem.failureCount,
-        now
-      )
+      verify(workItemService).markAsInvoked(workItem)
 
       hcCaptor.getValue.authorization.map(_.value) shouldBe Some("Bearer test-token")
       hcCaptor.getValue.sessionId.map(_.value) shouldBe Some("session-123")
@@ -190,25 +180,15 @@ with BeforeAndAfterEach:
       val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
 
       when(appConfig.stubsCompatibilityMode).thenReturn(false)
-      when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(Some(workItem)))
+      when(workItemService.pullOutstanding(regime, jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
       when(connector.invoke(eqTo(expectedPayload), any[CorrelationId])(using any[HeaderCarrier]))
-        .thenReturn(Future.successful(()))
-      when(workItemService.saveToDatabase(
-        workItem.id,
-        Succeeded,
-        workItem.failureCount,
-        now
-      )).thenReturn(Future.successful(true))
+        .thenReturn(Future.successful(Done))
+      when(workItemService.markAsInvoked(workItem)).thenReturn(Future.successful(Done))
 
-      worker.runOnce(now)(using jobConfig, regime).futureValue
+      worker.runOnce(using jobConfig, regime).futureValue
 
       verify(connector).invoke(eqTo(expectedPayload), any[CorrelationId])(using hcCaptor.capture())
-      verify(workItemService).saveToDatabase(
-        workItem.id,
-        Succeeded,
-        workItem.failureCount,
-        now
-      )
+      verify(workItemService).markAsInvoked(workItem)
 
       hcCaptor.getValue.authorization shouldBe None
       hcCaptor.getValue.sessionId shouldBe None
@@ -220,20 +200,15 @@ with BeforeAndAfterEach:
       val workItem = buildWorkItem(ukRequest, requestId = "failed-req-123")
 
       when(appConfig.stubsCompatibilityMode).thenReturn(false)
-      when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(Some(workItem)))
+      when(workItemService.pullOutstanding(regime, jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
       when(connector.invoke(any[JsObject], any[CorrelationId])(using any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("boom")))
-      when(workItemService.markDeferred(workItem)).thenReturn(Future.successful(true))
+      when(workItemService.markFailed(workItem)).thenReturn(Future.successful(Done))
 
-      worker.runOnce(now)(using jobConfig, regime).futureValue
+      worker.runOnce(using jobConfig, regime).futureValue
 
-      verify(workItemService).markDeferred(workItem)
-      verify(workItemService, never()).saveToDatabase(
-        workItem.id,
-        Failed,
-        workItem.failureCount,
-        now
-      )
+      verify(workItemService).markFailed(workItem)
+      verify(workItemService, never()).markAsInvoked(workItem)
     }
 
     "mark the work item PermanentlyFailed when workItem reaches maximum retries" in {
@@ -246,25 +221,14 @@ with BeforeAndAfterEach:
       )
 
       when(appConfig.stubsCompatibilityMode).thenReturn(false)
-      when(workItemService.pullOutstanding(now)).thenReturn(Future.successful(Some(workItem)))
+      when(workItemService.pullOutstanding(regime, jobConfig.retryInterval)).thenReturn(Future.successful(Some(workItem)))
       when(connector.invoke(any[JsObject], any[CorrelationId])(using any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("boom")))
-      when(workItemService.markDeferred(workItem)).thenReturn(Future.successful(true))
-      when(workItemService.saveToDatabase(
-        workItem.id,
-        PermanentlyFailed,
-        maxAttempts,
-        now
-      )).thenReturn(Future.successful(true))
+      when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
 
-      worker.runOnce(now)(using jobConfig, regime).futureValue
+      worker.runOnce(using jobConfig, regime).futureValue
 
-      verify(workItemService).saveToDatabase(
-        workItem.id,
-        PermanentlyFailed,
-        maxAttempts,
-        now
-      )
+      verify(workItemService).markPermanentlyFailed(workItem)
     }
   }
 

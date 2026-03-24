@@ -16,17 +16,18 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import play.api.http.Status.OK
+import org.apache.pekko.Done
 import play.api.libs.json.JsObject
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import play.api.Logging
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.HttpErrorFunctions
 import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.StringContextOps
 import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.Inject
@@ -41,26 +42,22 @@ class RoboticsInvocationConnector @Inject() (
 )(using
   ec: ExecutionContext
 )
-extends Logging:
+extends Logging
+with HttpErrorFunctions:
 
   private val baseUrl: String = appConfig.hipBaseUrl
 
   def invoke(
     payload: JsObject,
     correlationId: CorrelationId
-  )(using HeaderCarrier): Future[Unit] = http
+  )(using HeaderCarrier): Future[Done] = http
     .post(url"$baseUrl/RTServer/rest/nice/rti/ra/invocation")
     .setHeader("correlationId" -> correlationId.value)
     .withBody(payload)
     .execute[HttpResponse]
     .map { response =>
       response.status match {
-        case status if status / 100 == 2 =>
-          // Spec and stubs currently return 200. Guard against HIP/proxy layers returning other 2xx (e.g. 202/204),
-          // because treating those as errors would cause unnecessary retries and potentially duplicate submissions.
-          if status != OK then
-            logger.warn(s"[RoboticsInvocationConnector][invoke] Received $status from robotics invocation endpoint (correlationId=${correlationId.value})")
-          ()
+        case status if is2xx(status) => Done
         case status =>
           // Do not include the outbound payload in exception messages; this may be logged by callers and could
           // contain PII (e.g. postcode). Use correlationId for traceability instead.

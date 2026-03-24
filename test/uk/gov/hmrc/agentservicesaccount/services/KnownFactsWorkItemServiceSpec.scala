@@ -77,7 +77,7 @@ with BeforeAndAfterEach:
 
   "KnownFactsWorkItemService" should {
     "pull outstanding items for PAYE" in {
-      when(repository.pullOutstandingForRegime(
+      when(repository.pullAwaitingKnownFacts(
         any[LegacyRegime],
         any[Instant],
         any[Instant]
@@ -86,7 +86,7 @@ with BeforeAndAfterEach:
 
       service.pullOutstanding(LegacyRegime.PAYE, 10.seconds).futureValue
 
-      verify(repository).pullOutstandingForRegime(
+      verify(repository).pullAwaitingKnownFacts(
         any[LegacyRegime],
         any[Instant],
         any[Instant]
@@ -94,7 +94,7 @@ with BeforeAndAfterEach:
     }
 
     "pull outstanding items for SA" in {
-      when(repository.pullOutstandingForRegime(
+      when(repository.pullAwaitingKnownFacts(
         any[LegacyRegime],
         any[Instant],
         any[Instant]
@@ -103,7 +103,7 @@ with BeforeAndAfterEach:
 
       service.pullOutstanding(LegacyRegime.SA, 10.seconds).futureValue
 
-      verify(repository).pullOutstandingForRegime(
+      verify(repository).pullAwaitingKnownFacts(
         any[LegacyRegime],
         any[Instant],
         any[Instant]
@@ -118,7 +118,7 @@ with BeforeAndAfterEach:
       ))
         .thenReturn(Future.successful(true))
 
-      service.reschedule(workItem, 10.seconds).futureValue
+      service.markFailed(workItem).futureValue
 
       verify(repository).markAs(
         eqTo(workItem.id),
@@ -127,20 +127,20 @@ with BeforeAndAfterEach:
       )
     }
 
-    "complete items by marking them succeeded" in {
-      when(repository.complete(eqTo(workItem.id), eqTo(ProcessingStatus.Succeeded)))
+    "complete items by removing them" in {
+      when(repository.completeAndDelete(eqTo(workItem.id)))
         .thenReturn(Future.successful(true))
 
       service.complete(workItem).futureValue
 
-      verify(repository).complete(eqTo(workItem.id), eqTo(ProcessingStatus.Succeeded))
+      verify(repository).completeAndDelete(eqTo(workItem.id))
     }
 
     "mark items as requiring manual intervention" in {
       when(repository.complete(eqTo(workItem.id), eqTo(ProcessingStatus.PermanentlyFailed)))
         .thenReturn(Future.successful(true))
 
-      service.markManualIntervention(workItem).futureValue
+      service.markPermanentlyFailed(workItem).futureValue
 
       verify(repository).complete(eqTo(workItem.id), eqTo(ProcessingStatus.PermanentlyFailed))
     }

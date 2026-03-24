@@ -59,10 +59,10 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.get[Long](meq("mongodb.timeToLive"))(any()))
       .thenReturn(3600L)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.initial-delay"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.scheduler-delay"))(any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.scheduler-interval"))(any()))
       .thenReturn(1.second)
 
     when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.retry-interval"))(any()))
@@ -71,10 +71,10 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.get[Int](meq("work-item-jobs.paye-known-facts.max-attempts"))(any()))
       .thenReturn(3)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.initial-delay"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.scheduler-delay"))(any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.scheduler-interval"))(any()))
       .thenReturn(1.second)
 
     when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.retry-interval"))(any()))
@@ -89,16 +89,19 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.get[Boolean](meq("work-item-jobs.sa-robotics.enabled"))(any()))
       .thenReturn(false)
 
-    when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.sa-robotics.initial-delay"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-robotics.scheduler-delay"))(any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.sa-robotics.interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-robotics.scheduler-interval"))(any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.initial-delay"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-robotics.retry-interval"))(any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.scheduler-delay"))(any()))
+      .thenReturn(1.second)
+
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.scheduler-interval"))(any()))
       .thenReturn(1.second)
 
     when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.retry-interval"))(any()))
@@ -110,10 +113,13 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.get[Boolean](meq("work-item-jobs.ct-robotics.enabled"))(any()))
       .thenReturn(false)
 
-    when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.ct-robotics.initial-delay"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-robotics.scheduler-delay"))(any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[scala.concurrent.duration.Duration](meq("work-item-jobs.ct-robotics.interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-robotics.scheduler-interval"))(any()))
+      .thenReturn(1.second)
+
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-robotics.retry-interval"))(any()))
       .thenReturn(1.second)
 
     when(mockConfig.get[Boolean](meq("features.get-agent-record-via-hip"))(any()))

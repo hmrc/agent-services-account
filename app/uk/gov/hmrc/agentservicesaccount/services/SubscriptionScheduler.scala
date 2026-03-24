@@ -20,6 +20,9 @@ import org.apache.pekko.actor.ActorSystem
 import play.api.Logging
 import play.api.inject.ApplicationLifecycle
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.UsesRobotics
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
@@ -41,70 +44,45 @@ class SubscriptionScheduler @Inject() (
 )
 extends Logging:
 
-  private val payeKnownFactsScheduled =
-    actorSystem.scheduler.scheduleAtFixedRate(
-      initialDelay = appConfig.payeKnownFactsJobConfig.initialDelay,
-      interval = appConfig.payeKnownFactsJobConfig.interval
-    )(() =>
-      knownFactsWorker.runOnce(using appConfig.payeKnownFactsJobConfig, PAYE).recover {
-        case error => logger.error("[SubscriptionScheduler] PAYE known facts scheduler run failed", error)
-      }
-    )
+  private val knownFactsWorkerConfigs: Map[LegacyRegime, WorkItemJobConfig] = Map(
+    PAYE -> appConfig.payeKnownFactsJobConfig,
+    SA -> appConfig.saKnownFactsJobConfig,
+    CT -> appConfig.ctKnownFactsJobConfig
+  )
 
-  private val saKnownFactsScheduled =
-    actorSystem.scheduler.scheduleAtFixedRate(
-      initialDelay = appConfig.saKnownFactsJobConfig.initialDelay,
-      interval = appConfig.saKnownFactsJobConfig.interval
-    )(() =>
-      knownFactsWorker.runOnce(using appConfig.saKnownFactsJobConfig, SA).recover {
-        case error => logger.error("[SubscriptionScheduler] SA known facts scheduler failed", error)
-      }
-    )
+  private val roboticsWorkerConfigs: Map[LegacyRegime & UsesRobotics, WorkItemJobConfig] = Map(
+    SA -> appConfig.saRoboticsJobConfig,
+    CT -> appConfig.ctRoboticsJobConfig
+  )
 
-  private val ctKnownFactsScheduled =
-    actorSystem.scheduler.scheduleAtFixedRate(
-      initialDelay = appConfig.ctKnownFactsJobConfig.initialDelay,
-      interval = appConfig.ctKnownFactsJobConfig.interval
-    )(() =>
-      knownFactsWorker.runOnce(using appConfig.ctKnownFactsJobConfig, CT).recover {
-        case error => logger.error("[SubscriptionScheduler] CT known facts scheduler failed", error)
-      }
-    )
-
-  private val saRoboticsScheduled =
-    if appConfig.saRoboticsJobConfig.enabled then
-      val s =
-        actorSystem.scheduler.scheduleAtFixedRate(
-          initialDelay = appConfig.saRoboticsJobConfig.initialDelay,
-          interval = appConfig.saRoboticsJobConfig.interval
-        )(() =>
-          roboticsWorker.runOnce()(using appConfig.saRoboticsJobConfig, SA).recover {
-            case error => logger.error("[SubscriptionScheduler] SA robotics scheduler run failed", error)
-          }
-        )
-      Some(s)
+  private val knownFactsScheduled = knownFactsWorkerConfigs.flatMap { case (regime, config) =>
+    if config.enabled then
+      Some(actorSystem.scheduler.scheduleAtFixedRate(
+        initialDelay = config.schedulerDelay,
+        interval = config.schedulerInterval
+      )(() =>
+        knownFactsWorker.runOnce(using config, regime).recover {
+          case error => logger.error(s"[SubscriptionScheduler] ${regime.toString} known facts scheduler run failed", error)
+        }
+      ))
     else
-      logger.warn("[SubscriptionScheduler] SA robotics scheduler disabled by config")
+      logger.warn(s"[SubscriptionScheduler] ${regime.toString} known facts scheduler disabled by config")
       None
+  }
 
-  private val ctRoboticsScheduled =
-    if appConfig.ctRoboticsJobConfig.enabled then
-      val s =
-        actorSystem.scheduler.scheduleAtFixedRate(
-          initialDelay = appConfig.ctRoboticsJobConfig.initialDelay,
-          interval = appConfig.ctRoboticsJobConfig.interval
-        )(() =>
-          roboticsWorker.runOnce()(using appConfig.saRoboticsJobConfig, CT).recover {
-            case error => logger.error("[SubscriptionScheduler] CT robotics scheduler run failed", error)
-          }
-        )
-      Some(s)
+  private val roboticsScheduled = roboticsWorkerConfigs.flatMap { case (regime, config) =>
+    if config.enabled then
+      Some(actorSystem.scheduler.scheduleAtFixedRate(
+        initialDelay = config.schedulerDelay,
+        interval = config.schedulerInterval
+      )(() =>
+        roboticsWorker.runOnce(using config, regime).recover {
+          case error => logger.error(s"[SubscriptionScheduler] ${regime.toString} robotics scheduler run failed", error)
+        }
+      ))
     else
-      logger.warn("[SubscriptionScheduler] CT robotics scheduler disabled by config")
+      logger.warn(s"[SubscriptionScheduler] ${regime.toString} robotics scheduler disabled by config")
       None
+  }
 
-  lifecycle.addStopHook(() => Future.successful(payeKnownFactsScheduled.cancel()))
-  lifecycle.addStopHook(() => Future.successful(saKnownFactsScheduled.cancel()))
-  lifecycle.addStopHook(() => Future.successful(ctKnownFactsScheduled.cancel()))
-  lifecycle.addStopHook(() => Future.successful(saRoboticsScheduled.foreach(_.cancel())))
-  lifecycle.addStopHook(() => Future.successful(ctRoboticsScheduled.foreach(_.cancel())))
+  (knownFactsScheduled ++ roboticsScheduled).foreach(worker => lifecycle.addStopHook(() => Future.successful(worker.cancel())))

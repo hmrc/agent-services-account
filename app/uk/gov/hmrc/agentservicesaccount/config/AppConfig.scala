@@ -74,49 +74,21 @@ class AppConfig @Inject() (
   val dmsSubmissionSource: String = servicesConfig.getString("microservice.services.dms-submission.contact-details-submission.source")
   val dmsSubmissionUrl: String = dmsBaseUrl + "/dms-submission/submit"
 
-  val payeKnownFactsJobConfig: KnownFactsJobConfig =
-    val prefix = "work-item-jobs.paye-known-facts"
-    KnownFactsJobConfig(
-      initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
-      interval = config.get[Duration](s"$prefix.interval").toMillis.millis,
-      retryInterval = config.get[Duration](s"$prefix.retry-interval").toMillis.millis,
-      maxAttempts = config.get[Int](s"$prefix.max-attempts")
-    )
+  private def getWorkItemJobConfig(name: String): WorkItemJobConfig = WorkItemJobConfig(
+    enabled = config.get[Boolean](s"work-item-jobs.$name.enabled"),
+    schedulerDelay = config.get[Duration](s"work-item-jobs.$name.scheduler-delay").toMillis.millis,
+    schedulerInterval = config.get[Duration](s"work-item-jobs.$name.scheduler-interval").toMillis.millis,
+    retryInterval = config.get[Duration](s"work-item-jobs.$name.retry-interval").toMillis.millis,
+    maxAttempts = config.get[Int](s"work-item-jobs.$name.max-attempts")
+  )
+  val payeKnownFactsJobConfig: WorkItemJobConfig = getWorkItemJobConfig("paye-known-facts")
 
-  val saKnownFactsJobConfig: KnownFactsJobConfig =
-    val prefix = "work-item-jobs.sa-known-facts"
-    KnownFactsJobConfig(
-      initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
-      interval = config.get[Duration](s"$prefix.interval").toMillis.millis,
-      retryInterval = config.get[Duration](s"$prefix.retry-interval").toMillis.millis,
-      maxAttempts = config.get[Int](s"$prefix.max-attempts")
-    )
+  val saKnownFactsJobConfig: WorkItemJobConfig = getWorkItemJobConfig("sa-known-facts")
 
-  val saRoboticsJobConfig: RoboticsJobConfig =
-    val prefix = "work-item-jobs.sa-robotics"
-    RoboticsJobConfig(
-      enabled = config.get[Boolean](s"$prefix.enabled"),
-      initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
-      interval = config.get[Duration](s"$prefix.interval").toMillis.millis,
-      maxAttempts = config.get[Int](s"$prefix.max-attempts")
-    )
+  val ctKnownFactsJobConfig: WorkItemJobConfig = getWorkItemJobConfig("ct-known-facts")
 
-  val ctKnownFactsJobConfig: KnownFactsJobConfig =
-    val prefix = "work-item-jobs.ct-known-facts"
-    KnownFactsJobConfig(
-      initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
-      interval = config.get[Duration](s"$prefix.interval").toMillis.millis,
-      retryInterval = config.get[Duration](s"$prefix.retry-interval").toMillis.millis,
-      maxAttempts = config.get[Int](s"$prefix.max-attempts")
-    )
+  val saRoboticsJobConfig: WorkItemJobConfig = getWorkItemJobConfig("sa-robotics")
 
-  val ctRoboticsJobConfig: RoboticsJobConfig =
-    val prefix = "work-item-jobs.ct-robotics"
-    RoboticsJobConfig(
-      enabled = config.get[Boolean](s"$prefix.enabled"),
-      initialDelay = config.get[Duration](s"$prefix.initial-delay").toMillis.millis,
-      interval = config.get[Duration](s"$prefix.interval").toMillis.millis,
-      maxAttempts = config.get[Int](s"$prefix.max-attempts")
-    )
+  val ctRoboticsJobConfig: WorkItemJobConfig = getWorkItemJobConfig("ct-robotics")
 
   private def baseUrl(key: String) = servicesConfig.baseUrl(key)

@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
+import org.apache.pekko.Done
 import org.bson.types.ObjectId
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as eqTo
 import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.config.KnownFactsJobConfig
+import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.Es20Enrolment
@@ -46,9 +47,10 @@ with BeforeAndAfterEach:
 
   given HeaderCarrier = HeaderCarrier()
 
-  private val jobConfig = KnownFactsJobConfig(
-    initialDelay = 1.second,
-    interval = 1.second,
+  private val jobConfig = WorkItemJobConfig(
+    enabled = true,
+    schedulerDelay = 1.second,
+    schedulerInterval = 1.second,
     retryInterval = 10.seconds,
     maxAttempts = 3
   )
@@ -123,11 +125,11 @@ with BeforeAndAfterEach:
       when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(None))
 
-      when(workItemService.reschedule(workItem, jobConfig.retryInterval)).thenReturn(Future.successful(true))
+      when(workItemService.markFailed(workItem)).thenReturn(Future.successful(Done))
 
       worker.runOnce(using jobConfig, regime).futureValue
 
-      verify(workItemService).reschedule(workItem, jobConfig.retryInterval)
+      verify(workItemService).markFailed(workItem)
       verify(workItemService, never()).complete(workItem)
     }
 
@@ -149,13 +151,12 @@ with BeforeAndAfterEach:
       )(using any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
 
-      when(workItemService.complete(workItem))
-        .thenReturn(Future.successful(true))
+      when(workItemService.complete(workItem)).thenReturn(Future.successful(Done))
 
       worker.runOnce(using jobConfig, regime).futureValue
 
       verify(workItemService).complete(workItem)
-      verify(workItemService, never()).reschedule(workItem, jobConfig.retryInterval)
+      verify(workItemService, never()).markFailed(workItem)
     }
 
     "mark for manual intervention once max attempts are reached" in {
@@ -167,11 +168,11 @@ with BeforeAndAfterEach:
       when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"))(using any[HeaderCarrier]))
         .thenReturn(Future.successful(None))
 
-      when(workItemService.markManualIntervention(workItem)).thenReturn(Future.successful(true))
+      when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
 
       worker.runOnce(using jobConfig, regime).futureValue
 
-      verify(workItemService).markManualIntervention(workItem)
-      verify(workItemService, never()).reschedule(workItem, jobConfig.retryInterval)
+      verify(workItemService).markPermanentlyFailed(workItem)
+      verify(workItemService, never()).markFailed(workItem)
     }
   }

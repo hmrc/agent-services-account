@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
+import org.apache.pekko.Done
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
@@ -40,23 +41,20 @@ class KnownFactsWorkItemService @Inject() (
     retryInterval: FiniteDuration
   ): Future[Option[WorkItem[SubscriptionWorkItem]]] =
     val now = Instant.now()
-    repository.pullOutstandingForRegime(
+    repository.pullAwaitingKnownFacts(
       regime,
       failedBefore = now.minus(Duration.ofMillis(retryInterval.toMillis)),
       availableBefore = now
     )
 
-  def reschedule(
-    workItem: WorkItem[SubscriptionWorkItem],
-    retryInterval: FiniteDuration
-  ): Future[Boolean] =
-    val nextRun = Instant.now().plus(Duration.ofMillis(retryInterval.toMillis))
-    repository.markAs(
-      workItem.id,
-      ProcessingStatus.Failed,
-      Some(nextRun)
-    )
+  def markFailed(workItem: WorkItem[SubscriptionWorkItem]): Future[Done] = repository
+    .markAs(workItem.id, ProcessingStatus.Failed)
+    .map(_ => Done)
 
-  def complete(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] = repository.complete(workItem.id, ProcessingStatus.Succeeded)
+  def complete(workItem: WorkItem[SubscriptionWorkItem]): Future[Done] = repository
+    .completeAndDelete(workItem.id)
+    .map(_ => Done)
 
-  def markManualIntervention(workItem: WorkItem[SubscriptionWorkItem]): Future[Boolean] = repository.complete(workItem.id, ProcessingStatus.PermanentlyFailed)
+  def markPermanentlyFailed(workItem: WorkItem[SubscriptionWorkItem]): Future[Done] = repository
+    .complete(workItem.id, ProcessingStatus.PermanentlyFailed)
+    .map(_ => Done)
