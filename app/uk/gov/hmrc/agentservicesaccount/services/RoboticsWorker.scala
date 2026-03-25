@@ -123,7 +123,7 @@ extends Logging:
         Json.obj(
           "schemaVersion" -> schemaVersion,
           "requestId" -> workItem.item.requestId,
-          "targetSystem" -> TargetSystem.CESA.toString,
+          "targetSystem" -> targetSystem.toString,
           "operationRequired" -> Operation.CREATE.toString,
           "entityType" -> defaultEntityType,
           "agentDetails" -> agentDetails
