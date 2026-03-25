@@ -80,7 +80,6 @@ extends Logging:
   private def process(
     workItem: WorkItem[SubscriptionWorkItem]
   )(using
-    jobConfig: WorkItemJobConfig,
     regime: LegacyRegime & UsesRobotics
   ): Future[Done] = {
     val request = workItem.item.subscriptionRequest
