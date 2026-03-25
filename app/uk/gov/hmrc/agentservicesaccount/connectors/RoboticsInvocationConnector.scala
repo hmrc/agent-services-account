@@ -45,7 +45,8 @@ class RoboticsInvocationConnector @Inject() (
 extends Logging
 with HttpErrorFunctions:
 
-  private val baseUrl: String = appConfig.hipBaseUrl
+  private val baseUrl = appConfig.hipBaseUrl
+  private val authToken = appConfig.hipAuthToken
 
   def invoke(
     payload: JsObject,
@@ -53,6 +54,7 @@ with HttpErrorFunctions:
   )(using HeaderCarrier): Future[Done] = http
     .post(url"$baseUrl/RTServer/rest/nice/rti/ra/invocation")
     .setHeader("correlationId" -> correlationId.value)
+    .setHeader("Authorization" -> s"Basic $authToken")
     .withBody(payload)
     .execute[HttpResponse]
     .map { response =>
