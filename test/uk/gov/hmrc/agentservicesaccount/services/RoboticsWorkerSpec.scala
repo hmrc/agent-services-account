@@ -78,7 +78,7 @@ with BeforeAndAfterEach:
     item = SubscriptionWorkItem(
       arn = Arn("TARN0000001"),
       subscriptionRequest = request,
-      regime = LegacyRegime.SA,
+      regime = regime,
       agentReference = None,
       groupId = testGroupId,
       adminCredId = testAdminCredId,
