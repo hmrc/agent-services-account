@@ -34,8 +34,8 @@ case class SubscriptionWorkItem(
   subscriptionRequest: SubscriptionRequest,
   regime: LegacyRegime,
   agentReference: Option[AgentReference],
-  groupId: Option[GroupId] = None,
-  adminCredId: Option[CredId] = None,
+  groupId: GroupId,
+  adminCredId: CredId,
   requestId: String = UUID.randomUUID().toString,
   roboticsInvokedAt: Option[Instant] = None,
   sessionId: Option[String] = None, // Local stub-only: ESP stubs require X-Session-ID; keep None for QA/Prod.
@@ -52,8 +52,8 @@ object SubscriptionWorkItem:
         ) and
         Reads.pure(regime) and
         (__ \ "agentReference").readNullable[AgentReference] and
-        (__ \ "groupId").readNullable[GroupId] and
-        (__ \ "adminCredId").readNullable[CredId] and
+        (__ \ "groupId").read[GroupId] and
+        (__ \ "adminCredId").read[CredId] and
         (__ \ "requestId").read[String] and
         (__ \ "roboticsInvokedAt").readNullable[Instant](MongoJavatimeFormats.instantFormat) and
         (__ \ "sessionId").readNullable[String] and
@@ -69,8 +69,8 @@ object SubscriptionWorkItem:
         ) and
         (__ \ "regime").write[LegacyRegime] and
         (__ \ "agentReference").writeNullable[AgentReference] and
-        (__ \ "groupId").writeNullable[GroupId] and
-        (__ \ "adminCredId").writeNullable[CredId] and
+        (__ \ "groupId").write[GroupId] and
+        (__ \ "adminCredId").write[CredId] and
         (__ \ "requestId").write[String] and
         (__ \ "roboticsInvokedAt").writeNullable[Instant](MongoJavatimeFormats.instantFormat) and
         (__ \ "sessionId").writeNullable[String] and

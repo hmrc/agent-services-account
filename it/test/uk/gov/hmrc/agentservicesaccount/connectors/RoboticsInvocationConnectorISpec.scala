@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{post as wmPost, stubFor, urlEqualTo, aResponse}
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, stubFor, urlEqualTo, post as wmPost}
+import org.apache.pekko.Done
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
@@ -56,7 +57,7 @@ class RoboticsInvocationConnectorISpec extends ComponentSpecHelper {
 
         val result = connector.invoke(payload, correlationId).futureValue
 
-        result shouldBe (())
+        result shouldBe Done
         resetWiremock()
       }
     }

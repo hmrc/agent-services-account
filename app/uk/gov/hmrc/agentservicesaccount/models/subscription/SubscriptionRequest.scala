@@ -19,6 +19,7 @@ package uk.gov.hmrc.agentservicesaccount.models.subscription
 import play.api.libs.json.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
 
+// TODO since the models are the same they can be merged
 sealed trait SubscriptionRequest:
 
   val agentName: String

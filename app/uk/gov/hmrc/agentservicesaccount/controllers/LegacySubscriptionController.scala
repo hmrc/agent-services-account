@@ -48,21 +48,14 @@ with Logging:
     request => arn => adminCredId => groupId =>
       given RequestHeader = request
       request.body.asJson.map(_.validate[SubscriptionRequest](SubscriptionRequest.reads(regime))) match {
-        case Some(JsSuccess(payeRequest: PayeSubscriptionRequest, _)) =>
-          legacySubscriptionService.startPayeSubscription(
+        case Some(JsSuccess(request: SubscriptionRequest, _)) =>
+          legacySubscriptionService.startSubscriptionProcess(
             arn,
-            payeRequest,
+            request,
+            regime,
             adminCredId,
             groupId
           ).map(_ => Ok)
-        case Some(JsSuccess(saRequest: SaSubscriptionRequest, _)) =>
-          legacySubscriptionService.startSaSubscription(
-            arn,
-            saRequest,
-            adminCredId,
-            groupId
-          ).map(_ => Ok)
-        case Some(JsSuccess(_: CtSubscriptionRequest, _)) => Future.successful(NotImplemented)
         case Some(JsError(errors)) => Future.successful(BadRequest(s"Invalid subscription request, reason: $errors"))
         case _ => Future.successful(BadRequest("Missing subscription request JSON"))
       }

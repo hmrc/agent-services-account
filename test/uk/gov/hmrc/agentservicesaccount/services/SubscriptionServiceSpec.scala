@@ -33,6 +33,9 @@ import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.Enrolment
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.Decrypter
@@ -86,6 +89,21 @@ with BeforeAndAfterEach {
     isAbroad = false
   )
 
+  private val ctSubscriptionRequest = CtSubscriptionRequest(
+    agentName = "Test Agency",
+    contactName = "John Agent",
+    phoneNumber = Some("1234567890"),
+    emailAddress = Some("test@email.com"),
+    address = SubscriptionAddress(
+      line1 = "Line 1",
+      line2 = "Line 2",
+      line3 = Some("Line 3"),
+      line4 = Some("Line 4"),
+      postCode = Some("A11 11A")
+    ),
+    isAbroad = false
+  )
+
   private val testRequest: RequestHeader = FakeRequest()
     .withHeaders(
       "Authorization" -> "Bearer test-token",
@@ -98,227 +116,395 @@ with BeforeAndAfterEach {
   )
   private val repository = new SubscriptionWorkItemRepository(repoConfig, mongoComponent)
 
+  // Force a race-like condition deterministically by making `findByArnAndRegime` lie, while still relying on the
+  // unique (arn, regime) index in Mongo to reject the insert.
+  class RaceSubscriptionWorkItemRepository
+  extends SubscriptionWorkItemRepository(repoConfig, mongoComponent):
+    override def findByArnAndRegime(
+      arn: Arn,
+      regime: LegacyRegime
+    ): Future[Option[uk.gov.hmrc.mongo.workitem.WorkItem[SubscriptionWorkItem]]] = Future.successful(None)
+
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     repository.coll.drop().toFuture().futureValue
   }
 
-  "startPayeSubscription" should {
-    "capture session and bearer when stubs compatibility mode is enabled" in {
-      val connector = mock[AgentEpayeRegistrationConnector]
-      val appConfig = mock[AppConfig]
-      val espConnector = mock[EnrolmentStoreProxyConnector]
-      val agentMappingConnector = mock[AgentMappingConnector]
-      val service =
-        new SubscriptionService(
-          connector,
-          repository,
-          espConnector,
-          agentMappingConnector,
-          appConfig
-        )
+  "startSubscriptionProcess" when {
+    "invoked for PAYE" should {
+      "capture session and bearer when stubs compatibility mode is enabled" in {
+        val connector = mock[AgentEpayeRegistrationConnector]
+        val appConfig = mock[AppConfig]
+        val espConnector = mock[EnrolmentStoreProxyConnector]
+        val agentMappingConnector = mock[AgentMappingConnector]
+        val service =
+          new SubscriptionService(
+            connector,
+            repository,
+            espConnector,
+            agentMappingConnector,
+            appConfig
+          )
 
-      when(appConfig.stubsCompatibilityMode).thenReturn(true)
-      when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
+        when(appConfig.stubsCompatibilityMode).thenReturn(true)
+        when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
+        when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
 
-      service.startPayeSubscription(
-        testArn,
-        subscriptionRequest,
-        testAdminCredId,
-        testGroupId
-      )(using testRequest).futureValue
-
-      val item = repository.coll.find().first().toFuture().futureValue.item
-
-      item.sessionId shouldBe Some("session-123")
-      item.bearerToken shouldBe Some("Bearer test-token")
-    }
-
-    "omit session and bearer when stubs compatibility mode is disabled" in {
-      val connector = mock[AgentEpayeRegistrationConnector]
-      val appConfig = mock[AppConfig]
-      val espConnector = mock[EnrolmentStoreProxyConnector]
-      val agentMappingConnector = mock[AgentMappingConnector]
-      val service =
-        new SubscriptionService(
-          connector,
-          repository,
-          espConnector,
-          agentMappingConnector,
-          appConfig
-        )
-
-      when(appConfig.stubsCompatibilityMode).thenReturn(false)
-      when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
-
-      service.startPayeSubscription(
-        testArn,
-        subscriptionRequest,
-        testAdminCredId,
-        testGroupId
-      )(using testRequest).futureValue
-
-      val item = repository.coll.find().first().toFuture().futureValue.item
-
-      item.sessionId shouldBe None
-      item.bearerToken shouldBe None
-    }
-  }
-
-  "startSaSubscription" should {
-    "capture session and bearer when stubs compatibility mode is enabled" in {
-      val connector = mock[AgentEpayeRegistrationConnector]
-      val appConfig = mock[AppConfig]
-      val espConnector = mock[EnrolmentStoreProxyConnector]
-      val agentMappingConnector = mock[AgentMappingConnector]
-      val service =
-        new SubscriptionService(
-          connector,
-          repository,
-          espConnector,
-          agentMappingConnector,
-          appConfig
-        )
-
-      when(appConfig.stubsCompatibilityMode).thenReturn(true)
-      when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
-
-      service.startSaSubscription(
-        testArn,
-        saSubscriptionRequest,
-        testAdminCredId,
-        testGroupId
-      )(using testRequest).futureValue
-
-      val item = repository.coll.find().first().toFuture().futureValue.item
-
-      item.sessionId shouldBe Some("session-123")
-      item.bearerToken shouldBe Some("Bearer test-token")
-      item.regime shouldBe LegacyRegime.SA
-    }
-
-    "fail when SA enrolment already exists on the group" in {
-      val connector = mock[AgentEpayeRegistrationConnector]
-      val appConfig = mock[AppConfig]
-      val espConnector = mock[EnrolmentStoreProxyConnector]
-      val agentMappingConnector = mock[AgentMappingConnector]
-      val service =
-        new SubscriptionService(
-          connector,
-          repository,
-          espConnector,
-          agentMappingConnector,
-          appConfig
-        )
-
-      when(appConfig.stubsCompatibilityMode).thenReturn(false)
-      when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(
-        Future.successful(List(Enrolment(service = LegacyRegime.SA.enrolmentKey, state = "Activated")))
-      )
-
-      val ex =
-        service.startSaSubscription(
+        service.startSubscriptionProcess(
           testArn,
-          saSubscriptionRequest,
+          subscriptionRequest,
+          PAYE,
           testAdminCredId,
           testGroupId
-        )(using testRequest).failed.futureValue
+        )(using testRequest).futureValue
 
-      ex shouldBe a[uk.gov.hmrc.http.UpstreamErrorResponse]
+        val item = repository.coll.find().first().toFuture().futureValue.item
+
+        item.sessionId shouldBe Some("session-123")
+        item.bearerToken shouldBe Some("Bearer test-token")
+      }
+
+      "omit session and bearer when stubs compatibility mode is disabled" in {
+        val connector = mock[AgentEpayeRegistrationConnector]
+        val appConfig = mock[AppConfig]
+        val espConnector = mock[EnrolmentStoreProxyConnector]
+        val agentMappingConnector = mock[AgentMappingConnector]
+        val service =
+          new SubscriptionService(
+            connector,
+            repository,
+            espConnector,
+            agentMappingConnector,
+            appConfig
+          )
+
+        when(appConfig.stubsCompatibilityMode).thenReturn(false)
+        when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
+        when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+
+        service.startSubscriptionProcess(
+          testArn,
+          subscriptionRequest,
+          PAYE,
+          testAdminCredId,
+          testGroupId
+        )(using testRequest).futureValue
+
+        val item = repository.coll.find().first().toFuture().futureValue.item
+
+        item.sessionId shouldBe None
+        item.bearerToken shouldBe None
+      }
     }
+    "invoked for SA" should {
+      "capture session and bearer when stubs compatibility mode is enabled" in {
+        val connector = mock[AgentEpayeRegistrationConnector]
+        val appConfig = mock[AppConfig]
+        val espConnector = mock[EnrolmentStoreProxyConnector]
+        val agentMappingConnector = mock[AgentMappingConnector]
+        val service =
+          new SubscriptionService(
+            connector,
+            repository,
+            espConnector,
+            agentMappingConnector,
+            appConfig
+          )
 
-    "replace a permanently failed work item when SA subscription is retried" in {
-      val connector = mock[AgentEpayeRegistrationConnector]
-      val appConfig = mock[AppConfig]
-      val espConnector = mock[EnrolmentStoreProxyConnector]
-      val agentMappingConnector = mock[AgentMappingConnector]
-      val service =
-        new SubscriptionService(
-          connector,
-          repository,
-          espConnector,
-          agentMappingConnector,
-          appConfig
+        when(appConfig.stubsCompatibilityMode).thenReturn(true)
+        when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+
+        service.startSubscriptionProcess(
+          testArn,
+          saSubscriptionRequest,
+          SA,
+          testAdminCredId,
+          testGroupId
+        )(using testRequest).futureValue
+
+        val item = repository.coll.find().first().toFuture().futureValue.item
+
+        item.sessionId shouldBe Some("session-123")
+        item.bearerToken shouldBe Some("Bearer test-token")
+        item.regime shouldBe LegacyRegime.SA
+      }
+
+      "fail when SA enrolment already exists on the group" in {
+        val connector = mock[AgentEpayeRegistrationConnector]
+        val appConfig = mock[AppConfig]
+        val espConnector = mock[EnrolmentStoreProxyConnector]
+        val agentMappingConnector = mock[AgentMappingConnector]
+        val service =
+          new SubscriptionService(
+            connector,
+            repository,
+            espConnector,
+            agentMappingConnector,
+            appConfig
+          )
+
+        when(appConfig.stubsCompatibilityMode).thenReturn(false)
+        when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(
+          Future.successful(List(Enrolment(service = LegacyRegime.SA.enrolmentKey, state = "Activated")))
         )
 
-      when(appConfig.stubsCompatibilityMode).thenReturn(false)
-      when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+        val ex =
+          service.startSubscriptionProcess(
+            testArn,
+            saSubscriptionRequest,
+            SA,
+            testAdminCredId,
+            testGroupId
+          )(using testRequest).failed.futureValue
 
-      val failedItem =
+        ex shouldBe a[uk.gov.hmrc.http.UpstreamErrorResponse]
+      }
+
+      "replace a permanently failed work item when SA subscription is retried" in {
+        val connector = mock[AgentEpayeRegistrationConnector]
+        val appConfig = mock[AppConfig]
+        val espConnector = mock[EnrolmentStoreProxyConnector]
+        val agentMappingConnector = mock[AgentMappingConnector]
+        val service =
+          new SubscriptionService(
+            connector,
+            repository,
+            espConnector,
+            agentMappingConnector,
+            appConfig
+          )
+
+        when(appConfig.stubsCompatibilityMode).thenReturn(false)
+        when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+
+        val failedItem =
+          repository.pushNew(
+            SubscriptionWorkItem(
+              arn = testArn,
+              subscriptionRequest = saSubscriptionRequest,
+              regime = LegacyRegime.SA,
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
+            )
+          ).futureValue
+
+        repository.markAs(failedItem.id, PermanentlyFailed).futureValue
+
+        service.startSubscriptionProcess(
+          testArn,
+          saSubscriptionRequest,
+          SA,
+          testAdminCredId,
+          testGroupId
+        )(using testRequest).futureValue
+
+        val items = repository.coll.find().toFuture().futureValue
+
+        items.size.shouldBe(1)
+        items.head.id.should(not(be(failedItem.id)))
+        items.head.status.shouldBe(ToDo)
+        items.head.item.regime.shouldBe(LegacyRegime.SA)
+      }
+
+      "return 429 when a concurrent SA start hits the unique (arn, regime) index" in {
+        val connector = mock[AgentEpayeRegistrationConnector]
+        val appConfig = mock[AppConfig]
+        val espConnector = mock[EnrolmentStoreProxyConnector]
+        val agentMappingConnector = mock[AgentMappingConnector]
+
+        val raceRepository = new RaceSubscriptionWorkItemRepository
+        val service =
+          new SubscriptionService(
+            connector,
+            raceRepository,
+            espConnector,
+            agentMappingConnector,
+            appConfig
+          )
+
+        when(appConfig.stubsCompatibilityMode).thenReturn(false)
+        when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+
+        // Seed an existing SA work item so the insert below will hit the unique index.
         repository.pushNew(
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = saSubscriptionRequest,
             regime = LegacyRegime.SA,
-            agentReference = None
+            agentReference = None,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
           )
         ).futureValue
 
-      repository.markAs(failedItem.id, PermanentlyFailed).futureValue
+        val ex =
+          service.startSubscriptionProcess(
+            testArn,
+            saSubscriptionRequest,
+            SA,
+            testAdminCredId,
+            testGroupId
+          )(using testRequest).failed.futureValue
 
-      service.startSaSubscription(
-        testArn,
-        saSubscriptionRequest,
-        testAdminCredId,
-        testGroupId
-      )(using testRequest).futureValue
-
-      val items = repository.coll.find().toFuture().futureValue
-
-      items.size.shouldBe(1)
-      items.head.id.should(not(be(failedItem.id)))
-      items.head.status.shouldBe(ToDo)
-      items.head.item.regime.shouldBe(LegacyRegime.SA)
+        ex shouldBe a[uk.gov.hmrc.http.UpstreamErrorResponse]
+        ex.asInstanceOf[uk.gov.hmrc.http.UpstreamErrorResponse].statusCode shouldBe 429
+      }
     }
+    "invoked for CT" should {
+      "capture session and bearer when stubs compatibility mode is enabled" in {
+        val connector = mock[AgentEpayeRegistrationConnector]
+        val appConfig = mock[AppConfig]
+        val espConnector = mock[EnrolmentStoreProxyConnector]
+        val agentMappingConnector = mock[AgentMappingConnector]
+        val service =
+          new SubscriptionService(
+            connector,
+            repository,
+            espConnector,
+            agentMappingConnector,
+            appConfig
+          )
 
-    "return 409 when a concurrent SA start hits the unique (arn, regime) index" in {
-      val connector = mock[AgentEpayeRegistrationConnector]
-      val appConfig = mock[AppConfig]
-      val espConnector = mock[EnrolmentStoreProxyConnector]
-      val agentMappingConnector = mock[AgentMappingConnector]
+        when(appConfig.stubsCompatibilityMode).thenReturn(true)
+        when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
 
-      // Force a race-like condition deterministically by making `findByArnAndRegime` lie, while still relying on the
-      // unique (arn, regime) index in Mongo to reject the insert.
-      class RaceSubscriptionWorkItemRepository
-      extends SubscriptionWorkItemRepository(repoConfig, mongoComponent):
-        override def findByArnAndRegime(
-          arn: Arn,
-          regime: LegacyRegime
-        ): Future[Option[uk.gov.hmrc.mongo.workitem.WorkItem[SubscriptionWorkItem]]] = Future.successful(None)
-
-      val raceRepository = new RaceSubscriptionWorkItemRepository
-      val service =
-        new SubscriptionService(
-          connector,
-          raceRepository,
-          espConnector,
-          agentMappingConnector,
-          appConfig
-        )
-
-      when(appConfig.stubsCompatibilityMode).thenReturn(false)
-      when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
-
-      // Seed an existing SA work item so the insert below will hit the unique index.
-      repository.pushNew(
-        SubscriptionWorkItem(
-          arn = testArn,
-          subscriptionRequest = saSubscriptionRequest,
-          regime = LegacyRegime.SA,
-          agentReference = None
-        )
-      ).futureValue
-
-      val ex =
-        service.startSaSubscription(
+        service.startSubscriptionProcess(
           testArn,
-          saSubscriptionRequest,
+          ctSubscriptionRequest,
+          CT,
           testAdminCredId,
           testGroupId
-        )(using testRequest).failed.futureValue
+        )(using testRequest).futureValue
 
-      ex shouldBe a[uk.gov.hmrc.http.UpstreamErrorResponse]
-      ex.asInstanceOf[uk.gov.hmrc.http.UpstreamErrorResponse].statusCode shouldBe 409
+        val item = repository.coll.find().first().toFuture().futureValue.item
+
+        item.sessionId shouldBe Some("session-123")
+        item.bearerToken shouldBe Some("Bearer test-token")
+        item.regime shouldBe LegacyRegime.CT
+      }
+
+      "fail when SA enrolment already exists on the group" in {
+        val connector = mock[AgentEpayeRegistrationConnector]
+        val appConfig = mock[AppConfig]
+        val espConnector = mock[EnrolmentStoreProxyConnector]
+        val agentMappingConnector = mock[AgentMappingConnector]
+        val service =
+          new SubscriptionService(
+            connector,
+            repository,
+            espConnector,
+            agentMappingConnector,
+            appConfig
+          )
+
+        when(appConfig.stubsCompatibilityMode).thenReturn(false)
+        when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(
+          Future.successful(List(Enrolment(service = LegacyRegime.CT.enrolmentKey, state = "Activated")))
+        )
+
+        val ex =
+          service.startSubscriptionProcess(
+            testArn,
+            ctSubscriptionRequest,
+            CT,
+            testAdminCredId,
+            testGroupId
+          )(using testRequest).failed.futureValue
+
+        ex shouldBe a[uk.gov.hmrc.http.UpstreamErrorResponse]
+      }
+
+      "replace a permanently failed work item when SA subscription is retried" in {
+        val connector = mock[AgentEpayeRegistrationConnector]
+        val appConfig = mock[AppConfig]
+        val espConnector = mock[EnrolmentStoreProxyConnector]
+        val agentMappingConnector = mock[AgentMappingConnector]
+        val service =
+          new SubscriptionService(
+            connector,
+            repository,
+            espConnector,
+            agentMappingConnector,
+            appConfig
+          )
+
+        when(appConfig.stubsCompatibilityMode).thenReturn(false)
+        when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+
+        val failedItem =
+          repository.pushNew(
+            SubscriptionWorkItem(
+              arn = testArn,
+              subscriptionRequest = saSubscriptionRequest,
+              regime = LegacyRegime.CT,
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
+            )
+          ).futureValue
+
+        repository.markAs(failedItem.id, PermanentlyFailed).futureValue
+
+        service.startSubscriptionProcess(
+          testArn,
+          ctSubscriptionRequest,
+          CT,
+          testAdminCredId,
+          testGroupId
+        )(using testRequest).futureValue
+
+        val items = repository.coll.find().toFuture().futureValue
+
+        items.size.shouldBe(1)
+        items.head.id.should(not(be(failedItem.id)))
+        items.head.status.shouldBe(ToDo)
+        items.head.item.regime.shouldBe(LegacyRegime.CT)
+      }
+
+      "return 429 when a concurrent SA start hits the unique (arn, regime) index" in {
+        val connector = mock[AgentEpayeRegistrationConnector]
+        val appConfig = mock[AppConfig]
+        val espConnector = mock[EnrolmentStoreProxyConnector]
+        val agentMappingConnector = mock[AgentMappingConnector]
+
+        val raceRepository = new RaceSubscriptionWorkItemRepository
+        val service =
+          new SubscriptionService(
+            connector,
+            raceRepository,
+            espConnector,
+            agentMappingConnector,
+            appConfig
+          )
+
+        when(appConfig.stubsCompatibilityMode).thenReturn(false)
+        when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+
+        // Seed an existing SA work item so the insert below will hit the unique index.
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = testArn,
+            subscriptionRequest = saSubscriptionRequest,
+            regime = LegacyRegime.CT,
+            agentReference = None,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
+          )
+        ).futureValue
+
+        val ex =
+          service.startSubscriptionProcess(
+            testArn,
+            ctSubscriptionRequest,
+            CT,
+            testAdminCredId,
+            testGroupId
+          )(using testRequest).failed.futureValue
+
+        ex shouldBe a[uk.gov.hmrc.http.UpstreamErrorResponse]
+        ex.asInstanceOf[uk.gov.hmrc.http.UpstreamErrorResponse].statusCode shouldBe 429
+      }
     }
   }
 
@@ -345,7 +531,9 @@ with BeforeAndAfterEach {
             subscriptionRequest = saSubscriptionRequest,
             regime = LegacyRegime.SA,
             agentReference = None,
-            requestId = requestId
+            requestId = requestId,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
           )
         ).futureValue
       repository.markAs(workItem.id, InProgress).futureValue
@@ -390,7 +578,9 @@ with BeforeAndAfterEach {
             subscriptionRequest = saSubscriptionRequest,
             regime = LegacyRegime.SA,
             agentReference = None,
-            requestId = requestId
+            requestId = requestId,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
           )
         ).futureValue
       repository.markAs(workItem.id, PermanentlyFailed).futureValue
@@ -435,7 +625,9 @@ with BeforeAndAfterEach {
             subscriptionRequest = saSubscriptionRequest,
             regime = LegacyRegime.SA,
             agentReference = None,
-            requestId = requestId
+            requestId = requestId,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
           )
         ).futureValue
       repository.markAs(workItem.id, InProgress).futureValue

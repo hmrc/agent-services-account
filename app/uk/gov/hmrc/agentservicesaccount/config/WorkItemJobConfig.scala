@@ -18,9 +18,10 @@ package uk.gov.hmrc.agentservicesaccount.config
 
 import scala.concurrent.duration.FiniteDuration
 
-final case class RoboticsJobConfig(
+final case class WorkItemJobConfig(
   enabled: Boolean,
-  initialDelay: FiniteDuration,
-  interval: FiniteDuration,
-  maxAttempts: Int
+  schedulerDelay: FiniteDuration, // Delay after application start before the first execution of the job
+  schedulerInterval: FiniteDuration, // Interval between subsequent executions of the job
+  retryInterval: FiniteDuration, // Delay before retrying a failed work item
+  maxAttempts: Int // Maximum number of attempts to process a work item before giving up
 )

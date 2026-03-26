@@ -17,18 +17,9 @@
 package uk.gov.hmrc.agentservicesaccount.modules
 
 import com.google.inject.AbstractModule
-import com.google.inject.Provides
-import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.config.RoboticsJobConfig
-import uk.gov.hmrc.agentservicesaccount.services.SaRoboticsScheduler
+import uk.gov.hmrc.agentservicesaccount.services.SubscriptionScheduler
 
-import javax.inject.Singleton
-
-class SaRoboticsModule
+class SubscriptionSchedulerModule
 extends AbstractModule:
 
-  override def configure(): Unit = bind(classOf[SaRoboticsScheduler]).asEagerSingleton()
-
-  @Provides
-  @Singleton
-  def provideSaRoboticsJobConfig(appConfig: AppConfig): RoboticsJobConfig = appConfig.saRoboticsJobConfig
+  override def configure(): Unit = bind(classOf[SubscriptionScheduler]).asEagerSingleton()

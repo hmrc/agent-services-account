@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
@@ -62,6 +63,7 @@ with AgentAuthStubs:
     line4 = Some("Line 4"),
     postCode = Some(testPostCode)
   )
+  val testCredId = CredId("test-cred-id")
 
   val testAgentReference = AgentReference("AB1234")
 
@@ -92,24 +94,27 @@ with AgentAuthStubs:
     "return 200 after successfully calling OPRA and creating a new work item for PAYE regime" in:
       isLoggedInAsASAgent(testArn)
 
+      givenEs3CallSucceeds(testGroupId)()
       givenEpayeRegisterCallSucceeds(testPayeSubscriptionRequest)(testAgentReference)
 
       val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testPayeSubscriptionRequest)
 
       response.status shouldBe 200
-      repository.coll.find().headOption().futureValue.nonEmpty shouldBe true
+      repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(PAYE)
+      repository.coll.find().headOption().futureValue.flatMap(_.item.agentReference) shouldBe Some(testAgentReference)
 
     "throw error after a failed OPRA call without creating a new work item for PAYE regime" in:
       isLoggedInAsASAgent(testArn)
 
+      givenEs3CallSucceeds(testGroupId)()
       givenEpayeRegisterCallFails(testPayeSubscriptionRequest)
 
       val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testPayeSubscriptionRequest)
 
       response.status shouldBe 400
-      repository.coll.find().headOption().futureValue.flatMap(_.item.agentReference) shouldBe None
+      repository.coll.find().headOption().futureValue shouldBe None
 
-    "return 501 for SA regime" in:
+    "return 200 for SA regime" in:
       isLoggedInAsASAgent(testArn)
 
       givenEs3CallSucceeds(testGroupId)()
@@ -118,12 +123,14 @@ with AgentAuthStubs:
       response.status shouldBe 200
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(SA)
 
-    "return 501 for CT regime" in:
+    "return 200 for CT regime" in:
       isLoggedInAsASAgent(testArn)
 
+      givenEs3CallSucceeds(testGroupId)()
       val response = post(s"/legacy-subscription-request/$CT")(testCtSubscriptionRequest)
 
-      response.status shouldBe 501
+      response.status shouldBe 200
+      repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(CT)
 
   "GET /legacy-subscription-info" should:
     "return 200 with the correct information for an in progress work item" in:
@@ -133,7 +140,9 @@ with AgentAuthStubs:
         testArn,
         testSaSubscriptionRequest,
         SA,
-        None
+        None,
+        testGroupId,
+        testCredId
       )).futureValue
 
       val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
@@ -154,7 +163,9 @@ with AgentAuthStubs:
           testArn,
           testSaSubscriptionRequest,
           SA,
-          None
+          None,
+          testGroupId,
+          testCredId
         )).futureValue
 
       repository.markAs(model.id, PermanentlyFailed).futureValue
@@ -177,7 +188,9 @@ with AgentAuthStubs:
           testArn,
           testSaSubscriptionRequest,
           SA,
-          None
+          None,
+          testGroupId,
+          testCredId
         )).futureValue
 
       repository.markAs(model.id, Deferred).futureValue
@@ -240,7 +253,9 @@ with AgentAuthStubs:
         testArn,
         testSaSubscriptionRequest,
         SA,
-        None
+        None,
+        testGroupId,
+        testCredId
       )).futureValue
       givenEs3CallSucceeds(testGroupId)(CT)
       givenGetMappingsCallSucceeds(testArn, PAYE)(testAgentReference)
@@ -279,6 +294,8 @@ with AgentAuthStubs:
         subscriptionRequest = testSaSubscriptionRequest,
         regime = SA,
         agentReference = None,
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )).futureValue
       val expected = SubscriptionWorkItem(
@@ -286,6 +303,8 @@ with AgentAuthStubs:
         subscriptionRequest = testSaSubscriptionRequest,
         regime = SA,
         agentReference = Some(testAgentReference),
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )
 
@@ -309,6 +328,8 @@ with AgentAuthStubs:
         subscriptionRequest = testSaSubscriptionRequest,
         regime = SA,
         agentReference = None,
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )).futureValue
       val expected = SubscriptionWorkItem(
@@ -316,6 +337,8 @@ with AgentAuthStubs:
         subscriptionRequest = testSaSubscriptionRequest,
         regime = SA,
         agentReference = Some(testAgentReference),
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )
 
@@ -340,6 +363,8 @@ with AgentAuthStubs:
         subscriptionRequest = testCtSubscriptionRequest,
         regime = CT,
         agentReference = None,
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )).futureValue
 
@@ -363,6 +388,8 @@ with AgentAuthStubs:
         subscriptionRequest = testCtSubscriptionRequest,
         regime = CT,
         agentReference = None,
+        groupId = testGroupId,
+        adminCredId = testCredId,
         requestId = requestId
       )).futureValue
 
