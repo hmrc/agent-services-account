@@ -48,6 +48,8 @@ with Logging:
     request => arn => adminCredId => groupId =>
       given RequestHeader = request
       request.body.asJson.map(_.validate[SubscriptionRequest](SubscriptionRequest.reads(regime))) match {
+        case Some(JsSuccess(request: SubscriptionRequest, _)) if hasBlankUkPostcode(request) =>
+          Future.successful(BadRequest("Invalid subscription request, reason: postcode is required for legacy subscriptions in UK"))
         case Some(JsSuccess(request: SubscriptionRequest, _)) =>
           legacySubscriptionService.startSubscriptionProcess(
             arn,
@@ -60,6 +62,9 @@ with Logging:
         case _ => Future.successful(BadRequest("Missing subscription request JSON"))
       }
   }
+
+  private def hasBlankUkPostcode(request: SubscriptionRequest): Boolean =
+    !request.isAbroad && request.address.postCode.exists(_.trim.isEmpty)
 
   def subscriptionInfo(regimes: Seq[LegacyRegime]): Action[AnyContent] = authActions.authorisedWithArnAndGroupId {
     request => (arn, groupId) =>

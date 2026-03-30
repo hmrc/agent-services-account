@@ -34,6 +34,7 @@ import uk.gov.hmrc.agentservicesaccount.models.Es8Request
 import uk.gov.hmrc.agentservicesaccount.models.EspKnownFact
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.HeaderCarrier
@@ -81,19 +82,42 @@ class EnrolmentStoreProxyConnector @Inject() (
 
   def queryKnownFactsForAgent(
     regime: LegacyRegime,
-    agentReference: String
-  )(using HeaderCarrier): Future[Option[Es20Response]] = {
-    val request = Es20Request(
-      service = regime.enrolmentKey,
-      knownFacts = Seq(EspKnownFact(regime.agentReferenceKey, agentReference))
-    )
+    agentReference: String,
+    postcode: Option[PayePostcode.Valid]
+  )(using HeaderCarrier): Future[Option[Es20Response]] =
+    es20RequestFor(regime, agentReference, postcode) match
+      case None => Future.successful(None)
+      case Some(request) => executeEs20Lookup(request)
 
+  private def es20RequestFor(
+    regime: LegacyRegime,
+    agentReference: String,
+    postcode: Option[PayePostcode.Valid]
+  ): Option[Es20Request] =
+    (regime, postcode) match
+      case (LegacyRegime.PAYE, Some(pc)) =>
+        Some(Es20Request(
+          service = regime.enrolmentKey,
+          knownFacts = Seq(
+            EspKnownFact(regime.agentReferenceKey, agentReference),
+            EspKnownFact("IRAgentPostcode", pc.value)
+          )
+        ))
+      case (LegacyRegime.PAYE, None) =>
+        None
+      case (_, _) =>
+        Some(Es20Request(
+          service = regime.enrolmentKey,
+          knownFacts = Seq(EspKnownFact(regime.agentReferenceKey, agentReference))
+        ))
+
+  private def executeEs20Lookup(request: Es20Request)(using HeaderCarrier): Future[Option[Es20Response]] =
     http
       .post(url"$baseUrl/enrolment-store-proxy/enrolment-store/enrolments")
       .withBody(Json.toJson(request))
       .execute[HttpResponse]
       .map { response =>
-        response.status match {
+        response.status match
           case OK => Some(response.json.as[Es20Response])
           case NO_CONTENT => None
           case status =>
@@ -102,9 +126,7 @@ class EnrolmentStoreProxyConnector @Inject() (
               status,
               status
             )
-        }
       }
-  }
 
   def allocateAgentEnrolment(
     regime: LegacyRegime,

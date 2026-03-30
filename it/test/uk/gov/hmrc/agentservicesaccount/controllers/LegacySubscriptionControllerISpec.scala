@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentservicesaccount.controllers
 
 import play.api.libs.json.Json
+import play.api.libs.ws.WSBodyReadables.readableAsString
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
@@ -112,6 +113,19 @@ with AgentAuthStubs:
       val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testPayeSubscriptionRequest)
 
       response.status shouldBe 400
+      repository.coll.find().headOption().futureValue shouldBe None
+
+    "return 400 without creating a work item for PAYE when postcode is blank" in:
+      isLoggedInAsASAgent(testArn)
+
+      givenEs3CallSucceeds(testGroupId)()
+
+      val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(
+        testPayeSubscriptionRequest.copy(address = testAddress.copy(postCode = Some("   ")))
+      )
+
+      response.status shouldBe 400
+      response.body[String] should include("postcode is required for legacy subscriptions in UK")
       repository.coll.find().headOption().futureValue shouldBe None
 
     "return 200 for SA regime" in:

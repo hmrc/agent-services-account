@@ -159,3 +159,14 @@ extends UnitSpec:
       val result = Json.fromJson[SubscriptionRequest](invalidSaJson)(SubscriptionRequest.reads(SA))
 
       result shouldBe JsError("Postcode is required for legacy subscriptions in UK")
+
+    "allow deserialization when postcode is blank for PAYE to preserve persisted work items" in:
+      val payeJsonWithBlankPostcode = testPayeJson.deepMerge(Json.obj(
+        "address" -> Json.obj(
+          "postCode" -> "   "
+        )
+      ))
+
+      val result = Json.fromJson[SubscriptionRequest](payeJsonWithBlankPostcode)(SubscriptionRequest.reads(PAYE))
+
+      result shouldBe JsSuccess(testPayeSubscriptionRequest.copy(address = testUkAddress.copy(postCode = Some("   "))))
