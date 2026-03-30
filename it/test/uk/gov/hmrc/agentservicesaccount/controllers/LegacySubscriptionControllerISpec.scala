@@ -125,7 +125,7 @@ with AgentAuthStubs:
       )
 
       response.status shouldBe 400
-      response.body[String] should include("postcode is required for legacy subscriptions in UK")
+      response.body[String] should include("Postcode is required for legacy subscriptions in UK")
       repository.coll.find().headOption().futureValue shouldBe None
 
     "return 200 for SA regime" in:

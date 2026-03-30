@@ -43,6 +43,11 @@ object SubscriptionRequest:
     }
   }
 
+  def requestReads(regime: LegacyRegime): Reads[SubscriptionRequest] =
+    reads(regime).filter(JsonValidationError("Postcode is required for legacy subscriptions in UK")) { request =>
+      request.isAbroad || request.address.postCode.forall(_.trim.nonEmpty)
+    }
+
   implicit val writes: Writes[SubscriptionRequest] = Writes {
     case payeRequest: PayeSubscriptionRequest => Json.writes[PayeSubscriptionRequest].writes(payeRequest)
     case saRequest: SaSubscriptionRequest => Json.writes[SaSubscriptionRequest].writes(saRequest)
