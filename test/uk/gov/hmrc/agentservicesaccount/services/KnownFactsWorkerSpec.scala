@@ -33,6 +33,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
+import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
@@ -159,7 +160,7 @@ with BeforeAndAfterEach:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
           .thenReturn(Future.successful(None))
 
         when(workItemService.markFailed(workItem)).thenReturn(Future.successful(Done))
@@ -181,7 +182,7 @@ with BeforeAndAfterEach:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
@@ -210,7 +211,7 @@ with BeforeAndAfterEach:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
           .thenReturn(Future.successful(None))
 
         when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
@@ -222,3 +223,34 @@ with BeforeAndAfterEach:
       }
     }
   }
+
+  "KnownFactsWorker for PAYE" should {
+    "mark permanently failed without calling ES20 when postcode is blank" in {
+      val workItem = buildWorkItem(
+        PAYE,
+        failureCount = 0,
+        subscriptionRequest = testData(PAYE).asInstanceOf[PayeSubscriptionRequest].copy(
+          address = testData(PAYE).address.copy(postCode = Some("   "))
+        )
+      )
+
+      when(workItemService.pullOutstanding(PAYE, jobConfig.retryInterval))
+        .thenReturn(Future.successful(Some(workItem)))
+
+      when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
+
+      worker.runOnce(using jobConfig, PAYE).futureValue
+
+      verify(workItemService).markPermanentlyFailed(workItem)
+      verifyNoInteractions(connector)
+    }
+  }
+
+  private def expectedPostcode(regime: LegacyRegime): Option[String] =
+    regime match {
+      case PAYE => Some("AA1 1AA")
+      case _ => None
+    }
+
+  private def expectedValidatedPostcode(regime: LegacyRegime): Option[PayePostcode.Valid] =
+    PayePostcode.from(expectedPostcode(regime))

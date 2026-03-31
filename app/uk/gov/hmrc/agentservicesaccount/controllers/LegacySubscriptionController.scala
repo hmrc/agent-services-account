@@ -22,7 +22,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import play.api.libs.json.JsError
 import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsPath
 import play.api.libs.json.Json
+import play.api.libs.json.JsonValidationError
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
@@ -47,7 +49,7 @@ with Logging:
   def startSubscription(regime: LegacyRegime): Action[AnyContent] = authActions.authorisedWithArnAndCredId {
     request => arn => adminCredId => groupId =>
       given RequestHeader = request
-      request.body.asJson.map(_.validate[SubscriptionRequest](SubscriptionRequest.reads(regime))) match {
+      request.body.asJson.map(_.validate[SubscriptionRequest](SubscriptionRequest.requestReads(regime))) match {
         case Some(JsSuccess(request: SubscriptionRequest, _)) =>
           legacySubscriptionService.startSubscriptionProcess(
             arn,
@@ -56,10 +58,18 @@ with Logging:
             adminCredId,
             groupId
           ).map(_ => Ok)
-        case Some(JsError(errors)) => Future.successful(BadRequest(s"Invalid subscription request, reason: $errors"))
+        case Some(JsError(errors)) =>
+          Future.successful(BadRequest(s"Invalid subscription request, reason: ${formatErrors(errors)}"))
         case _ => Future.successful(BadRequest("Missing subscription request JSON"))
       }
   }
+
+  private def formatErrors(errors: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])]): String =
+    errors
+      .flatMap(_._2)
+      .flatMap(_.messages)
+      .distinct
+      .mkString(", ")
 
   def subscriptionInfo(regimes: Seq[LegacyRegime]): Action[AnyContent] = authActions.authorisedWithArnAndGroupId {
     request => (arn, groupId) =>

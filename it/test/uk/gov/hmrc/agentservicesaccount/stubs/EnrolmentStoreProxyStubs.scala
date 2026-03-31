@@ -22,7 +22,7 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentservicesaccount.models.GroupId
+import uk.gov.hmrc.agentservicesaccount.models.{Es20Response, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayeSubscriptionRequest
@@ -50,5 +50,24 @@ trait EnrolmentStoreProxyStubs:
       .willReturn(
         aResponse()
           .withStatus(500)
+      )
+  )
+
+  def givenEs20CallSucceeds(expectedBody: String, response: Es20Response): Unit = stubFor(
+    post(urlEqualTo("/enrolment-store-proxy/enrolment-store/enrolments"))
+      .withRequestBody(equalToJson(expectedBody, true, true))
+      .willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody(Json.toJson(response).toString)
+      )
+  )
+
+  def givenEs20CallReturnsNoContent(expectedBody: String): Unit = stubFor(
+    post(urlEqualTo("/enrolment-store-proxy/enrolment-store/enrolments"))
+      .withRequestBody(equalToJson(expectedBody, true, true))
+      .willReturn(
+        aResponse()
+          .withStatus(204)
       )
   )

@@ -87,3 +87,15 @@ extends UnitSpec:
       val result = Json.fromJson[SubscriptionWorkItem](testJson)(SubscriptionWorkItem.mongoFormat)
 
       result shouldBe JsSuccess(testModel)
+
+    "deserialize persisted PAYE work item when postcode is blank" in:
+      val blankPostcodeModel = testModel.copy(
+        subscriptionRequest = testPayeSubscriptionRequest.copy(
+          address = testUkAddress.copy(postCode = Some("   "))
+        )
+      )
+      val blankPostcodeJson = Json.toJson(blankPostcodeModel)(SubscriptionWorkItem.mongoFormat)
+
+      val result = Json.fromJson[SubscriptionWorkItem](blankPostcodeJson)(SubscriptionWorkItem.mongoFormat)
+
+      result shouldBe JsSuccess(blankPostcodeModel)

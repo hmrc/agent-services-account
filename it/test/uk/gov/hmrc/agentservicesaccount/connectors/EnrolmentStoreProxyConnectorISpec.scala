@@ -16,16 +16,20 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
+import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlEqualTo, verify as verifyWiremock}
 import org.scalatest.exceptions.TestFailedException
+import play.api.libs.json.Json
 import play.api.mvc.AnyContentAsEmpty
 import play.api.mvc.Request
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentservicesaccount.models.{Enrolment, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.{Enrolment, Es20Enrolment, Es20Response, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
+import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
 import uk.gov.hmrc.agentservicesaccount.stubs.EnrolmentStoreProxyStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
 
@@ -35,6 +39,7 @@ with EnrolmentStoreProxyStubs {
 
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
+  private given HeaderCarrier = HeaderCarrier()
 
   lazy val connector: EnrolmentStoreProxyConnector = app.injector.instanceOf[EnrolmentStoreProxyConnector]
 
@@ -65,6 +70,58 @@ with EnrolmentStoreProxyStubs {
       givenEs3CallFails(testGroupId)
 
       intercept[TestFailedException](connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue)
+    }
+  }
+
+  "ES20" should {
+    "send agent reference and postcode for PAYE" in {
+      val response = Es20Response(PAYE.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+      givenEs20CallSucceeds(
+        expectedBody = Json.obj(
+          "service" -> PAYE.enrolmentKey,
+          "knownFacts" -> Json.arr(
+            Json.obj("key" -> "IRAgentReference", "value" -> "A12345"),
+            Json.obj("key" -> "IRAgentPostcode", "value" -> "AA1 1AA")
+          )
+        ).toString,
+        response = response
+      )
+
+      connector.queryKnownFactsForAgent(PAYE, "A12345", PayePostcode.from(Some("AA1 1AA"))).futureValue shouldBe Some(response)
+    }
+
+    "send only agent reference for SA" in {
+      val response = Es20Response(SA.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+      givenEs20CallSucceeds(
+        expectedBody = Json.obj(
+          "service" -> SA.enrolmentKey,
+          "knownFacts" -> Json.arr(
+            Json.obj("key" -> "IRAgentReference", "value" -> "A12345")
+          )
+        ).toString,
+        response = response
+      )
+
+      connector.queryKnownFactsForAgent(SA, "A12345", None).futureValue shouldBe Some(response)
+    }
+
+    "return no content when PAYE known facts do not match" in {
+      givenEs20CallReturnsNoContent(
+        expectedBody = Json.obj(
+          "service" -> PAYE.enrolmentKey,
+          "knownFacts" -> Json.arr(
+            Json.obj("key" -> "IRAgentReference", "value" -> "A12345"),
+            Json.obj("key" -> "IRAgentPostcode", "value" -> "AA1 1AA")
+          )
+        ).toString
+      )
+
+      connector.queryKnownFactsForAgent(PAYE, "A12345", PayePostcode.from(Some("AA1 1AA"))).futureValue shouldBe None
+    }
+
+    "return none without calling ES20 when PAYE postcode is blank" in {
+      connector.queryKnownFactsForAgent(PAYE, "A12345", PayePostcode.from(Some("   "))).futureValue shouldBe None
+      verifyWiremock(0, postRequestedFor(urlEqualTo("/enrolment-store-proxy/enrolment-store/enrolments")))
     }
   }
 
