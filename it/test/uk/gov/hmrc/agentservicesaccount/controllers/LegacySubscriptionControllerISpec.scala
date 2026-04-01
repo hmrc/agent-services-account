@@ -19,22 +19,16 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 import play.api.libs.json.Json
 import play.api.libs.ws.WSBodyReadables.readableAsString
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
-import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.{CallbackFailure, CallbackSuccess}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.Operation.CREATE
-import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.CESA
-import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.COTAX
+import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.{CESA, COTAX}
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
-import uk.gov.hmrc.agentservicesaccount.stubs.AgentAuthStubs
-import uk.gov.hmrc.agentservicesaccount.stubs.AgentEpayeRegistrationStubs
-import uk.gov.hmrc.agentservicesaccount.stubs.AgentMappingStubs
-import uk.gov.hmrc.agentservicesaccount.stubs.EnrolmentStoreProxyStubs
+import uk.gov.hmrc.agentservicesaccount.stubs.{AgentAuthStubs, AgentEpayeRegistrationStubs, AgentMappingStubs, EnrolmentStoreProxyStubs}
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.Deferred
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{Deferred, PermanentlyFailed}
 
 import java.util.UUID
 

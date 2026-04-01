@@ -30,6 +30,8 @@ trait Cache[T] {
   def apply(key: String)(
     body: => Future[T]
   )(implicit ec: ExecutionContext): Future[T]
+
+  def delete(key: String)(using ec: ExecutionContext): Future[Unit] = Future.unit
 }
 
 class DoNotCache[T]
@@ -52,7 +54,7 @@ class CacheProvider @Inject() (
       agencyDetailsCache
     }
     else {
-      new DoNotCache[AgentDetailsDesResponse]
+      DoNotCache[AgentDetailsDesResponse]()
     }
 
 }

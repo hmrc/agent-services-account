@@ -51,7 +51,7 @@ class AgentDetailsCacheRepositoryISpec
     }
 
   private implicit val crypto: Encrypter
-    with Decrypter = aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
+    & Decrypter = aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
   private def encryptKey(key: String): String = crypto.encrypt(PlainText(key)).value
   private def decryptKey(field: String): String = crypto.decrypt(Crypted(field)).value
 

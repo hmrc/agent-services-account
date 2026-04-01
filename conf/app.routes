@@ -7,6 +7,7 @@ DELETE        /change-of-details-request/:arn             uk.gov.hmrc.agentservi
 GET           /agent-record-with-checks/arn/:arn          uk.gov.hmrc.agentservicesaccount.controllers.AgentDetailsController.clientGetWithChecks(arn:Arn)
 GET           /agent-record-with-checks                   uk.gov.hmrc.agentservicesaccount.controllers.AgentDetailsController.agentGetWithChecks()
 POST          /agent/agency-details/arn/:arn              uk.gov.hmrc.agentservicesaccount.controllers.AgentDetailsController.post(arn: Arn)
+PUT           /agent-record-update                        uk.gov.hmrc.agentservicesaccount.controllers.AgentDetailsController.agentRecordUpdate()
 POST          /dms-agent-callback                         uk.gov.hmrc.agentservicesaccount.controllers.DmsNotificationController.dmsCallback()
 
 POST          /legacy-subscription-request/:regime        uk.gov.hmrc.agentservicesaccount.controllers.LegacySubscriptionController.startSubscription(regime: LegacyRegime)

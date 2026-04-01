@@ -158,8 +158,6 @@ with BeforeAndAfterEach:
       }
 
       "invoke robotics with stub-compatible payload and replay auth/session headers in stubs mode" in {
-        val now = Instant.parse("2026-02-26T10:00:00Z")
-        val maxAttempts = 3
         val workItem = buildWorkItem(
           regime,
           ukRequest,
@@ -190,8 +188,6 @@ with BeforeAndAfterEach:
       }
 
       "invoke robotics with HIP payload shape for abroad requests in non-stub mode" in {
-        val now = Instant.parse("2026-02-26T10:00:00Z")
-        val maxAttempts = 3
         val workItem = buildWorkItem(
           regime,
           abroadRequestNoPostcode,
@@ -237,8 +233,6 @@ with BeforeAndAfterEach:
       }
 
       "mark the work item failed when invocation fails" in {
-        val now = Instant.parse("2026-02-26T10:00:00Z")
-        val maxAttempts = 3
         val workItem = buildWorkItem(
           regime,
           ukRequest,
@@ -258,7 +252,6 @@ with BeforeAndAfterEach:
       }
 
       "mark the work item PermanentlyFailed when workItem reaches maximum retries" in {
-        val now = Instant.parse("2026-02-26T10:00:00Z")
         val maxAttempts = 3
         val workItem = buildWorkItem(
           regime,

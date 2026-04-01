@@ -68,7 +68,7 @@ with DataStreamStub {
   private implicit lazy val configuration: Config = app.injector.instanceOf[Config]
   private implicit lazy val as: ActorSystem = ActorSystem()
   private implicit val crypto: Encrypter
-    with Decrypter = aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
+    & Decrypter = aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
 
   private def encryptKey(key: String): String = crypto.encrypt(PlainText(key)).value
 

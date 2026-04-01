@@ -30,8 +30,8 @@ class AgentEpayeRegistrationConnectorISpec
 extends ComponentSpecHelper
 with AgentEpayeRegistrationStubs {
 
-  private implicit val ec: ExecutionContext = ExecutionContext.global
-  private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
+  given ExecutionContext = ExecutionContext.global
+  given Request[AnyContentAsEmpty.type] = FakeRequest()
 
   lazy val connector: AgentEpayeRegistrationConnector = app.injector.instanceOf[AgentEpayeRegistrationConnector]
 

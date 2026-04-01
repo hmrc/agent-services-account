@@ -17,15 +17,9 @@
 package uk.gov.hmrc.agentservicesaccount.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import org.scalatest.concurrent.Eventually.*
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.time.Seconds
-import org.scalatest.time.Span
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentservicesaccount.models.{Es20Response, GroupId}
-import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
-import uk.gov.hmrc.agentservicesaccount.models.subscription.PayeSubscriptionRequest
+import uk.gov.hmrc.agentservicesaccount.models.{Es20Response, GroupId}
 
 trait EnrolmentStoreProxyStubs:
 

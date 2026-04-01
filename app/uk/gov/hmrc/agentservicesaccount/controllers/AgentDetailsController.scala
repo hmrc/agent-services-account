@@ -15,31 +15,33 @@
  */
 
 package uk.gov.hmrc.agentservicesaccount.controllers
-
+import cats.data.EitherT
 import play.api.Logging
-import play.api.libs.json.Json
-import play.api.mvc.Action
-import play.api.mvc.AnyContent
-import play.api.mvc.ControllerComponents
+import play.api.libs.json.*
+import play.api.mvc.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
+import uk.gov.hmrc.agentservicesaccount.controllers.RequestValidation.*
+import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.toHipAmendPayload
 import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
-import uk.gov.hmrc.agentservicesaccount.services.AgentDetailsService
-import uk.gov.hmrc.agentservicesaccount.services.DmsService
+import uk.gov.hmrc.agentservicesaccount.models.{AgentRecordUpdateRequest, HipAmendPayload}
+import uk.gov.hmrc.agentservicesaccount.services.{AgentDetailsService, DmsService}
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import java.time.temporal.ChronoUnit
 import java.time.Instant
-import javax.inject.Inject
-import javax.inject.Singleton
+import java.time.temporal.ChronoUnit
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
 class AgentDetailsController @Inject() (
   cc: ControllerComponents,
   agentEntityService: AgentDetailsService,
+  hipConnector: HipConnector,
   dmsService: DmsService,
   authActions: AuthActions,
   auth: BackendAuthComponents
@@ -80,6 +82,31 @@ with Logging {
           Created
         }
     }
+
+  def agentRecordUpdate: Action[AnyContent] = authActions.authorisedWithArn { request => arn =>
+    given Request[AnyContent] = request
+    (
+      for
+        json       <- request.body.toJsonEitherT
+        rawRecord  <- json.validateEitherT[AgentRecordUpdateRequest]
+        hipPayload <- rawRecord.toHipAmendPayload.toResultEitherT
+        response   <- EitherT.liftF(hipConnector.putAgentRecord(arn, hipPayload))
+      yield Ok(Json.obj("processingDate" -> response.success.processingDate))
+    ).value.map {
+      case Right(result) => result
+      case Left(error)   => error
+    }.recover {
+      case e: UpstreamErrorResponse if e.statusCode >= 400 && e.statusCode < 500 =>
+        logger.warn(s"HIP agent record amend failed: ${e.statusCode}")
+        Status(e.statusCode)(Json.obj("code" -> e.statusCode.toString, "message" -> "Agent record update failed"))
+      case e: UpstreamErrorResponse =>
+        logger.warn(s"HIP agent record amend upstream error: ${e.statusCode}")
+        BadGateway(Json.obj("code" -> "BAD_GATEWAY", "message" -> "Upstream service error"))
+      case scala.util.control.NonFatal(e) =>
+        logger.error(s"HIP agent record amend unexpected error: ${e.getMessage}", e)
+        InternalServerError(Json.obj("code" -> "INTERNAL_SERVER_ERROR", "message" -> "Unexpected error"))
+    }
+  }
 
   private val strideRoles = Seq(appConfig.manuallyAssuredStrideRole)
 

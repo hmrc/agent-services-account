@@ -16,15 +16,9 @@
 
 package uk.gov.hmrc.agentservicesaccount.controllers
 
-import play.api.http.Status.BAD_REQUEST
-import play.api.http.Status.OK
-import play.api.http.Status.UNAUTHORIZED
+import play.api.http.Status.{BAD_REQUEST, OK, UNAUTHORIZED}
 import play.api.libs.json.Json
-import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
-import play.api.libs.ws.WSClient
-import play.api.libs.ws.WSResponse
-import uk.gov.hmrc.agentservicesaccount.models.dms.DmsNotification
-import uk.gov.hmrc.agentservicesaccount.models.dms.SubmissionItemStatus
+import uk.gov.hmrc.agentservicesaccount.models.dms.{DmsNotification, SubmissionItemStatus}
 import uk.gov.hmrc.agentservicesaccount.stubs.InternalAuthStub
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 

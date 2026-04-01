@@ -20,7 +20,6 @@ import play.api.http.Status.*
 import play.api.libs.json.*
 import play.api.libs.ws.{WSClient, WSResponse}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
-import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.stubs.*
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.domain.SaUtr
@@ -104,26 +103,6 @@ with EmailStub {
 
     JsObject(utrField.toSeq ++ baseFields)
   }
-
-  private val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy h:mma")
-  private val dateTime = formatter.format(localDateTime)
-
-  private def emailInformation(
-    arn: Arn,
-    utr: Utr,
-    failedChecks: List[String]
-  ) = EmailInformation(
-    to = Seq("test@example.com"),
-    templateId = "entity_check_notification",
-    parameters = Map(
-      "arn" -> arn.value,
-      "dateTime" -> dateTime,
-      "agencyName" -> "ABC Accountants",
-      "failedChecks" -> failedChecks.mkString("|"),
-      "utr" -> utr.value
-    ),
-    force = true
-  )
 
   def retry[T](n: Int)(block: => T): T = {
     Try(block) match {

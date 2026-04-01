@@ -25,6 +25,8 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
+import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
 
 import scala.concurrent.Future
 
@@ -44,5 +46,15 @@ extends MockitoSugar { this: TestSuite =>
       mockHipConnector.getAgentRecord(meq(arn))(using any[RequestHeader])
     ).thenReturn(Future.failed(ex))
   }
+
+  def mockHipPutAgentRecord(arn: Arn)(response: HipAmendResponse): Unit =
+    when(
+      mockHipConnector.putAgentRecord(meq(arn), any[HipAmendPayload])(using any[RequestHeader])
+    ).thenReturn(Future.successful(response))
+
+  def mockHipPutAgentRecordFailure(arn: Arn)(ex: Throwable): Unit =
+    when(
+      mockHipConnector.putAgentRecord(meq(arn), any[HipAmendPayload])(using any[RequestHeader])
+    ).thenReturn(Future.failed(ex))
 
 }
