@@ -54,16 +54,14 @@ object HipAmendPayload:
           postcode = ad.agencyAddress.flatMap(_.postalCode),
           country = ad.agencyAddress.map(_.countryCode),
           phone = ad.agencyTelephone,
-          email = ad.agencyEmail,
-          updateDetailsStatus = Some(UpdateStatus.ACCEPTED)
+          email = ad.agencyEmail
         )
 
       def amlsFields(amls: AmlsDetails) =
         HipAmendPayload(
           supervisoryBody = Some(amls.supervisoryBody.value),
           membershipNumber = Some(amls.membershipNumber.value),
-          evidenceObjectReference = amls.evidenceObjectReference.map(_.value),
-          amlSupervisionUpdateStatus = Some(UpdateStatus.ACCEPTED)
+          evidenceObjectReference = amls.evidenceObjectReference.map(_.value)
         )
 
       (request.agencyDetails, request.amlsDetails) match

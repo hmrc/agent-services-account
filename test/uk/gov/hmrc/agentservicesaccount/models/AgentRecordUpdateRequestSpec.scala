@@ -130,10 +130,10 @@ class AgentRecordUpdateRequestSpec extends UnitSpec {
           payload.supervisoryBody shouldBe Some("SRA")
           payload.membershipNumber shouldBe Some("XAML00000123456")
           payload.evidenceObjectReference shouldBe Some("ref-123")
-          payload.amlSupervisionUpdateStatus shouldBe Some(UpdateStatus.ACCEPTED)
 
           payload.name shouldBe None
           payload.addr1 shouldBe None
+          payload.amlSupervisionUpdateStatus shouldBe None
           payload.updateDetailsStatus shouldBe None
         case _ =>
           fail()
@@ -171,9 +171,9 @@ class AgentRecordUpdateRequestSpec extends UnitSpec {
           payload.addr4 shouldBe Some("Telford")
           payload.postcode shouldBe Some("TF1 1AA")
           payload.country shouldBe Some("GB")
-          payload.updateDetailsStatus shouldBe Some(UpdateStatus.ACCEPTED)
 
           payload.supervisoryBody shouldBe None
+          payload.updateDetailsStatus shouldBe None
           payload.amlSupervisionUpdateStatus shouldBe None
 
         case _ =>
@@ -223,10 +223,10 @@ class AgentRecordUpdateRequestSpec extends UnitSpec {
 
           fields should contain("supervisoryBody")
           fields should contain("membershipNumber")
-          fields should contain("amlSupervisionUpdateStatus")
           fields should not contain "name"
           fields should not contain "addr1"
           fields should not contain "updateDetailsStatus"
+          fields should not contain "amlSupervisionUpdateStatus"
           fields should not contain "directorPartnerUpdateStatus"
 
         case _ =>

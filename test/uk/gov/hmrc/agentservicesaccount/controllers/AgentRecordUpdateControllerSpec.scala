@@ -30,7 +30,6 @@ import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendSuccess
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderNames
-import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.internalauth.client.test.BackendAuthComponentsStub
 
@@ -210,58 +209,5 @@ with MockFactory {
       status(result) shouldBe FORBIDDEN
     }
 
-    "return the HIP error status when HIP returns an error" in {
-      mockAuth()(Right(enrolmentsWithNoIrSAAgent))
-      mockHipPutAgentRecordFailure(testArn)(UpstreamErrorResponse("Not found", 404))
-
-      val result = controller.agentRecordUpdate.apply(
-        FakeRequest(PUT, "/agent-record-update")
-          .withHeaders(HeaderNames.authorisation -> "Bearer token", "Content-Type" -> "application/json")
-          .withJsonBody(amlsPayload)
-      )
-
-      status(result) shouldBe NOT_FOUND
-    }
-
-    "return 422 when HIP returns validation error" in {
-      mockAuth()(Right(enrolmentsWithNoIrSAAgent))
-      mockHipPutAgentRecordFailure(testArn)(UpstreamErrorResponse("Agent is terminated", 422))
-
-      val result = controller.agentRecordUpdate.apply(
-        FakeRequest(PUT, "/agent-record-update")
-          .withHeaders(HeaderNames.authorisation -> "Bearer token", "Content-Type" -> "application/json")
-          .withJsonBody(amlsPayload)
-      )
-
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-    }
-
-    "return 502 when HIP returns a 5xx error" in {
-      mockAuth()(Right(enrolmentsWithNoIrSAAgent))
-      mockHipPutAgentRecordFailure(testArn)(UpstreamErrorResponse("Internal error", 500))
-
-      val result = controller.agentRecordUpdate.apply(
-        FakeRequest(PUT, "/agent-record-update")
-          .withHeaders(HeaderNames.authorisation -> "Bearer token", "Content-Type" -> "application/json")
-          .withJsonBody(amlsPayload)
-      )
-
-      status(result) shouldBe BAD_GATEWAY
-      (contentAsJson(result) \ "code").as[String] shouldBe "BAD_GATEWAY"
-    }
-
-    "return 500 for unexpected errors" in {
-      mockAuth()(Right(enrolmentsWithNoIrSAAgent))
-      mockHipPutAgentRecordFailure(testArn)(RuntimeException("Connection refused"))
-
-      val result = controller.agentRecordUpdate.apply(
-        FakeRequest(PUT, "/agent-record-update")
-          .withHeaders(HeaderNames.authorisation -> "Bearer token", "Content-Type" -> "application/json")
-          .withJsonBody(amlsPayload)
-      )
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      (contentAsJson(result) \ "code").as[String] shouldBe "INTERNAL_SERVER_ERROR"
-    }
   }
 }

@@ -85,16 +85,14 @@ with HipStubs {
 
   val amlsPayload = HipAmendPayload(
     supervisoryBody = Some("SRA"),
-    membershipNumber = Some("XAML00000123456"),
-    amlSupervisionUpdateStatus = Some(UpdateStatus.ACCEPTED)
+    membershipNumber = Some("XAML00000123456")
   )
 
   val agencyPayload = HipAmendPayload(
     name = Some("Test Agency"),
     addr1 = Some("1 High Street"),
     country = Some("GB"),
-    email = Some("test@example.com"),
-    updateDetailsStatus = Some(UpdateStatus.ACCEPTED)
+    email = Some("test@example.com")
   )
 
   "HipConnector putAgentRecord" should {

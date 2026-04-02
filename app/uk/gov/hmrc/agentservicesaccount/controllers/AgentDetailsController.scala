@@ -28,7 +28,6 @@ import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.toHipAmendPayload
 import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
 import uk.gov.hmrc.agentservicesaccount.models.{AgentRecordUpdateRequest, HipAmendPayload}
 import uk.gov.hmrc.agentservicesaccount.services.{AgentDetailsService, DmsService}
-import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -95,16 +94,6 @@ with Logging {
     ).value.map {
       case Right(result) => result
       case Left(error)   => error
-    }.recover {
-      case e: UpstreamErrorResponse if e.statusCode >= 400 && e.statusCode < 500 =>
-        logger.warn(s"HIP agent record amend failed: ${e.statusCode}")
-        Status(e.statusCode)(Json.obj("code" -> e.statusCode.toString, "message" -> "Agent record update failed"))
-      case e: UpstreamErrorResponse =>
-        logger.warn(s"HIP agent record amend upstream error: ${e.statusCode}")
-        BadGateway(Json.obj("code" -> "BAD_GATEWAY", "message" -> "Upstream service error"))
-      case scala.util.control.NonFatal(e) =>
-        logger.error(s"HIP agent record amend unexpected error: ${e.getMessage}", e)
-        InternalServerError(Json.obj("code" -> "INTERNAL_SERVER_ERROR", "message" -> "Unexpected error"))
     }
   }
 
