@@ -43,6 +43,7 @@ with MockAppConfig
 with MockAuthConnector
 with MockAgentEntityService
 with MockDesConnector
+with MockHipConnector
 with MockInternalAuth
 with MockDmsService
 with MockFactory {
@@ -53,12 +54,13 @@ with MockFactory {
 
   val stubBackendAuthComponents: BackendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
 
-  val mockAuthActions: AuthActions = new AuthActions(mockAuthConnector, stubControllerComponents())
+  val mockAuthActions: AuthActions = AuthActions(mockAuthConnector, stubControllerComponents())
 
   val controller =
-    new AgentDetailsController(
+    AgentDetailsController(
       stubControllerComponents(),
       mockAgentEntityService,
+      mockHipConnector,
       mockDmsService,
       mockAuthActions,
       stubBackendAuthComponents

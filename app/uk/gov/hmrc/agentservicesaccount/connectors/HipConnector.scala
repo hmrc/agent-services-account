@@ -24,12 +24,17 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
 import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
+import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
+import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
+import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
+import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.http.StringContextOps
 import uk.gov.hmrc.http.client.HttpClientV2
 
@@ -88,6 +93,20 @@ with Logging {
       "X-Transmitting-System" -> transmittingSystem
     )
   }
+
+  def putAgentRecord(arn: Arn, payload: HipAmendPayload)(using request: RequestHeader): Future[HipAmendResponse] =
+    val url = url"$baseUrl/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"
+    retryFor[HipAmendResponse](s"HIP put $url")(retryCondition) {
+      httpV2
+        .put(url)
+        .withBody(Json.toJson(payload))
+        .setHeader(hipHeaders*)
+        .executeAndDeserialise[HipAmendResponse]
+    }.flatMap { response =>
+      agentCacheProvider.agentDetailsCache.delete(arn.value)
+        .recover { case e => logger.warn(s"Failed to invalidate agent details cache: ${e.getMessage}") }
+        .map(_ => response)
+    }
 
   private def mapHipToDesModel(
     hipResponse: HipAgentSubscriptionResponse

@@ -88,4 +88,8 @@ with Cache[AgentDetailsDesResponse] {
     }
   }
 
+  override def delete(key: String)(using ec: ExecutionContext): Future[Unit] =
+    val encryptedKey = crypto.encrypt(PlainText(key)).value
+    deleteFromCache(encryptedKey)
+
 }

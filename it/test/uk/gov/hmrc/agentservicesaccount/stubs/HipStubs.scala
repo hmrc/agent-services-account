@@ -78,4 +78,26 @@ trait HipStubs {
     )
   }
 
+  def givenHipAmendAgentRecordSuccess(arn: Arn) = stubFor(
+    put(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
+      .willReturn(
+        okJson("""{"success":{"processingDate":"2024-07-15T09:30:47Z"}}""")
+      )
+  )
+
+  def givenHipAmendAgentRecordError(arn: Arn, status: Int) = stubFor(
+    put(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
+      .willReturn(
+        aResponse().withStatus(status)
+      )
+  )
+
+  def verifyHipAmendAgentRecord(arn: Arn, count: Int = 1): Unit =
+    eventually(Timeout(Span(5, Seconds))) {
+      verify(
+        count,
+        putRequestedFor(urlMatching(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
+      )
+    }
+
 }

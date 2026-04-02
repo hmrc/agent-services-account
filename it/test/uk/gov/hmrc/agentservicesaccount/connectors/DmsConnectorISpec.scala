@@ -89,7 +89,7 @@ class DmsConnectorISpec
     val sourcePart: Source[ByteString, NotUsed] = Source.single(ByteString.fromString("SomePdfBytes"))
     val source: Source[
       MultipartFormData.Part[Source[ByteString, NotUsed]]
-        with Serializable,
+        & Serializable,
       NotUsed
     ] = Source(
       Seq(

@@ -24,12 +24,8 @@ import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
-import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
-import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
+import uk.gov.hmrc.agentservicesaccount.models.*
 import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.stubs.HipStubs
@@ -37,19 +33,18 @@ import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
-import uk.gov.hmrc.crypto.PlainText
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import scala.concurrent.ExecutionContext
 
-class HipConnectorISpec
+class HipConnectorAmendISpec
 extends ComponentSpecHelper
 with HipStubs {
 
-  private implicit val ec: ExecutionContext = ExecutionContext.global
-  private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
+  private given ExecutionContext = ExecutionContext.global
+  private given Request[AnyContentAsEmpty.type] = FakeRequest()
 
   override def extraConfig: Map[String, Any] = Map(
     "microservice.services.hip.host" -> mockHost,
@@ -61,26 +56,24 @@ with HipStubs {
     "auditing.enabled" -> false
   )
 
-  private implicit lazy val configuration: Config = app.injector.instanceOf[Config]
-  private implicit lazy val as: ActorSystem = ActorSystem()
+  given configuration: Config = app.injector.instanceOf[Config]
+  given as: ActorSystem = ActorSystem()
 
-  private implicit val crypto: Encrypter
-    & Decrypter = aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
-
-  private def encryptKey(key: String): String = crypto.encrypt(PlainText(key)).value
+  private given (Encrypter & Decrypter) =
+    aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
 
   lazy val agentDataCache =
-    new AgencyDetailsCacheRepository(
+    AgencyDetailsCacheRepository(
       app.injector.instanceOf[Configuration],
       mongoComponent,
-      new CurrentTimestampSupport,
+      CurrentTimestampSupport(),
       app.injector.instanceOf[Metrics]
     )
 
-  lazy val cacheProvider = new CacheProvider(agentDataCache, app.injector.instanceOf[Configuration])
+  lazy val cacheProvider = CacheProvider(agentDataCache, app.injector.instanceOf[Configuration])
 
   lazy val hipConnector =
-    new HipConnector(
+    HipConnector(
       app.injector.instanceOf[AppConfig],
       app.injector.instanceOf[HttpClientV2],
       cacheProvider,
@@ -90,67 +83,67 @@ with HipStubs {
 
   val arn = Arn("AARN00012345")
 
-  val expectedResponse = AgentDetailsDesResponse(
-    Some(Utr("123456")),
-    Some(
-      AgencyDetails(
-        Some("ABC Accountants"),
-        Some("abc@xyz.com"),
-        Some("07345678901"),
-        Some(
-          BusinessAddress(
-            "Matheson House",
-            Some("Grange Central"),
-            Some("Town Centre"),
-            Some("Telford"),
-            Some("TF3 4ER"),
-            "GB"
-          )
-        )
-      )
-    ),
-    Some(SuspensionDetails(suspensionStatus = true, None)),
-    Some(true)
+  val amlsPayload = HipAmendPayload(
+    supervisoryBody = Some("SRA"),
+    membershipNumber = Some("XAML00000123456")
   )
 
-  "HipConnector getAgentRecord" should {
+  val agencyPayload = HipAmendPayload(
+    name = Some("Test Agency"),
+    addr1 = Some("1 High Street"),
+    country = Some("GB"),
+    email = Some("test@example.com")
+  )
 
-    "return mapped agency details from HIP" in {
-      givenHIPGetAgentRecordSuspendedAgent(arn)
+  "HipConnector putAgentRecord" should {
 
-      hipConnector.getAgentRecord(arn).futureValue shouldBe expectedResponse
+    "return HipAmendResponse for AMLS update" in {
+      givenHipAmendAgentRecordSuccess(arn)
+
+      val result = hipConnector.putAgentRecord(arn, amlsPayload).futureValue
+
+      result.success.processingDate shouldBe "2024-07-15T09:30:47Z"
+      verifyHipAmendAgentRecord(arn, 1)
     }
 
-    "cache agency details after first call" in {
-      givenHIPGetAgentRecordSuspendedAgent(arn)
+    "return HipAmendResponse for agency details update" in {
+      givenHipAmendAgentRecordSuccess(arn)
 
-      hipConnector.getAgentRecord(arn).futureValue shouldBe expectedResponse
-      Thread.sleep(500)
+      val result = hipConnector.putAgentRecord(arn, agencyPayload).futureValue
 
-      agentDataCache
-        .getFromCache(cacheId = encryptKey(arn.value))
-        .futureValue shouldBe Some(expectedResponse)
+      result.success.processingDate shouldBe "2024-07-15T09:30:47Z"
     }
 
-    "return cached result on second call" in {
+    "invalidate the cache after successful PUT" in {
       givenHIPGetAgentRecordSuspendedAgent(arn)
+      givenHipAmendAgentRecordSuccess(arn)
 
+      // populate the cache via GET
       hipConnector.getAgentRecord(arn).futureValue
       Thread.sleep(500)
-      hipConnector.getAgentRecord(arn).futureValue
 
-      verifyHipGetAgentRecord(arn, 1)
+      // PUT should invalidate the cache
+      hipConnector.putAgentRecord(arn, amlsPayload).futureValue
+      Thread.sleep(500)
+
+      // second GET should hit HIP again (not cache)
+      hipConnector.getAgentRecord(arn).futureValue
+      verifyHipGetAgentRecord(arn, 2)
     }
 
-    "fail when HIP returns 5xx" in {
-      givenHipReturnsServerError(arn)
-      an[Exception] should be thrownBy await(hipConnector.getAgentRecord(arn))
+    "fail when HIP returns 500" in {
+      givenHipAmendAgentRecordError(arn, 500)
+      an[Exception] should be thrownBy await(hipConnector.putAgentRecord(arn, amlsPayload))
     }
 
     "fail when HIP returns 404" in {
-      givenHipAgentIsUnknown404(arn)
-      an[Exception] should be thrownBy await(hipConnector.getAgentRecord(arn))
+      givenHipAmendAgentRecordError(arn, 404)
+      an[Exception] should be thrownBy await(hipConnector.putAgentRecord(arn, amlsPayload))
+    }
+
+    "fail when HIP returns 422" in {
+      givenHipAmendAgentRecordError(arn, 422)
+      an[Exception] should be thrownBy await(hipConnector.putAgentRecord(arn, amlsPayload))
     }
   }
-
 }

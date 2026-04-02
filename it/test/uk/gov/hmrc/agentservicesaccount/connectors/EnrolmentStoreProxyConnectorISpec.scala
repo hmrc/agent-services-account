@@ -37,8 +37,7 @@ class EnrolmentStoreProxyConnectorISpec
 extends ComponentSpecHelper
 with EnrolmentStoreProxyStubs {
 
-  private implicit val ec: ExecutionContext = ExecutionContext.global
-  private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
+  private given Request[AnyContentAsEmpty.type] = FakeRequest()
   private given HeaderCarrier = HeaderCarrier()
 
   lazy val connector: EnrolmentStoreProxyConnector = app.injector.instanceOf[EnrolmentStoreProxyConnector]

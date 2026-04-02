@@ -26,19 +26,15 @@ import scala.jdk.CollectionConverters.*
 
 trait MetricTestSupport {
   self: Suite
-    with Matchers =>
+    & Matchers =>
 
   def app: Application
 
-  private var metricsRegistry: MetricRegistry = _
+  private lazy val metricsRegistry: MetricRegistry = app.injector.instanceOf[Metrics].defaultRegistry
 
-  def givenCleanMetricRegistry(): Unit = {
-    val registry = app.injector.instanceOf[Metrics].defaultRegistry
-    for (metric <- registry.getMetrics.keySet().iterator().asScala) {
-      registry.remove(metric)
-    }
-    metricsRegistry = registry
-  }
+  def givenCleanMetricRegistry(): Unit =
+    for (metric <- metricsRegistry.getMetrics.keySet().iterator().asScala)
+      metricsRegistry.remove(metric)
 
   def timerShouldExistsAndBeenUpdated(metric: String): Unit = {
     val timers = metricsRegistry.getTimers

@@ -32,8 +32,8 @@ class AgentMappingConnectorISpec
 extends ComponentSpecHelper
 with AgentMappingStubs {
 
-  private implicit val ec: ExecutionContext = ExecutionContext.global
-  private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
+  given ExecutionContext = ExecutionContext.global
+  given Request[AnyContentAsEmpty.type] = FakeRequest()
 
   lazy val connector: AgentMappingConnector = app.injector.instanceOf[AgentMappingConnector]
 
