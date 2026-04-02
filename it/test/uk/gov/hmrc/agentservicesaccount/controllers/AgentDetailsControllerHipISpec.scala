@@ -101,7 +101,15 @@ with EmailStub {
 
     val utrField: Option[(String, JsValue)] = utr.map(u => "uniqueTaxReference" -> JsString(u.value))
 
-    JsObject(utrField.toSeq ++ baseFields)
+    val amlsField: Seq[(String, JsValue)] = Seq(
+      "amlsDetails" -> Json.obj(
+        "supervisoryBody" -> "HMRC",
+        "membershipNumber" -> "AMLS123",
+        "evidenceObjectReference" -> "evidence-ref-001"
+      )
+    )
+
+    JsObject(utrField.toSeq ++ baseFields ++ amlsField)
   }
 
   def retry[T](n: Int)(block: => T): T = {

@@ -29,6 +29,8 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails
+import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
 import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
@@ -110,7 +112,12 @@ with HipStubs {
       )
     ),
     Some(SuspensionDetails(suspensionStatus = true, None)),
-    Some(true)
+    Some(true),
+    Some(AmlsDetails(
+      SupervisoryBody("HMRC"),
+      MembershipNumber("AMLS123"),
+      Some(EvidenceObjectReference("evidence-ref-001"))
+    ))
   )
 
   "HipConnector getAgentRecord" should {

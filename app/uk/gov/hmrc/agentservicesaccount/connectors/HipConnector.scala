@@ -27,6 +27,8 @@ import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails
+import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
 import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
@@ -117,6 +119,14 @@ with Logging {
       suspensionStatus = s.suspensionStatus == "T",
       regimes = s.regime.filter(_.nonEmpty).map(_.toSet)
     )
+    val amlsDetails = for {
+      sb <- s.supervisoryBody
+      mn <- s.membershipNumber
+    } yield AmlsDetails(
+      SupervisoryBody(sb),
+      MembershipNumber(mn),
+      s.evidenceObjectReference.map(EvidenceObjectReference(_))
+    )
     AgentDetailsDesResponse(
       uniqueTaxReference = s.utr.map(Utr(_)),
       agencyDetails = Some(
@@ -137,7 +147,8 @@ with Logging {
         )
       ),
       suspensionDetails = Some(suspension),
-      isAnIndividual = Some(true)
+      isAnIndividual = Some(true),
+      amlsDetails = amlsDetails
     )
   }
 
