@@ -19,9 +19,12 @@ package uk.gov.hmrc.agentservicesaccount.models.subscription
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 
+import java.time.Instant
+
 case class SubscriptionInfo(
   regime: LegacyRegime,
-  subscriptionStatus: SubscriptionStatus
+  subscriptionStatus: SubscriptionStatus,
+  creationDate: Option[Instant] = None
 )
 
 object SubscriptionInfo:

@@ -222,7 +222,8 @@ extends Logging:
         Future.successful(
           SubscriptionInfo(
             regime = regime,
-            subscriptionStatus = SubscriptionStatus.fromProcessingStatus(workItem.status)
+            subscriptionStatus = SubscriptionStatus.fromProcessingStatus(workItem.status),
+            creationDate = Some(workItem.receivedAt)
           )
         )
       case None =>
