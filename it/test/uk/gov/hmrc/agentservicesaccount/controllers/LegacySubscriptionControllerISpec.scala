@@ -31,6 +31,7 @@ import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{Deferred, PermanentlyFailed}
 
 import java.util.UUID
+import org.scalatest.OptionValues.*
 
 class LegacySubscriptionControllerISpec
 extends ComponentSpecHelper
@@ -156,12 +157,14 @@ with AgentAuthStubs:
       val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
 
       response.status shouldBe 200
-      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
-        SubscriptionInfo(
-          regime = SA,
-          subscriptionStatus = SubscriptionStatus.SubscriptionInProgress
-        )
-      )
+      val result = response.json.as[Seq[SubscriptionInfo]]
+
+      result should have size 1
+
+      val info = result.head
+      info.regime shouldBe SA
+      info.subscriptionStatus shouldBe SubscriptionStatus.SubscriptionInProgress
+      info.creationDate shouldBe defined
 
     "return 200 with the correct information for a permanently failed work item" in:
       isLoggedInAsASAgent(testArn)
@@ -181,12 +184,14 @@ with AgentAuthStubs:
       val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
 
       response.status shouldBe 200
-      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
-        SubscriptionInfo(
-          regime = SA,
-          subscriptionStatus = SubscriptionStatus.SubscriptionFailed
-        )
-      )
+      val result = response.json.as[Seq[SubscriptionInfo]]
+
+      result should have size 1
+
+      val info = result.head
+      info.regime shouldBe SA
+      info.subscriptionStatus shouldBe SubscriptionStatus.SubscriptionFailed
+      info.creationDate shouldBe defined
 
     "return 200 with the correct information for a deferred work item" in:
       isLoggedInAsASAgent(testArn)
@@ -206,12 +211,14 @@ with AgentAuthStubs:
       val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
 
       response.status shouldBe 200
-      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
-        SubscriptionInfo(
-          regime = SA,
-          subscriptionStatus = SubscriptionStatus.SubscriptionInProgress
-        )
-      )
+      val result = response.json.as[Seq[SubscriptionInfo]]
+
+      result should have size 1
+
+      val info = result.head
+      info.regime shouldBe SA
+      info.subscriptionStatus shouldBe SubscriptionStatus.SubscriptionInProgress
+      info.creationDate shouldBe defined
 
     "return 200 with the correct information for an agency with an existing subscription" in:
       isLoggedInAsASAgent(testArn)
@@ -248,12 +255,13 @@ with AgentAuthStubs:
       val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
 
       response.status shouldBe 200
-      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
-        SubscriptionInfo(
-          regime = SA,
-          subscriptionStatus = SubscriptionStatus.NotSubscribed
-        )
-      )
+      val result = response.json.as[Seq[SubscriptionInfo]]
+
+      result should have size 1
+
+      val info = result.head
+      info.regime shouldBe SA
+      info.subscriptionStatus shouldBe SubscriptionStatus.NotSubscribed
 
     "return 200 with the correct information for a multiple different subscriptions in different states" in:
       isLoggedInAsASAgent(testArn)
@@ -271,20 +279,21 @@ with AgentAuthStubs:
       val response = get(s"/legacy-subscription-info?regimes=${SA.toString}&regimes=${CT.toString}&regimes=${PAYE.toString}")
 
       response.status shouldBe 200
-      response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
-        SubscriptionInfo(
-          regime = SA,
-          subscriptionStatus = SubscriptionStatus.SubscriptionInProgress
-        ),
-        SubscriptionInfo(
-          regime = CT,
-          subscriptionStatus = SubscriptionStatus.SubscriptionOnAgency
-        ),
-        SubscriptionInfo(
-          regime = PAYE,
-          subscriptionStatus = SubscriptionStatus.SubscriptionMapped
-        )
-      )
+      val result = response.json.as[Seq[SubscriptionInfo]]
+
+      result should have size 3
+
+      val sa = result.find(_.regime == SA).value
+      sa.subscriptionStatus shouldBe SubscriptionStatus.SubscriptionInProgress
+      sa.creationDate shouldBe defined
+
+      val ct = result.find(_.regime == CT).value
+      ct.subscriptionStatus shouldBe SubscriptionStatus.SubscriptionOnAgency
+      ct.creationDate shouldBe None
+
+      val paye = result.find(_.regime == PAYE).value
+      paye.subscriptionStatus shouldBe SubscriptionStatus.SubscriptionMapped
+      paye.creationDate shouldBe None
 
   "POST /robotics/callback" should:
     "return 204 when a work item is successfully updated with the new agentReference from a successful callback" in:
