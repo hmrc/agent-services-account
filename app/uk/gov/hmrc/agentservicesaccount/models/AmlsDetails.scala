@@ -16,7 +16,11 @@
 
 package uk.gov.hmrc.agentservicesaccount.models
 
+import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.*
+import uk.gov.hmrc.crypto.json.JsonEncryption.stringEncrypterDecrypter
+import uk.gov.hmrc.crypto.Decrypter
+import uk.gov.hmrc.crypto.Encrypter
 import AmlsDetails.*
 
 object AmlsDetails:
@@ -39,6 +43,15 @@ object AmlsDetails:
     extension (eor: EvidenceObjectReference) def value: String = eor
 
   given Format[AmlsDetails] = Json.format[AmlsDetails]
+
+  def amlsDetailsDatabaseFormat(using crypto: Encrypter & Decrypter): Format[AmlsDetails] =
+    (__ \ "supervisoryBody")
+      .format[String](stringEncrypterDecrypter)
+      .and((__ \ "membershipNumber").format[String](stringEncrypterDecrypter))
+      .and((__ \ "evidenceObjectReference").formatNullable[String](stringEncrypterDecrypter))(
+        AmlsDetails.apply,
+        ad => (ad.supervisoryBody, ad.membershipNumber, ad.evidenceObjectReference)
+      )
 
 case class AmlsDetails(
   supervisoryBody: SupervisoryBody,

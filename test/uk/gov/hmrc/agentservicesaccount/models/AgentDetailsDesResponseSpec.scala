@@ -21,6 +21,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
+import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.*
 
@@ -62,11 +63,18 @@ extends UnitSpec:
     ))
   )
 
+  val testAmlsDetails = AmlsDetails(
+    SupervisoryBody("HMRC"),
+    MembershipNumber("AMLS123"),
+    Some(EvidenceObjectReference("evidence-ref-001"))
+  )
+
   val testAgentDetails = AgentDetailsDesResponse(
     uniqueTaxReference = Some(testUtr),
     agencyDetails = Some(testAgencyDetails),
     suspensionDetails = Some(testSuspension),
-    isAnIndividual = Some(false)
+    isAnIndividual = Some(false),
+    amlsDetails = Some(testAmlsDetails)
   )
 
   "AgentDetailsDesResponse" should {
@@ -75,6 +83,9 @@ extends UnitSpec:
       val json = Json.toJson(testAgentDetails)
       (json \ "uniqueTaxReference").as[String] mustBe "1234567890"
       (json \ "agencyDetails" \ "agencyName").as[String] mustBe "Test Agency"
+      (json \ "amlsDetails" \ "supervisoryBody").as[String] mustBe "HMRC"
+      (json \ "amlsDetails" \ "membershipNumber").as[String] mustBe "AMLS123"
+      (json \ "amlsDetails" \ "evidenceObjectReference").as[String] mustBe "evidence-ref-001"
     }
 
     "deserialize from JSON using the standard format" in {
@@ -94,7 +105,12 @@ extends UnitSpec:
           "suspensionStatus" -> true,
           "regimes" -> Json.arr("ITSA")
         ),
-        "isAnIndividual" -> false
+        "isAnIndividual" -> false,
+        "amlsDetails" -> Json.obj(
+          "supervisoryBody" -> "HMRC",
+          "membershipNumber" -> "AMLS123",
+          "evidenceObjectReference" -> "evidence-ref-001"
+        )
       )
 
       val result = Json.fromJson[AgentDetailsDesResponse](json).get
@@ -104,6 +120,9 @@ extends UnitSpec:
     "serialize to encrypted JSON" in {
       val encrypted = Json.toJson(testAgentDetails)(using AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat)
       (encrypted \ "uniqueTaxReference").as[String] must startWith("ENC(")
+      (encrypted \ "amlsDetails" \ "supervisoryBody").as[String] must startWith("ENC(")
+      (encrypted \ "amlsDetails" \ "membershipNumber").as[String] must startWith("ENC(")
+      (encrypted \ "amlsDetails" \ "evidenceObjectReference").as[String] must startWith("ENC(")
     }
 
     "deserialize from encrypted JSON" in {

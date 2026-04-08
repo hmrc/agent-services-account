@@ -36,7 +36,10 @@ case class HipAgentSubscriptionSuccess(
   phone: Option[String],
   email: String,
   suspensionStatus: String,
-  regime: Option[Seq[String]]
+  regime: Option[Seq[String]],
+  supervisoryBody: Option[String],
+  membershipNumber: Option[String],
+  evidenceObjectReference: Option[String]
 )
 
 object HipAgentSubscriptionResponse {
@@ -66,7 +69,10 @@ object HipAgentSubscriptionResponse {
         readNullableString(__ \ "phone") and
         (__ \ "email").read[String] and
         (__ \ "suspensionStatus").read[String] and
-        (__ \ "regime").readNullable[Seq[String]].map(_.filter(_.nonEmpty))
+        (__ \ "regime").readNullable[Seq[String]].map(_.filter(_.nonEmpty)) and
+        readNullableString(__ \ "supervisoryBody") and
+        readNullableString(__ \ "membershipNumber") and
+        readNullableString(__ \ "evidenceObjectReference")
     )(HipAgentSubscriptionSuccess.apply)
 
   given Reads[HipAgentSubscriptionResponse] = (__ \ "success").read[HipAgentSubscriptionSuccess]

@@ -42,7 +42,10 @@ trait HipStubs {
                   "country": "GB",
                   "phone": "07345678901",
                   "email": "abc@xyz.com",
-                  "suspensionStatus": "T"
+                  "suspensionStatus": "T",
+                  "supervisoryBody": "HMRC",
+                  "membershipNumber": "AMLS123",
+                  "evidenceObjectReference": "evidence-ref-001"
                 }
               }
             """
