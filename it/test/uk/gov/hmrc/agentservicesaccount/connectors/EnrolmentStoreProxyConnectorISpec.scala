@@ -19,19 +19,14 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlEqualTo, verify as verifyWiremock}
 import org.scalatest.exceptions.TestFailedException
 import play.api.libs.json.Json
-import play.api.mvc.AnyContentAsEmpty
-import play.api.mvc.Request
+import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentservicesaccount.models.{Enrolment, Es20Enrolment, Es20Response, GroupId}
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
+import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.{CT, PAYE, SA}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
+import uk.gov.hmrc.agentservicesaccount.models.{Enrolment, Es20Enrolment, Es20Response, GroupId}
 import uk.gov.hmrc.agentservicesaccount.stubs.EnrolmentStoreProxyStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.http.HeaderCarrier
-
-import scala.concurrent.ExecutionContext
 
 class EnrolmentStoreProxyConnectorISpec
 extends ComponentSpecHelper

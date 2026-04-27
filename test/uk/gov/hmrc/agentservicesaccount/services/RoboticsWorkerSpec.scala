@@ -163,13 +163,32 @@ with BeforeAndAfterEach:
           ukRequest,
           requestId = "stub-req-123"
         )
-        val expectedOperationData = Json.obj(
-          "requestId" -> "stub-req-123",
-          "targetSystem" -> targetSystem.toString,
-          "postcode" -> "AA1 1AA",
-          "operationRequired" -> Operation.CREATE.toString
+
+        val roboticsArgumentValueForStubs = RoboticsArgumentValueForStubs(
+          requestId = "stub-req-123",
+          targetSystem = targetSystem.toString,
+          postcode = Some("AA1 1AA"),
+          operationRequired = Operation.CREATE.toString,
         )
-        val expectedPayload: JsObject = Json.toJsObject(RoboticsInvocationRequest.fromOperationData(Json.stringify(expectedOperationData)))
+
+        val roboticsArgumentForStubs = RoboticsArgumentForStubs(
+          argumentType = "string",
+          argumentValue = roboticsArgumentValueForStubs
+        )
+
+        val roboticsWorkflowDataForStubs = RoboticsWorkflowDataForStubs(
+          arguments = List(roboticsArgumentForStubs)
+        )
+
+        val roboticsRequestDataForStubs = RoboticsRequestDataForStubs(
+          workflowData = roboticsWorkflowDataForStubs
+        )
+
+        val roboticsRequestForStubs = RoboticsRequestForStubs(
+          requestData = List(roboticsRequestDataForStubs)
+        )
+
+        val expectedPayload: JsObject = Json.toJson(roboticsRequestForStubs).as[JsObject]
         val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
 
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
@@ -193,28 +212,55 @@ with BeforeAndAfterEach:
           abroadRequestNoPostcode,
           requestId = "hip-req-123"
         )
-        val expectedOperationData = Json.obj(
-          "schemaVersion" -> 1,
-          "requestId" -> "hip-req-123",
-          "targetSystem" -> targetSystem.toString,
-          "operationRequired" -> Operation.CREATE.toString,
-          "entityType" -> "Sole Trader",
-          "agentDetails" -> Json.obj(
-            "agentName" -> abroadRequestNoPostcode.agentName,
-            "isAbroad" -> true,
-            "address" -> Json.obj(
-              "line1" -> abroadRequestNoPostcode.address.line1,
-              "line2" -> abroadRequestNoPostcode.address.line2,
-              "line3" -> abroadRequestNoPostcode.address.line3,
-              "line4" -> abroadRequestNoPostcode.address.line4
-            ),
-            "contact" -> Json.obj(
-              "phone" -> abroadRequestNoPostcode.phoneNumber,
-              "email" -> abroadRequestNoPostcode.emailAddress
-            )
-          )
+
+        val roboticsArgumentValue = RoboticsArgumentValue(
+          requestId = "hip-req-123",
+          targetSystem = targetSystem.toString,
+          operationRequired = Operation.CREATE.toString,
+          entityType = "Sole Trader",
+          agentName = abroadRequestNoPostcode.agentName,
+          tradingAs = abroadRequestNoPostcode.agentName,
+          isAbroad = true,
+          addressLine1 = abroadRequestNoPostcode.address.line1,
+          addressLine2 = abroadRequestNoPostcode.address.line2,
+          addressLine3 = abroadRequestNoPostcode.address.line3,
+          addressLine4 = abroadRequestNoPostcode.address.line4,
+          postcode = None,
+          phone = abroadRequestNoPostcode.phoneNumber,
+          ARN = workItem.item.arn.value
         )
-        val expectedPayload: JsObject = Json.toJsObject(RoboticsInvocationRequest.fromOperationData(Json.stringify(expectedOperationData)))
+
+        val roboticsArgument = RoboticsArgument(
+          argumentType = "string",
+          argumentValue = roboticsArgumentValue
+        )
+
+        val roboticsWorkflowData = RoboticsWorkflowData(
+          arguments = List(roboticsArgument)
+        )
+
+        val roboticsWorkflowMetaData = RoboticsWorkflowMetaData(
+          solution = appConfig.roboticsWorkflowMetaDataSolution,
+          workflowId = appConfig.roboticsWorkflowMetaDataWorkflowID
+        )
+
+        val roboticsRequestData = RoboticsRequestData(
+          workflowMetaData = roboticsWorkflowMetaData,
+          workflowData = roboticsWorkflowData
+        )
+
+        val roboticsRequestMetaData = RoboticsRequestMetaData(
+          initiatorType = "THIRD_PARTY_APP",
+          initiatorId = "ASA",
+          externalInvokerReqId = "hip-req-123"
+        )
+
+        val roboticsRequest = RoboticsRequest(
+          requestMetaData = roboticsRequestMetaData,
+          requestData = List(roboticsRequestData)
+        )
+
+        val expectedPayload: JsObject = Json.toJson(roboticsRequest).as[JsObject]
         val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
 
         when(appConfig.stubsCompatibilityMode).thenReturn(false)

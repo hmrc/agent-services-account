@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
-import play.api.libs.json.Format
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 
 case class AgentReference(value: String)
 extends AnyVal
