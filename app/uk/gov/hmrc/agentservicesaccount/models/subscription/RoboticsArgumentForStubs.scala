@@ -30,7 +30,7 @@ object RoboticsArgumentForStubs {
       argument =>
         Json.obj(
           "type" -> argument.argumentType,
-          "value" -> Json.stringify(Json.toJson(argument.argumentValue))
+          "value" -> s"${Json.toJson(argument.argumentValue)}"
         )
     }
     
