@@ -64,6 +64,95 @@ extends Logging:
       }
   }
 
+  private def createRoboticsRequestBodyForStubs(
+                                         workItem: WorkItem[SubscriptionWorkItem],
+                                         targetSystem: TargetSystem,
+                                         request: SubscriptionRequest
+                                       ) = {
+
+    val roboticsArgumentValueForStubs = RoboticsArgumentValueForStubs(
+      requestId = workItem.item.requestId,
+      targetSystem = targetSystem.toString,
+      postcode = request.address.postCode,
+      operationRequired = Operation.CREATE.toString,
+    )
+
+    val roboticsArgumentForStubs = RoboticsArgumentForStubs(
+      argumentType = "string",
+      argumentValue = roboticsArgumentValueForStubs
+    )
+
+    val roboticsWorkflowDataForStubs = RoboticsWorkflowDataForStubs(
+      arguments = List(roboticsArgumentForStubs)
+    )
+
+    val roboticsRequestDataForStubs = RoboticsRequestDataForStubs(
+      workflowData = roboticsWorkflowDataForStubs
+    )
+
+    val roboticsRequestForStubs = RoboticsRequestForStubs(
+      requestData = List(roboticsRequestDataForStubs)
+    )
+
+    Json.toJson(roboticsRequestForStubs).as[JsObject]
+  }
+
+  private def createRoboticsRequestBodyForAllEnvironments(
+                                                   workItem: WorkItem[SubscriptionWorkItem],
+                                                   targetSystem: TargetSystem,
+                                                   request: SubscriptionRequest
+                                                 ) = {
+
+    val roboticsArgumentValue = RoboticsArgumentValue(
+      requestId = workItem.item.requestId,
+      targetSystem = targetSystem.toString,
+      operationRequired = Operation.CREATE.toString,
+      entityType = defaultEntityType,
+      agentName = request.agentName,
+      tradingAs = request.agentName,
+      isAbroad = request.isAbroad,
+      addressLine1 = request.address.line1,
+      addressLine2 = request.address.line2,
+      addressLine3 = request.address.line3,
+      addressLine4 = request.address.line4,
+      postcode = request.address.postCode,
+      phone = request.phoneNumber,
+      ARN = workItem.item.arn.value
+    )
+
+    val roboticsArgument = RoboticsArgument(
+      argumentType = "string",
+      argumentValue = roboticsArgumentValue
+    )
+
+    val roboticsWorkflowData = RoboticsWorkflowData(
+      arguments = List(roboticsArgument)
+    )
+
+    val roboticsWorkflowMetaData = RoboticsWorkflowMetaData(
+      solution = appConfig.roboticsWorkflowMetaDataSolution,
+      workflowId = appConfig.roboticsWorkflowMetaDataWorkflowID
+    )
+
+    val roboticsRequestData = RoboticsRequestData(
+      workflowMetaData = roboticsWorkflowMetaData,
+      workflowData = roboticsWorkflowData
+    )
+
+    val roboticsRequestMetaData = RoboticsRequestMetaData(
+      initiatorType = "THIRD_PARTY_APP",
+      initiatorId = "ASA",
+      externalInvokerReqId = workItem.item.requestId
+    )
+
+    val roboticsRequest = RoboticsRequest(
+      requestMetaData = roboticsRequestMetaData,
+      requestData = List(roboticsRequestData)
+    )
+
+    Json.toJson(roboticsRequest).as[JsObject]
+  }
+
   private def process(
     workItem: WorkItem[SubscriptionWorkItem]
   )(using
@@ -75,95 +164,14 @@ extends Logging:
         case LegacyRegime.SA => TargetSystem.CESA
         case LegacyRegime.CT => TargetSystem.COTAX
       }
-
-    def createRoboticsRequestBodyForStubs() = {
-
-      val roboticsArgumentValueForStubs = RoboticsArgumentValueForStubs(
-        requestId = workItem.item.requestId,
-        targetSystem = targetSystem.toString,
-        postcode = request.address.postCode,
-        operationRequired = Operation.CREATE.toString,
-      )
-
-      val roboticsArgumentForStubs = RoboticsArgumentForStubs(
-        argumentType = "string",
-        argumentValue = roboticsArgumentValueForStubs
-      )
-
-      val roboticsWorkflowDataForStubs = RoboticsWorkflowDataForStubs(
-        arguments = List(roboticsArgumentForStubs)
-      )
-
-      val roboticsRequestDataForStubs = RoboticsRequestDataForStubs(
-        workflowData = roboticsWorkflowDataForStubs
-      )
-
-      val roboticsRequestForStubs = RoboticsRequestForStubs(
-        requestData = List(roboticsRequestDataForStubs)
-      )
-
-      Json.toJson(roboticsRequestForStubs).as[JsObject]
-    }
-
-    def createRoboticsRequestBodyForAllEnvironments() = {
-
-      val roboticsArgumentValue = RoboticsArgumentValue(
-        requestId = workItem.item.requestId,
-        targetSystem = targetSystem.toString,
-        operationRequired = Operation.CREATE.toString,
-        entityType = defaultEntityType,
-        agentName = request.agentName,
-        tradingAs = request.agentName,
-        isAbroad = request.isAbroad,
-        addressLine1 = request.address.line1,
-        addressLine2 = request.address.line2,
-        addressLine3 = request.address.line3,
-        addressLine4 = request.address.line4,
-        postcode = request.address.postCode,
-        phone = request.phoneNumber,
-        ARN = workItem.item.arn.value
-      )
-
-      val roboticsArgument = RoboticsArgument(
-        argumentType = "string",
-        argumentValue = roboticsArgumentValue
-      )
-
-      val roboticsWorkflowData = RoboticsWorkflowData(
-        arguments = List(roboticsArgument)
-      )
-
-      val roboticsWorkflowMetaData = RoboticsWorkflowMetaData(
-        solution = appConfig.roboticsWorkflowMetaDataSolution,
-        workflowId = appConfig.roboticsWorkflowMetaDataWorkflowID
-      )
-
-      val roboticsRequestData = RoboticsRequestData(
-        workflowMetaData = roboticsWorkflowMetaData,
-        workflowData = roboticsWorkflowData
-      )
-
-      val roboticsRequestMetaData = RoboticsRequestMetaData(
-        initiatorType = "THIRD_PARTY_APP",
-        initiatorId = "ASA",
-        externalInvokerReqId = workItem.item.requestId
-      )
-
-      val roboticsRequest = RoboticsRequest(
-        requestMetaData = roboticsRequestMetaData,
-        requestData = List(roboticsRequestData)
-      )
-
-      Json.toJson(roboticsRequest).as[JsObject]
-    }
-
+    
     val operationData: JsObject = {
 
       if appConfig.stubsCompatibilityMode then
         // TODO update stubs to accept the same contract as QA/Prod, then remove this branch. Abroad currently not supported by the stub
-        createRoboticsRequestBodyForStubs()
+        createRoboticsRequestBodyForStubs(workItem, targetSystem, request)
       else
-        createRoboticsRequestBodyForAllEnvironments()
+        createRoboticsRequestBodyForAllEnvironments(workItem, targetSystem, request)
       end if
 
     }
