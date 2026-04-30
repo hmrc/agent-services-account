@@ -34,7 +34,7 @@ extends MockitoSugar { this: TestSuite =>
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
 
   def mockSendExtendedEvent(result: AuditResult): Unit = {
-    when(mockAuditConnector.sendExtendedEvent(any[ExtendedDataEvent])(any[HeaderCarrier], any[ExecutionContext]))
+    when(mockAuditConnector.sendExtendedEvent(any[ExtendedDataEvent])(using any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(Future.successful(result))
   }
 

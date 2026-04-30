@@ -127,17 +127,17 @@ extends UnitSpec:
       json shouldBe testCtJson
 
     "deserialize from JSON correctly for PAYE" in:
-      val result = Json.fromJson[SubscriptionRequest](testPayeJson)(SubscriptionRequest.reads(PAYE))
+      val result = Json.fromJson[SubscriptionRequest](testPayeJson)(using SubscriptionRequest.reads(PAYE))
 
       result shouldBe JsSuccess(testPayeSubscriptionRequest)
 
     "deserialize from JSON correctly for SA" in:
-      val result = Json.fromJson[SubscriptionRequest](testSaJson)(SubscriptionRequest.reads(SA))
+      val result = Json.fromJson[SubscriptionRequest](testSaJson)(using SubscriptionRequest.reads(SA))
 
       result shouldBe JsSuccess(testSaSubscriptionRequest)
 
     "deserialize from JSON correctly for CT" in:
-      val result = Json.fromJson[SubscriptionRequest](testCtJson)(SubscriptionRequest.reads(CT))
+      val result = Json.fromJson[SubscriptionRequest](testCtJson)(using SubscriptionRequest.reads(CT))
 
       result shouldBe JsSuccess(testCtSubscriptionRequest)
 
@@ -156,7 +156,7 @@ extends UnitSpec:
         "isAbroad" -> false
       )
 
-      val result = Json.fromJson[SubscriptionRequest](invalidSaJson)(SubscriptionRequest.reads(SA))
+      val result = Json.fromJson[SubscriptionRequest](invalidSaJson)(using SubscriptionRequest.reads(SA))
 
       result shouldBe JsError("Postcode is required for legacy subscriptions in UK")
 
@@ -167,7 +167,7 @@ extends UnitSpec:
         )
       ))
 
-      val result = Json.fromJson[SubscriptionRequest](payeJsonWithBlankPostcode)(SubscriptionRequest.reads(PAYE))
+      val result = Json.fromJson[SubscriptionRequest](payeJsonWithBlankPostcode)(using SubscriptionRequest.reads(PAYE))
 
       result shouldBe JsSuccess(testPayeSubscriptionRequest.copy(address = testUkAddress.copy(postCode = Some("   "))))
 
@@ -178,7 +178,7 @@ extends UnitSpec:
         )
       ))
 
-      val result = Json.fromJson[SubscriptionRequest](payeJsonWithBlankPostcode)(SubscriptionRequest.requestReads(PAYE))
+      val result = Json.fromJson[SubscriptionRequest](payeJsonWithBlankPostcode)(using SubscriptionRequest.requestReads(PAYE))
 
       result shouldBe JsError("Postcode is required for legacy subscriptions in UK")
 
@@ -189,6 +189,6 @@ extends UnitSpec:
         )
       ))
 
-      val result = Json.fromJson[SubscriptionRequest](saJsonWithBlankPostcode)(SubscriptionRequest.requestReads(SA))
+      val result = Json.fromJson[SubscriptionRequest](saJsonWithBlankPostcode)(using SubscriptionRequest.requestReads(SA))
 
       result shouldBe JsError("Postcode is required for legacy subscriptions in UK")

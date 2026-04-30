@@ -49,7 +49,8 @@ with Logging:
   def startSubscription(regime: LegacyRegime): Action[AnyContent] = authActions.authorisedWithArnAndCredId {
     request => arn => adminCredId => groupId =>
       given RequestHeader = request
-      request.body.asJson.map(_.validate[SubscriptionRequest](SubscriptionRequest.requestReads(regime))) match {
+
+      request.body.asJson.map(_.validate[SubscriptionRequest](using SubscriptionRequest.requestReads(regime))) match {
         case Some(JsSuccess(request: SubscriptionRequest, _)) =>
           legacySubscriptionService.startSubscriptionProcess(
             arn,

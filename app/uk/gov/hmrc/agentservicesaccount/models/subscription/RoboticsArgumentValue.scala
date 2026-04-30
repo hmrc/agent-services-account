@@ -16,46 +16,28 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.{JsPath, Json, OWrites, Writes}
 
 case class RoboticsArgumentValue(
-                                                requestId: String,
-                                                targetSystem: String,
-                                                operationRequired: String,
-                                                entityType: String,
-                                                agentName: String,
-                                                tradingAs: String,
-                                                isAbroad: Boolean,
-                                                addressLine1: String,
-                                                addressLine2: String,
-                                                addressLine3: Option[String] = None,
-                                                addressLine4: Option[String] = None,
-                                                postcode: Option[String] = None,
-                                                phone: Option[String] = None,
-                                                ARN: String
+                                  requestId: String,
+                                  targetSystem: String,
+                                  operationRequired: String,
+                                  entityType: String,
+                                  agentName: String,
+                                  tradingAs: String,
+                                  isAbroad: Boolean,
+                                  addressLine1: String,
+                                  addressLine2: String,
+                                  addressLine3: Option[String] = None,
+                                  addressLine4: Option[String] = None,
+                                  postcode: Option[String] = None,
+                                  phone: Option[String] = None,
+                                  email: Option[String] = None,
+                                  ARN: String
                                               )
 
 object RoboticsArgumentValue {
   
-  implicit val roboticsArgumentValueWrites: Writes[RoboticsArgumentValue] =
-    Writes {
-      value =>
-        Json.obj(
-          "requestId" -> value.requestId,
-          "targetSystem" -> value.targetSystem,
-          "operationRequired" -> value.operationRequired,
-          "entityType" -> value.entityType,
-          "agentName" -> value.agentName,
-          "tradingAs" -> value.tradingAs,
-          "isAbroad" -> value.isAbroad,
-          "addressLine1" -> value.addressLine1,
-          "addressLine2" -> value.addressLine2,
-          "addressLine3" -> value.addressLine3,
-          "addressLine4" -> value.addressLine4,
-          "postcode" -> value.postcode,
-          "phone" -> value.phone,
-          "ARN" -> value.ARN,
-        )
-    }
+  implicit val roboticsArgumentValueWrites: OWrites[RoboticsArgumentValue] = Json.writes
 
 }

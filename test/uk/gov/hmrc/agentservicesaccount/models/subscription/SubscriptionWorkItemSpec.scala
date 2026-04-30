@@ -79,12 +79,12 @@ extends UnitSpec:
 
   "SubscriptionWorkItem" should:
     "serialize to JSON correctly" in:
-      val json = Json.toJson(testModel)(SubscriptionWorkItem.mongoFormat)
+      val json = Json.toJson(testModel)(using SubscriptionWorkItem.mongoFormat)
 
       json shouldBe testJson
 
     "deserialize from JSON correctly" in:
-      val result = Json.fromJson[SubscriptionWorkItem](testJson)(SubscriptionWorkItem.mongoFormat)
+      val result = Json.fromJson[SubscriptionWorkItem](testJson)(using SubscriptionWorkItem.mongoFormat)
 
       result shouldBe JsSuccess(testModel)
 
@@ -94,8 +94,8 @@ extends UnitSpec:
           address = testUkAddress.copy(postCode = Some("   "))
         )
       )
-      val blankPostcodeJson = Json.toJson(blankPostcodeModel)(SubscriptionWorkItem.mongoFormat)
+      val blankPostcodeJson = Json.toJson(blankPostcodeModel)(using SubscriptionWorkItem.mongoFormat)
 
-      val result = Json.fromJson[SubscriptionWorkItem](blankPostcodeJson)(SubscriptionWorkItem.mongoFormat)
+      val result = Json.fromJson[SubscriptionWorkItem](blankPostcodeJson)(using SubscriptionWorkItem.mongoFormat)
 
       result shouldBe JsSuccess(blankPostcodeModel)

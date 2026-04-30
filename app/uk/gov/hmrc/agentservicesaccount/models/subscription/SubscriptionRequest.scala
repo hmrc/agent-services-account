@@ -33,9 +33,9 @@ object SubscriptionRequest:
 
   def reads(regime: LegacyRegime): Reads[SubscriptionRequest] = Reads { json =>
     regime match {
-      case PAYE => Json.fromJson(json)(Json.reads[PayeSubscriptionRequest])
-      case SA => Json.fromJson(json)(Json.reads[SaSubscriptionRequest])
-      case CT => Json.fromJson(json)(Json.reads[CtSubscriptionRequest])
+      case PAYE => Json.fromJson(json)(using Json.reads[PayeSubscriptionRequest])
+      case SA => Json.fromJson(json)(using Json.reads[SaSubscriptionRequest])
+      case CT => Json.fromJson(json)(using Json.reads[CtSubscriptionRequest])
     } match {
       case JsSuccess(request: SubscriptionRequest, _) if !request.isAbroad && request.address.postCode.isEmpty =>
         JsError("Postcode is required for legacy subscriptions in UK")

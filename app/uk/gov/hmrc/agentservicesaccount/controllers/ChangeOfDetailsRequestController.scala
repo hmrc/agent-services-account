@@ -41,11 +41,11 @@ extends BackendController(cc):
     changeOfDetailsRequestService
       .find(arn)
       .map:
-        case Some(changeOfDetailsRequest) => Ok(Json.toJson(changeOfDetailsRequest)(ChangeOfDetailsRequest.format))
+        case Some(changeOfDetailsRequest) => Ok(Json.toJson(changeOfDetailsRequest)(using ChangeOfDetailsRequest.format))
         case None => NotFound
 
   def upsert(): Action[ChangeOfDetailsRequest] =
-    Action.async(parse.json[ChangeOfDetailsRequest](ChangeOfDetailsRequest.format)): request =>
+    Action.async(parse.json[ChangeOfDetailsRequest](using ChangeOfDetailsRequest.format)): request =>
       changeOfDetailsRequestService
         .upsert(request.body)
         .map(_ => NoContent)

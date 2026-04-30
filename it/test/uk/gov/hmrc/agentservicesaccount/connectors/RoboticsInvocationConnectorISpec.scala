@@ -41,7 +41,8 @@ class RoboticsInvocationConnectorISpec extends ComponentSpecHelper {
       httpClient
     )
 
-  private val invocationPath = "/RTServer/rest/nice/rti/ra/invocation"
+  private val stubsInvocationPath = "/RTServer/rest/nice/rti/ra/invocation"
+  private val otherEnvironmentsInvocationPath = "/customer-management-and-engagement/automation/invocations"
 
   "invoke" should {
 
@@ -51,7 +52,12 @@ class RoboticsInvocationConnectorISpec extends ComponentSpecHelper {
 
       List(200, 201, 202, 204).foreach { status =>
         stubFor(
-          wmPost(urlEqualTo(invocationPath))
+          wmPost(urlEqualTo(stubsInvocationPath))
+            .willReturn(aResponse().withStatus(status))
+        )
+
+        stubFor(
+          wmPost(urlEqualTo(otherEnvironmentsInvocationPath))
             .willReturn(aResponse().withStatus(status))
         )
 
@@ -64,7 +70,12 @@ class RoboticsInvocationConnectorISpec extends ComponentSpecHelper {
 
     "throw UpstreamErrorResponse for non-2xx responses (and not include payload in message)" in {
       stubFor(
-        wmPost(urlEqualTo(invocationPath))
+        wmPost(urlEqualTo(stubsInvocationPath))
+          .willReturn(aResponse().withStatus(500).withBody("""{"error":"boom"}"""))
+      )
+
+      stubFor(
+        wmPost(urlEqualTo(otherEnvironmentsInvocationPath))
           .willReturn(aResponse().withStatus(500).withBody("""{"error":"boom"}"""))
       )
 

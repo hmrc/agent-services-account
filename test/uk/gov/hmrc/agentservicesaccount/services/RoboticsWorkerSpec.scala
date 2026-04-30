@@ -227,6 +227,7 @@ with BeforeAndAfterEach:
           addressLine4 = abroadRequestNoPostcode.address.line4,
           postcode = None,
           phone = abroadRequestNoPostcode.phoneNumber,
+          email = abroadRequestNoPostcode.emailAddress,
           ARN = workItem.item.arn.value
         )
 

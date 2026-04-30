@@ -40,7 +40,7 @@ extends MockitoSugar { this: TestSuite =>
   val mockServiceConfigHip: ServicesConfig = mock[ServicesConfig]
   val mockConfigHip: Configuration = mock[Configuration]
   stubCommonConfig(mockConfigHip, mockServiceConfigHip)
-  when(mockConfigHip.get[Boolean](meq("features.get-agent-record-via-hip"))(any()))
+  when(mockConfigHip.get[Boolean](meq("features.get-agent-record-via-hip"))(using any()))
     .thenReturn(true)
   val mockAppConfigHip: AppConfig = new AppConfig(mockConfigHip, mockServiceConfigHip)
 
@@ -53,76 +53,76 @@ extends MockitoSugar { this: TestSuite =>
     import org.mockito.Mockito.when
     import scala.concurrent.duration._
 
-    when(mockConfig.get[String](meq("agent-maintainer-email"))(any()))
+    when(mockConfig.get[String](meq("agent-maintainer-email"))(using any()))
       .thenReturn("test@example.com")
 
-    when(mockConfig.get[Long](meq("mongodb.timeToLive"))(any()))
+    when(mockConfig.get[Long](meq("mongodb.timeToLive"))(using any()))
       .thenReturn(3600L)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.scheduler-delay"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.scheduler-delay"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.scheduler-interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.scheduler-interval"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.retry-interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.paye-known-facts.retry-interval"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Int](meq("work-item-jobs.paye-known-facts.max-attempts"))(any()))
+    when(mockConfig.get[Int](meq("work-item-jobs.paye-known-facts.max-attempts"))(using any()))
       .thenReturn(3)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.scheduler-delay"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.scheduler-delay"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.scheduler-interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.scheduler-interval"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.retry-interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.retry-interval"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Int](meq("work-item-jobs.sa-known-facts.max-attempts"))(any()))
+    when(mockConfig.get[Int](meq("work-item-jobs.sa-known-facts.max-attempts"))(using any()))
       .thenReturn(3)
 
-    when(mockConfig.get[Boolean](meq("stubs-compatibility-mode"))(any()))
+    when(mockConfig.get[Boolean](meq("stubs-compatibility-mode"))(using any()))
       .thenReturn(false)
 
-    when(mockConfig.get[Boolean](meq("work-item-jobs.sa-robotics.enabled"))(any()))
+    when(mockConfig.get[Boolean](meq("work-item-jobs.sa-robotics.enabled"))(using any()))
       .thenReturn(false)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.sa-robotics.scheduler-delay"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-robotics.scheduler-delay"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.sa-robotics.scheduler-interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-robotics.scheduler-interval"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.sa-robotics.retry-interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.sa-robotics.retry-interval"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.scheduler-delay"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.scheduler-delay"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.scheduler-interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.scheduler-interval"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.retry-interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.retry-interval"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Int](meq("work-item-jobs.ct-known-facts.max-attempts"))(any()))
+    when(mockConfig.get[Int](meq("work-item-jobs.ct-known-facts.max-attempts"))(using any()))
       .thenReturn(3)
 
-    when(mockConfig.get[Boolean](meq("work-item-jobs.ct-robotics.enabled"))(any()))
+    when(mockConfig.get[Boolean](meq("work-item-jobs.ct-robotics.enabled"))(using any()))
       .thenReturn(false)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.ct-robotics.scheduler-delay"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-robotics.scheduler-delay"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.ct-robotics.scheduler-interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-robotics.scheduler-interval"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Duration](meq("work-item-jobs.ct-robotics.retry-interval"))(any()))
+    when(mockConfig.get[Duration](meq("work-item-jobs.ct-robotics.retry-interval"))(using any()))
       .thenReturn(1.second)
 
-    when(mockConfig.get[Boolean](meq("features.get-agent-record-via-hip"))(any()))
+    when(mockConfig.get[Boolean](meq("features.get-agent-record-via-hip"))(using any()))
       .thenReturn(false)
 
     when(mockServiceConfig.getString(meq("stride.roles.agent-services-account")))

@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Configuration
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 

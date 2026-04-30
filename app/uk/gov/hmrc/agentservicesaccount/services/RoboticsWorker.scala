@@ -117,6 +117,7 @@ extends Logging:
       addressLine4 = request.address.line4,
       postcode = request.address.postCode,
       phone = request.phoneNumber,
+      email = request.emailAddress,
       ARN = workItem.item.arn.value
     )
 

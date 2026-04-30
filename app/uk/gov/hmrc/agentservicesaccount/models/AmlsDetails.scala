@@ -46,9 +46,9 @@ object AmlsDetails:
 
   def amlsDetailsDatabaseFormat(using crypto: Encrypter & Decrypter): Format[AmlsDetails] =
     (__ \ "supervisoryBody")
-      .format[String](stringEncrypterDecrypter)
-      .and((__ \ "membershipNumber").format[String](stringEncrypterDecrypter))
-      .and((__ \ "evidenceObjectReference").formatNullable[String](stringEncrypterDecrypter))(
+      .format[String](using stringEncrypterDecrypter)
+      .and((__ \ "membershipNumber").format[String](using stringEncrypterDecrypter))
+      .and((__ \ "evidenceObjectReference").formatNullable[String](using stringEncrypterDecrypter))(
         AmlsDetails.apply,
         ad => (ad.supervisoryBody, ad.membershipNumber, ad.evidenceObjectReference)
       )

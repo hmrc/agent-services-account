@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentservicesaccount.models
 
-import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec

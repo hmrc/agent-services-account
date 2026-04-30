@@ -32,7 +32,7 @@ object ChangeOfDetailsRequest:
   given mongoFormat: OFormat[ChangeOfDetailsRequest] =
     (__ \ "arn")
       .format[String]
-      .and((__ \ "timeSubmitted").format[Instant](MongoJavatimeFormats.instantFormat))(
+      .and((__ \ "timeSubmitted").format[Instant](using MongoJavatimeFormats.instantFormat))(
         ChangeOfDetailsRequest.apply,
         changeOfDetailsRequest => (changeOfDetailsRequest.arn, changeOfDetailsRequest.timeSubmitted)
       )

@@ -16,38 +16,23 @@
 
 package uk.gov.hmrc.agentservicesaccount.repositories
 
-import java.time.Duration
-import java.time.Instant
-import javax.inject.Inject
-import javax.inject.Named
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import com.typesafe.config.Config
 import org.mongodb.scala.MongoCollection
-import org.mongodb.scala.model.Filters
-import org.mongodb.scala.model.FindOneAndUpdateOptions
-import org.mongodb.scala.model.IndexModel
-import org.mongodb.scala.model.IndexOptions
-import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.ReturnDocument
-import org.mongodb.scala.model.Updates
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.*
 import play.api.Logging
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
-import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
-import uk.gov.hmrc.crypto.Decrypter
-import uk.gov.hmrc.crypto.Encrypter
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus
-import uk.gov.hmrc.mongo.workitem.WorkItem
-import uk.gov.hmrc.mongo.workitem.WorkItemFields
-import uk.gov.hmrc.mongo.workitem.WorkItemRepository
+import uk.gov.hmrc.agentservicesaccount.models.subscription.{AgentReference, LegacyRegime, SubscriptionWorkItem}
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.*
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
+import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem, WorkItemFields, WorkItemRepository}
+
+import java.time.{Duration, Instant}
+import javax.inject.{Inject, Named, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class SubscriptionWorkItemRepository @Inject() (

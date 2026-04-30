@@ -20,7 +20,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.Materializer
 import org.scalamock.scalatest.MockFactory
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import play.api.test.*
 import play.api.test.Helpers.*
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
@@ -51,23 +51,23 @@ with MockFactory {
   implicit val mat: Materializer = Materializer(as)
 
   val stubBackendAuthComponents: BackendAuthComponents =
-    BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
+    BackendAuthComponentsStub(mockStubBehaviour)(using stubControllerComponents(), implicitly)
 
   val mockAuthActions: AuthActions = AuthActions(mockAuthConnector, stubControllerComponents())
 
-  val controller = AgentDetailsController(
+  val controller: AgentDetailsController = AgentDetailsController(
     stubControllerComponents(),
     mockAgentEntityService,
     mockHipConnector,
     mockDmsService,
     mockAuthActions,
     stubBackendAuthComponents
-  )(ec, mockAppConfig)
+  )(using ec, mockAppConfig)
 
   val testHipAmendResponse: HipAmendResponse =
     HipAmendResponse(HipAmendSuccess("2024-07-15T09:30:47Z"))
 
-  val amlsPayload = Json.obj(
+  val amlsPayload: JsObject = Json.obj(
     "amlsDetails" -> Json.obj(
       "supervisoryBody" -> "SRA",
       "membershipNumber" -> "XAML00000123456",
@@ -75,7 +75,7 @@ with MockFactory {
     )
   )
 
-  val agencyDetailsPayload = Json.obj(
+  val agencyDetailsPayload: JsObject = Json.obj(
     "agencyDetails" -> Json.obj(
       "agencyName" -> "Test Agency",
       "agencyEmail" -> "test@example.com",
@@ -183,7 +183,7 @@ with MockFactory {
       import org.mockito.ArgumentMatchers.any
       import org.mockito.Mockito.when
       when(
-        mockAuthConnector.authorise(any(), any())(any(), any())
+        mockAuthConnector.authorise(any(), any())(using any(), any())
       ).thenReturn(scala.concurrent.Future.failed(
         new uk.gov.hmrc.auth.core.NoActiveSession("No session") {}
       ))

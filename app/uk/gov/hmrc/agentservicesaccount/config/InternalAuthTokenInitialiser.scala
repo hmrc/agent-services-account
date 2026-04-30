@@ -38,8 +38,8 @@ abstract class InternalAuthTokenInitialiser {
 }
 
 @Singleton
-class NoOpInternalAuthTokenInitialiser @Inject() ()
-extends InternalAuthTokenInitialiser {
+class NoOpInternalAuthTokenInitialiser @Inject()
+  extends InternalAuthTokenInitialiser {
   override val initialised: Future[Done] = Future.successful(Done)
 }
 
@@ -71,7 +71,7 @@ with Logging {
   private def createClientAuthToken(): Future[Done] = {
     logger.info("Initialising auth token")
     httpClient
-      .post(url"${appConfig.internalAuthBaseUrl}/test-only/token")(HeaderCarrier())
+      .post(url"${appConfig.internalAuthBaseUrl}/test-only/token")(using HeaderCarrier())
       .withBody(
         // language=JSON
         Json.parse(
@@ -107,7 +107,7 @@ with Logging {
   private def authTokenIsValid: Future[Boolean] = {
     logger.info("Checking auth token")
     httpClient
-      .get(url"${appConfig.internalAuthBaseUrl}/test-only/token")(HeaderCarrier())
+      .get(url"${appConfig.internalAuthBaseUrl}/test-only/token")(using HeaderCarrier())
       .setHeader("Authorization" -> appConfig.internalAuthToken)
       .execute
       .map(_.status == 200)
