@@ -48,7 +48,7 @@ class AgentEpayeRegistrationConnector @Inject() (
 
     http
       .post(url)
-      .withBody(Json.toJson(subscriptionRequest)(PayeSubscriptionRequest.registerWrites))
+      .withBody(Json.toJson(subscriptionRequest)(using PayeSubscriptionRequest.registerWrites))
       .execute[HttpResponse]
       .map { response =>
         response.status match {

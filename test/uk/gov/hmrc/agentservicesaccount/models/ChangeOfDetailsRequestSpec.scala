@@ -58,7 +58,7 @@ extends UnitSpec:
         ) // Done to account for rounding errors when converting to/from JSON
 
     "serialize to JSON using the standard macro formatter" in:
-      val result = Json.toJson(testChangeOfDetailsRequest)(ChangeOfDetailsRequest.format)
+      val result = Json.toJson(testChangeOfDetailsRequest)(using ChangeOfDetailsRequest.format)
 
       result shouldBe Json.obj(
         "arn" -> "AARN1234567",
@@ -71,6 +71,6 @@ extends UnitSpec:
         "timeSubmitted" -> testChangeOfDetailsRequest.timeSubmitted
       )
 
-      val result = Json.fromJson[ChangeOfDetailsRequest](json)(ChangeOfDetailsRequest.format).get
+      val result = Json.fromJson[ChangeOfDetailsRequest](json)(using ChangeOfDetailsRequest.format).get
 
       result shouldBe testChangeOfDetailsRequest

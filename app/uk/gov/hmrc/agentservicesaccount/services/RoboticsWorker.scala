@@ -18,28 +18,16 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import org.apache.pekko.Done
 import play.api.Logging
-import play.api.libs.json.Json
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsObject, Json}
+import uk.gov.hmrc.agentservicesaccount.config.{AppConfig, WorkItemJobConfig}
 import uk.gov.hmrc.agentservicesaccount.connectors.RoboticsInvocationConnector
-import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
-import uk.gov.hmrc.agentservicesaccount.models.subscription.Operation
-import uk.gov.hmrc.agentservicesaccount.models.subscription.UsesRobotics
-import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsInvocationRequest
-import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
-import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem
-import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
-import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.RequestId
-import uk.gov.hmrc.http.Authorization
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.SessionId
+import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.{CorrelationId, RequestId}
+import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier, SessionId}
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
@@ -52,10 +40,9 @@ class RoboticsWorker @Inject() (
 )
 extends Logging:
 
-  private val schemaVersion: Int = 1
   // Robotics OpenAPI spec requires `entityType` (e.g. Sole Trader / Partnership / Limited Company).
   // However, APB-10568 does not introduce capture/validation of entity type in the inbound SA request yet (see story N1),
-  // and the field spec marks the source as TBC. For now we send "Sole Trader" as a placeholder, to be replaced once
+  // and the field spec marks the source as TBC. For now, we send "Sole Trader" as a placeholder, to be replaced once
   // entity type is captured and the contract is finalised.
   private val defaultEntityType: String = "Sole Trader"
 
@@ -77,6 +64,96 @@ extends Logging:
       }
   }
 
+  private def createRoboticsRequestBodyForStubs(
+                                         workItem: WorkItem[SubscriptionWorkItem],
+                                         targetSystem: TargetSystem,
+                                         request: SubscriptionRequest
+                                       ) = {
+
+    val roboticsArgumentValueForStubs = RoboticsArgumentValueForStubs(
+      requestId = workItem.item.requestId,
+      targetSystem = targetSystem.toString,
+      postcode = request.address.postCode,
+      operationRequired = Operation.CREATE.toString,
+    )
+
+    val roboticsArgumentForStubs = RoboticsArgumentForStubs(
+      argumentType = "string",
+      argumentValue = roboticsArgumentValueForStubs
+    )
+
+    val roboticsWorkflowDataForStubs = RoboticsWorkflowDataForStubs(
+      arguments = List(roboticsArgumentForStubs)
+    )
+
+    val roboticsRequestDataForStubs = RoboticsRequestDataForStubs(
+      workflowData = roboticsWorkflowDataForStubs
+    )
+
+    val roboticsRequestForStubs = RoboticsRequestForStubs(
+      requestData = List(roboticsRequestDataForStubs)
+    )
+
+    Json.toJson(roboticsRequestForStubs).as[JsObject]
+  }
+
+  private def createRoboticsRequestBodyForAllEnvironments(
+                                                   workItem: WorkItem[SubscriptionWorkItem],
+                                                   targetSystem: TargetSystem,
+                                                   request: SubscriptionRequest
+                                                 ) = {
+
+    val roboticsArgumentValue = RoboticsArgumentValue(
+      requestId = workItem.item.requestId,
+      targetSystem = targetSystem.toString,
+      operationRequired = Operation.CREATE.toString,
+      entityType = defaultEntityType,
+      agentName = request.agentName,
+      tradingAs = request.agentName,
+      isAbroad = request.isAbroad,
+      addressLine1 = request.address.line1,
+      addressLine2 = request.address.line2,
+      addressLine3 = request.address.line3,
+      addressLine4 = request.address.line4,
+      postcode = request.address.postCode,
+      phone = request.phoneNumber,
+      email = request.emailAddress,
+      ARN = workItem.item.arn.value
+    )
+
+    val roboticsArgument = RoboticsArgument(
+      argumentType = "string",
+      argumentValue = roboticsArgumentValue
+    )
+
+    val roboticsWorkflowData = RoboticsWorkflowData(
+      arguments = List(roboticsArgument)
+    )
+
+    val roboticsWorkflowMetaData = RoboticsWorkflowMetaData(
+      solution = appConfig.roboticsWorkflowMetaDataSolution,
+      workflowId = appConfig.roboticsWorkflowMetaDataWorkflowID
+    )
+
+    val roboticsRequestData = RoboticsRequestData(
+      workflowMetaData = roboticsWorkflowMetaData,
+      workflowData = roboticsWorkflowData
+    )
+
+    val roboticsRequestMetaData = RoboticsRequestMetaData(
+      initiatorType = "THIRD_PARTY_APP",
+      initiatorId = "ASA",
+      externalInvokerReqId = workItem.item.requestId
+    )
+
+    val roboticsRequest = RoboticsRequest(
+      requestMetaData = roboticsRequestMetaData,
+      requestData = List(roboticsRequestData)
+    )
+
+    Json.toJson(roboticsRequest).as[JsObject]
+  }
+
   private def process(
     workItem: WorkItem[SubscriptionWorkItem]
   )(using
@@ -88,50 +165,19 @@ extends Logging:
         case LegacyRegime.SA => TargetSystem.CESA
         case LegacyRegime.CT => TargetSystem.COTAX
       }
+    
+    val operationData: JsObject = {
 
-    val operationData: JsObject =
       if appConfig.stubsCompatibilityMode then
         // TODO update stubs to accept the same contract as QA/Prod, then remove this branch. Abroad currently not supported by the stub
-        Json.obj(
-          "requestId" -> workItem.item.requestId,
-          "targetSystem" -> targetSystem.toString,
-          "postcode" -> request.address.postCode,
-          "operationRequired" -> Operation.CREATE.toString
-        )
+        createRoboticsRequestBodyForStubs(workItem, targetSystem, request)
       else
-        // HIP/robotics contract: nested agent details.
-        val addressBase = Json.obj(
-          "line1" -> request.address.line1,
-          "line2" -> request.address.line2,
-          "line3" -> request.address.line3,
-          "line4" -> request.address.line4
-        )
-        val address =
-          if request.isAbroad then addressBase
-          else addressBase ++ Json.obj("postcode" -> request.address.postCode)
+        createRoboticsRequestBodyForAllEnvironments(workItem, targetSystem, request)
+      end if
 
-        val contact = Json.obj(
-          "phone" -> request.phoneNumber,
-          "email" -> request.emailAddress
-        )
+    }
 
-        val agentDetails = Json.obj(
-          "agentName" -> request.agentName,
-          "isAbroad" -> request.isAbroad,
-          "address" -> address,
-          "contact" -> contact
-        )
-
-        Json.obj(
-          "schemaVersion" -> schemaVersion,
-          "requestId" -> workItem.item.requestId,
-          "targetSystem" -> targetSystem.toString,
-          "operationRequired" -> Operation.CREATE.toString,
-          "entityType" -> defaultEntityType,
-          "agentDetails" -> agentDetails
-        )
-
-    val payload = Json.toJsObject(RoboticsInvocationRequest.fromOperationData(Json.stringify(operationData)))
+    val payload = operationData
 
     given HeaderCarrier =
       if appConfig.stubsCompatibilityMode then

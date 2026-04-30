@@ -38,15 +38,15 @@ object AgentDetailsDesResponse {
 
   def agentRecordDatabaseDetailsFormat(using crypto: Encrypter & Decrypter): Format[AgentDetailsDesResponse] =
     (__ \ "uniqueTaxReference")
-      .formatNullable[String](stringEncrypterDecrypter)
+      .formatNullable[String](using stringEncrypterDecrypter)
       .bimap[Option[Utr]](
         _.map(Utr(_)),
         _.map(_.value)
       )
-      .and((__ \ "agencyDetails").formatNullable[AgencyDetails](AgencyDetails.agencyDetailsDatabaseFormat))
+      .and((__ \ "agencyDetails").formatNullable[AgencyDetails](using AgencyDetails.agencyDetailsDatabaseFormat))
       .and((__ \ "suspensionDetails").formatNullable[SuspensionDetails])
       .and((__ \ "isAnIndividual").formatNullable[Boolean])
-      .and((__ \ "amlsDetails").formatNullable[AmlsDetails](AmlsDetails.amlsDetailsDatabaseFormat))(
+      .and((__ \ "amlsDetails").formatNullable[AmlsDetails](using AmlsDetails.amlsDetailsDatabaseFormat))(
         AgentDetailsDesResponse.apply,
         adr => (adr.uniqueTaxReference, adr.agencyDetails, adr.suspensionDetails, adr.isAnIndividual, adr.amlsDetails)
       )

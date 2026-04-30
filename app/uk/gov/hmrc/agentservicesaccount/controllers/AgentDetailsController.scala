@@ -24,9 +24,9 @@ import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
 import uk.gov.hmrc.agentservicesaccount.controllers.RequestValidation.*
+import uk.gov.hmrc.agentservicesaccount.models.AgentRecordUpdateRequest
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.toHipAmendPayload
 import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
-import uk.gov.hmrc.agentservicesaccount.models.{AgentRecordUpdateRequest, HipAmendPayload}
 import uk.gov.hmrc.agentservicesaccount.services.{AgentDetailsService, DmsService}
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -107,6 +107,6 @@ with Logging {
     action = IAAction("WRITE")
   )
 
-  val internalAuth = auth.authorizedAction(predicate)
+  private val internalAuth = auth.authorizedAction(predicate)
 
 }

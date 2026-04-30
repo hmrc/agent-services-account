@@ -16,16 +16,22 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{Json, Writes}
 
-case class SubscriptionCallback(
-  requestId: String,
-  targetSystem: TargetSystem,
-  operationRequired: Operation,
-  agentId: Option[AgentReference],
-  status: CallbackStatus,
-  requestMessage: String
-)
+case class RoboticsArgument(
+                               argumentType: String,
+                               argumentValue: RoboticsArgumentValue,
+                                        )
 
-object SubscriptionCallback:
-  implicit val format: Format[SubscriptionCallback] = Json.format[SubscriptionCallback]
+object RoboticsArgument {
+
+  implicit val roboticsArgument_Writes: Writes[RoboticsArgument] =
+  Writes {
+    argument =>
+      Json.obj(
+        "type" -> argument.argumentType,
+        "value" -> s"${Json.toJson(argument.argumentValue)}"
+      )
+  }
+
+}

@@ -42,7 +42,7 @@ extends MockitoSugar { this: TestSuite =>
       mockAuthConnector.authorise(
         meq(AuthProviders(GovernmentGateway)),
         meq(Retrievals.allEnrolments)
-      )(any[HeaderCarrier], any[ExecutionContext])
+      )(using any[HeaderCarrier], any[ExecutionContext])
     ).thenReturn(
       response.fold(
         e => Future.failed(new Exception(e)),
@@ -56,7 +56,7 @@ extends MockitoSugar { this: TestSuite =>
       mockAuthConnector.authorise[A](
         meq(EmptyPredicate),
         meq(retrieval)
-      )(any[HeaderCarrier], any[ExecutionContext])
+      )(using any[HeaderCarrier], any[ExecutionContext])
     ).thenReturn(Future.successful(result))
   }
 
@@ -65,7 +65,7 @@ extends MockitoSugar { this: TestSuite =>
       mockAuthConnector.authorise(
         meq(AuthProviders(GovernmentGateway).and(AffinityGroup.Agent)),
         meq(EmptyRetrieval)
-      )(any[HeaderCarrier], any[ExecutionContext])
+      )(using any[HeaderCarrier], any[ExecutionContext])
     ).thenReturn(
       response.fold(
         e => Future.failed(new Exception(e)),

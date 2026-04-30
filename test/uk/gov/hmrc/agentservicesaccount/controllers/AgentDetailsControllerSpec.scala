@@ -52,11 +52,11 @@ with MockFactory {
   val as: ActorSystem = ActorSystem()
   implicit val mat: Materializer = Materializer(as)
 
-  val stubBackendAuthComponents: BackendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
+  val stubBackendAuthComponents: BackendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(using stubControllerComponents(), implicitly)
 
   val mockAuthActions: AuthActions = AuthActions(mockAuthConnector, stubControllerComponents())
 
-  val controller =
+  val controller: AgentDetailsController =
     AgentDetailsController(
       stubControllerComponents(),
       mockAgentEntityService,
@@ -64,7 +64,7 @@ with MockFactory {
       mockDmsService,
       mockAuthActions,
       stubBackendAuthComponents
-    )(ec, mockAppConfig)
+    )(using ec, mockAppConfig)
 
   "agentVerifyEntity" should {
     "return OK" when {

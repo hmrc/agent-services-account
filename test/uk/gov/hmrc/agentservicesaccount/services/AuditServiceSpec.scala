@@ -39,7 +39,7 @@ with MockAuditConnector {
 
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val hc: HeaderCarrier = new HeaderCarrier()
-  val auditService = new AuditService(mockAppConfig, mockAuditConnector)(ec)
+  val auditService = new AuditService(mockAppConfig, mockAuditConnector)(using ec)
   implicit val request: RequestHeader = FakeRequest()
 
   "auditEntityCheckFailureNotificationSent" should {

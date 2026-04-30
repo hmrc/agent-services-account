@@ -24,7 +24,6 @@ import uk.gov.hmrc.agentservicesaccount.stubs.*
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.domain.SaUtr
 
-import java.time.format.DateTimeFormatter
 import scala.util.{Failure, Success, Try}
 
 class AgentDetailsControllerHipISpec

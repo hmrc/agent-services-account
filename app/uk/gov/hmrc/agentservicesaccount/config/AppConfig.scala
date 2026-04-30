@@ -34,6 +34,9 @@ class AppConfig @Inject() (
 
   val stubsCompatibilityMode: Boolean = config.get[Boolean]("stubs-compatibility-mode")
 
+  val roboticsWorkflowMetaDataSolution: String = config.get[String]("robotics.request.requestData.workflowMetaData.solution")
+  val roboticsWorkflowMetaDataWorkflowID: String = config.get[String]("robotics.request.requestData.workflowMetaData.workflowId")
+
   val mongoTtl: Long = config.get[Long]("mongodb.timeToLive")
   val enrolmentStoreProxyBaseUrl: String = baseUrl("enrolment-store-proxy")
   val citizenDetailsBaseUrl: String = baseUrl("citizen-details")
@@ -41,7 +44,7 @@ class AppConfig @Inject() (
   val desAuthToken: String = servicesConfig.getString("microservice.services.des.authorization-token")
   val desEnv: String = servicesConfig.getString("microservice.services.des.environment")
 
-  val hipBaseUrl = servicesConfig.baseUrl("hip")
+  val hipBaseUrl: String = servicesConfig.baseUrl("hip")
   val hipAuthToken: String = servicesConfig.getString("microservice.services.hip.authorization-token")
   val getAgentRecordViaHIP: Boolean = config.get[Boolean]("features.get-agent-record-via-hip")
 

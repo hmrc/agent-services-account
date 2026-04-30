@@ -19,10 +19,8 @@ package uk.gov.hmrc.agentservicesaccount.models.subscription
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.CredId
-import uk.gov.hmrc.agentservicesaccount.models.GroupId
-import uk.gov.hmrc.crypto.Decrypter
-import uk.gov.hmrc.crypto.Encrypter
+import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.crypto.json.JsonEncryption.stringEncrypterDecrypter
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
@@ -47,15 +45,15 @@ object SubscriptionWorkItem:
   private def mongoReads(using crypto: Encrypter & Decrypter) = (__ \ "regime").read[LegacyRegime].flatMap { regime =>
     (
       (__ \ "arn").read[Arn] and
-        (__ \ "subscriptionRequest").read[String](stringEncrypterDecrypter).map[SubscriptionRequest](string =>
-          Json.parse(string).as[SubscriptionRequest](SubscriptionRequest.reads(regime))
+        (__ \ "subscriptionRequest").read[String](using stringEncrypterDecrypter).map[SubscriptionRequest](string =>
+          Json.parse(string).as[SubscriptionRequest](using SubscriptionRequest.reads(regime))
         ) and
         Reads.pure(regime) and
         (__ \ "agentReference").readNullable[AgentReference] and
         (__ \ "groupId").read[GroupId] and
         (__ \ "adminCredId").read[CredId] and
         (__ \ "requestId").read[String] and
-        (__ \ "roboticsInvokedAt").readNullable[Instant](MongoJavatimeFormats.instantFormat) and
+        (__ \ "roboticsInvokedAt").readNullable[Instant](using MongoJavatimeFormats.instantFormat) and
         (__ \ "sessionId").readNullable[String] and
         (__ \ "bearerToken").readNullable[String]
     )(SubscriptionWorkItem.apply)
@@ -64,7 +62,7 @@ object SubscriptionWorkItem:
   private def mongoWrites(using crypto: Encrypter & Decrypter): Writes[SubscriptionWorkItem] =
     (
       (__ \ "arn").write[Arn] and
-        (__ \ "subscriptionRequest").write[String](stringEncrypterDecrypter).contramap[SubscriptionRequest](subscriptionRequest =>
+        (__ \ "subscriptionRequest").write[String](using stringEncrypterDecrypter).contramap[SubscriptionRequest](subscriptionRequest =>
           Json.toJson(subscriptionRequest).toString
         ) and
         (__ \ "regime").write[LegacyRegime] and
@@ -72,7 +70,7 @@ object SubscriptionWorkItem:
         (__ \ "groupId").write[GroupId] and
         (__ \ "adminCredId").write[CredId] and
         (__ \ "requestId").write[String] and
-        (__ \ "roboticsInvokedAt").writeNullable[Instant](MongoJavatimeFormats.instantFormat) and
+        (__ \ "roboticsInvokedAt").writeNullable[Instant](using MongoJavatimeFormats.instantFormat) and
         (__ \ "sessionId").writeNullable[String] and
         (__ \ "bearerToken").writeNullable[String]
     )(o => Tuple.fromProductTyped(o))

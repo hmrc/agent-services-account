@@ -51,22 +51,30 @@ with HttpErrorFunctions:
   def invoke(
     payload: JsObject,
     correlationId: CorrelationId
-  )(using HeaderCarrier): Future[Done] = http
-    .post(url"$baseUrl/RTServer/rest/nice/rti/ra/invocation")
-    .setHeader("correlationId" -> correlationId.value)
-    .setHeader("Authorization" -> s"Basic $authToken")
-    .withBody(payload)
-    .execute[HttpResponse]
-    .map { response =>
-      response.status match {
-        case status if is2xx(status) => Done
-        case status =>
-          // Do not include the outbound payload in exception messages; this may be logged by callers and could
-          // contain PII (e.g. postcode). Use correlationId for traceability instead.
-          throw UpstreamErrorResponse(
-            s"Unexpected response from robotics invocation endpoint (status=$status, correlationId=${correlationId.value})",
-            status,
-            status
-          )
+  )(using HeaderCarrier): Future[Done] = {
+    val roboticsURL = if appConfig.stubsCompatibilityMode then
+      s"$baseUrl/RTServer/rest/nice/rti/ra/invocation"
+    else
+      s"$baseUrl/customer-management-and-engagement/automation/invocations"
+    end roboticsURL
+
+    http
+      .post(url"$roboticsURL")
+      .setHeader("correlationId" -> correlationId.value)
+      .setHeader("Authorization" -> s"Basic $authToken")
+      .withBody(payload)
+      .execute[HttpResponse]
+      .map { response =>
+        response.status match {
+          case status if is2xx(status) => Done
+          case status =>
+            // Do not include the outbound payload in exception messages; this may be logged by callers and could
+            // contain PII (e.g. postcode). Use correlationId for traceability instead.
+            throw UpstreamErrorResponse(
+              s"Unexpected response from robotics invocation endpoint (status=$status, correlationId=${correlationId.value})",
+              status,
+              status
+            )
+        }
       }
-    }
+  }
