@@ -24,8 +24,10 @@ import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
+import uk.gov.hmrc.agentservicesaccount.connectors.EmailConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentservicesaccount.models.CredId
+import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.models.Es20Enrolment
 import uk.gov.hmrc.agentservicesaccount.models.Es20Response
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
@@ -60,6 +62,7 @@ with BeforeAndAfterEach:
 
   private val workItemService = mock[KnownFactsWorkItemService]
   private val connector = mock[EnrolmentStoreProxyConnector]
+  private val emailConnector = mock[EmailConnector]
 
   private def buildWorkItem(
     regime: LegacyRegime,
@@ -131,12 +134,13 @@ with BeforeAndAfterEach:
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    reset(workItemService, connector)
+    reset(workItemService, connector, emailConnector)
 
   private val worker =
     new KnownFactsWorker(
       workItemService = workItemService,
-      enrolmentStoreProxyConnector = connector
+      enrolmentStoreProxyConnector = connector,
+      emailConnector = emailConnector
     )
 
   testData.foreach { case (regime, subscriptionRequest) =>
@@ -201,6 +205,93 @@ with BeforeAndAfterEach:
         verify(workItemService, never()).markFailed(workItem)
       }
 
+      "send a service-specific completion email after allocating the enrolment" in {
+        val subscriptionRequestWithEmail = subscriptionRequest match
+          case request: PayeSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+          case request: SaSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+          case request: CtSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+
+        val workItem = buildWorkItem(
+          regime,
+          failureCount = 0,
+          subscriptionRequest = subscriptionRequestWithEmail
+        )
+        val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
+
+        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(response)))
+
+        when(connector.allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(()))
+
+        when(emailConnector.sendEmail(any[EmailInformation])(using any[play.api.mvc.RequestHeader]))
+          .thenReturn(Future.successful(()))
+
+        when(workItemService.complete(workItem)).thenReturn(Future.successful(Done))
+
+        worker.runOnce(using jobConfig, regime).futureValue
+
+        verify(emailConnector).sendEmail(eqTo(EmailInformation(
+          to = Seq("agent@example.com"),
+          templateId = "agent_services_subscription_complete",
+          parameters = Map(
+            "agencyName" -> "Agent Name",
+            "arn" -> "TARN0000001",
+            "serviceName" -> expectedServiceName(regime),
+            "serviceSectionName" -> expectedServiceSectionName(regime),
+            "agentCode" -> "A12345"
+          )
+        )))(using any[play.api.mvc.RequestHeader])
+        verify(workItemService).complete(workItem)
+      }
+
+      "complete the work item when the completion email fails after allocating the enrolment" in {
+        val subscriptionRequestWithEmail = subscriptionRequest match
+          case request: PayeSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+          case request: SaSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+          case request: CtSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+
+        val workItem = buildWorkItem(
+          regime,
+          failureCount = 0,
+          subscriptionRequest = subscriptionRequestWithEmail
+        )
+        val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
+
+        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(response)))
+
+        when(connector.allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(()))
+
+        when(emailConnector.sendEmail(any[EmailInformation])(using any[play.api.mvc.RequestHeader]))
+          .thenReturn(Future.failed(new RuntimeException("email service unavailable")))
+
+        when(workItemService.complete(workItem)).thenReturn(Future.successful(Done))
+
+        worker.runOnce(using jobConfig, regime).futureValue
+
+        verify(emailConnector).sendEmail(any[EmailInformation])(using any[play.api.mvc.RequestHeader])
+        verify(workItemService).complete(workItem)
+        verify(workItemService, never()).markFailed(workItem)
+      }
+
       "mark for manual intervention once max attempts are reached" in {
         val workItem = buildWorkItem(
           regime,
@@ -254,3 +345,15 @@ with BeforeAndAfterEach:
 
   private def expectedValidatedPostcode(regime: LegacyRegime): Option[PayePostcode.Valid] =
     PayePostcode.from(expectedPostcode(regime))
+
+  private def expectedServiceName(regime: LegacyRegime): String =
+    regime match
+      case PAYE => "PAYE/CIS"
+      case SA => "Self Assessment"
+      case CT => "Corporation Tax"
+
+  private def expectedServiceSectionName(regime: LegacyRegime): String =
+    regime match
+      case PAYE => "Pay as you earn (PAYE)/Construction Industry Scheme (CIS)"
+      case SA => "Self Assessment"
+      case CT => "Corporation Tax"

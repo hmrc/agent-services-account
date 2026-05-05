@@ -19,11 +19,14 @@ package uk.gov.hmrc.agentservicesaccount.services
 import org.apache.pekko.Done
 import play.api.Logging
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
+import uk.gov.hmrc.agentservicesaccount.connectors.EmailConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
+import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayeSubscriptionRequest
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
+import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 import uk.gov.hmrc.http.Authorization
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.SessionId
@@ -38,7 +41,8 @@ import scala.util.control.NonFatal
 @Singleton
 class KnownFactsWorker @Inject() (
   workItemService: KnownFactsWorkItemService,
-  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
+  emailConnector: EmailConnector
 )(using ec: ExecutionContext)
 extends Logging:
 
@@ -90,7 +94,11 @@ extends Logging:
               )
               .flatMap { _ =>
                 logger.info(s"[KnownFactsWorker] $regime enrolment allocated for work item: ${workItem.id}")
-                workItemService.complete(workItem)
+                sendCompletionEmail(workItem.item)
+                  .recover { case NonFatal(error) =>
+                    logger.warn(s"[KnownFactsWorker] $regime completion email failed for work item ${workItem.id}", error)
+                  }
+                  .flatMap(_ => workItemService.complete(workItem))
               }
         }
 
@@ -99,6 +107,38 @@ extends Logging:
       case request: PayeSubscriptionRequest => PayePostcode.from(request.address.postCode)
       case _ => None
     }
+
+  private def sendCompletionEmail(workItem: SubscriptionWorkItem)(using regime: LegacyRegime): Future[Unit] =
+    (workItem.subscriptionRequest.emailAddress, workItem.agentReference) match
+      case (Some(email), Some(agentReference)) =>
+        given play.api.mvc.RequestHeader = RequestSupport.thereIsNoRequest
+        emailConnector.sendEmail(
+          EmailInformation(
+            to = Seq(email),
+            templateId = "agent_services_subscription_complete",
+            parameters = Map(
+              "agencyName" -> workItem.subscriptionRequest.agentName,
+              "arn" -> workItem.arn.value,
+              "serviceName" -> serviceName(regime),
+              "serviceSectionName" -> serviceSectionName(regime),
+              "agentCode" -> agentReference.value
+            )
+          )
+        )
+      case _ =>
+        Future.unit
+
+  private def serviceName(regime: LegacyRegime): String =
+    regime match
+      case LegacyRegime.PAYE => "PAYE/CIS"
+      case LegacyRegime.SA => "Self Assessment"
+      case LegacyRegime.CT => "Corporation Tax"
+
+  private def serviceSectionName(regime: LegacyRegime): String =
+    regime match
+      case LegacyRegime.PAYE => "Pay as you earn (PAYE)/Construction Industry Scheme (CIS)"
+      case LegacyRegime.SA => "Self Assessment"
+      case LegacyRegime.CT => "Corporation Tax"
 
   private def handleFailure(workItem: WorkItem[SubscriptionWorkItem])(using jobConfig: WorkItemJobConfig): Future[Done] =
     if workItem.failureCount + 1 >= jobConfig.maxAttempts then
