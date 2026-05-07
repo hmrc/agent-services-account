@@ -74,7 +74,8 @@ extends UnitSpec:
     "adminCredId" -> "test-cred-id",
     "requestId" -> "test-request-id",
     "sessionId" -> "session-123",
-    "bearerToken" -> "Bearer test-token"
+    "bearerToken" -> "Bearer test-token",
+    "entityType" -> "Unknown"
   )
 
   "SubscriptionWorkItem" should:
@@ -85,6 +86,11 @@ extends UnitSpec:
 
     "deserialize from JSON correctly" in:
       val result = Json.fromJson[SubscriptionWorkItem](testJson)(using SubscriptionWorkItem.mongoFormat)
+
+      result shouldBe JsSuccess(testModel)
+
+    "deserialize existing persisted JSON without entityType" in:
+      val result = Json.fromJson[SubscriptionWorkItem](testJson - "entityType")(using SubscriptionWorkItem.mongoFormat)
 
       result shouldBe JsSuccess(testModel)
 

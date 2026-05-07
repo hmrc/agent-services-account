@@ -67,7 +67,8 @@ with BeforeAndAfterEach:
     regime: LegacyRegime,
     request: SubscriptionRequest,
     requestId: String = "req-123",
-    failureCount: Int = 0
+    failureCount: Int = 0,
+    entityType: String = AgentEntityType.SoleTrader
   ): WorkItem[SubscriptionWorkItem] = WorkItem(
     id = new ObjectId(),
     receivedAt = Instant.now(),
@@ -84,7 +85,8 @@ with BeforeAndAfterEach:
       adminCredId = testAdminCredId,
       requestId = requestId,
       sessionId = Some("session-123"),
-      bearerToken = Some("Bearer test-token")
+      bearerToken = Some("Bearer test-token"),
+      entityType = entityType
     )
   )
 
@@ -168,7 +170,7 @@ with BeforeAndAfterEach:
           requestId = "stub-req-123",
           targetSystem = targetSystem.toString,
           postcode = Some("AA1 1AA"),
-          operationRequired = Operation.CREATE.toString,
+          operationRequired = Operation.CREATE.toString
         )
 
         val roboticsArgumentForStubs = RoboticsArgumentForStubs(
@@ -210,14 +212,15 @@ with BeforeAndAfterEach:
         val workItem = buildWorkItem(
           regime,
           abroadRequestNoPostcode,
-          requestId = "hip-req-123"
+          requestId = "hip-req-123",
+          entityType = AgentEntityType.LimitedLiabilityPartnership
         )
 
         val roboticsArgumentValue = RoboticsArgumentValue(
           requestId = "hip-req-123",
           targetSystem = targetSystem.toString,
           operationRequired = Operation.CREATE.toString,
-          entityType = "Sole Trader",
+          entityType = AgentEntityType.LimitedLiabilityPartnership,
           agentName = abroadRequestNoPostcode.agentName,
           tradingAs = abroadRequestNoPostcode.agentName,
           isAbroad = true,

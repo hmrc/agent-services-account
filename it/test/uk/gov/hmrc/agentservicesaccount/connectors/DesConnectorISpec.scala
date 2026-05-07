@@ -19,18 +19,26 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
 import play.api.Configuration
-import play.api.mvc.{AnyContentAsEmpty, Request}
+import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, SuspensionDetails, Utr}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress}
+import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
 import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
-import uk.gov.hmrc.agentservicesaccount.stubs.{DataStreamStub, DesStubs}
+import uk.gov.hmrc.agentservicesaccount.stubs.DataStreamStub
+import uk.gov.hmrc.agentservicesaccount.stubs.DesStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
-import uk.gov.hmrc.crypto.{Decrypter, Encrypter, PlainText}
+import uk.gov.hmrc.crypto.Decrypter
+import uk.gov.hmrc.crypto.Encrypter
+import uk.gov.hmrc.crypto.PlainText
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
@@ -41,10 +49,9 @@ class DesConnectorISpec
 extends ComponentSpecHelper
 with DesStubs
 with DataStreamStub {
-  
+
   private implicit val ec: ExecutionContext = ExecutionContext.global
   private implicit val request: Request[AnyContentAsEmpty.type] = FakeRequest()
-
 
   override def extraConfig: Map[String, Any] = Map(
     "microservice.services.auth.host" -> mockHost,
@@ -79,7 +86,6 @@ with DataStreamStub {
       new CurrentTimestampSupport,
       app.injector.instanceOf[Metrics]
     )
-
 
   lazy val cacheProvider =
     new CacheProvider(
@@ -212,5 +218,23 @@ with DataStreamStub {
 
   }
 
+  "DesConnector getRegistration" should {
+    "post no-name-match lookup to the individual UTR path and return registration data" in {
+      givenDESGetRegistrationData(utr, isIndividual = false)
+
+      val result = desConnector.getRegistration(utr).futureValue
+
+      result.map(_.isAnIndividual) shouldBe Some(false)
+      result.flatMap(_.organisation.flatMap(_.organisationType)) shouldBe Some("Not Specified")
+      verifyDESGetRegistrationData(utr, 1)
+    }
+
+    "return None when registration data is not found" in {
+      givenDESGetRegistrationNotFound(utr)
+
+      desConnector.getRegistration(utr).futureValue shouldBe None
+      verifyDESGetRegistrationData(utr, 1)
+    }
+  }
 
 }

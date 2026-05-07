@@ -51,7 +51,8 @@ class SubscriptionService @Inject() (
   subscriptionWorkItemRepository: SubscriptionWorkItemRepository,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   agentMappingConnector: AgentMappingConnector,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  agentEntityTypeService: AgentEntityTypeService
 )(using ec: ExecutionContext)
 extends Logging:
 
@@ -123,13 +124,13 @@ extends Logging:
               groupId
             )
           case request: (SaSubscriptionRequest | CtSubscriptionRequest) =>
-            Future.successful(createWorkItem(
+            createWorkItem(
               arn,
               request,
               regime,
               adminCredId,
               groupId
-            ))
+            )
         }
       result <- subscriptionWorkItemRepository
         .pushNew(workItem)
@@ -175,20 +176,23 @@ extends Logging:
     regime: LegacyRegime,
     adminCredId: CredId,
     groupId: GroupId
-  )(using request: RequestHeader): SubscriptionWorkItem =
+  )(using request: RequestHeader): Future[SubscriptionWorkItem] =
     // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
     val (optSessionId, optBearerToken) = maybeCaptureStubHeaders()
 
-    SubscriptionWorkItem(
-      arn = arn,
-      subscriptionRequest = subscriptionRequest,
-      regime = regime,
-      agentReference = None,
-      groupId = groupId,
-      adminCredId = adminCredId,
-      sessionId = optSessionId,
-      bearerToken = optBearerToken
-    )
+    agentEntityTypeService.resolve(arn).map { entityType =>
+      SubscriptionWorkItem(
+        arn = arn,
+        subscriptionRequest = subscriptionRequest,
+        regime = regime,
+        agentReference = None,
+        groupId = groupId,
+        adminCredId = adminCredId,
+        sessionId = optSessionId,
+        bearerToken = optBearerToken,
+        entityType = entityType
+      )
+    }
 
   def handleRoboticsCallback(
     callback: SubscriptionCallback

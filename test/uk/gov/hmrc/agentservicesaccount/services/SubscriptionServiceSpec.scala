@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import com.typesafe.config.ConfigFactory
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
@@ -109,6 +110,7 @@ with BeforeAndAfterEach {
       "Authorization" -> "Bearer test-token",
       "X-Session-ID" -> "session-123"
     )
+  private val agentEntityTypeService = mock[AgentEntityTypeService]
 
   given Encrypter & Decrypter = SymmetricCryptoFactory.aesCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
   private val repoConfig = ConfigFactory.parseString(
@@ -128,6 +130,8 @@ with BeforeAndAfterEach {
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     repository.coll.drop().toFuture().futureValue
+    when(agentEntityTypeService.resolve(any[Arn])(using any[RequestHeader]))
+      .thenReturn(Future.successful(AgentEntityType.SoleTrader))
   }
 
   "startSubscriptionProcess" when {
@@ -143,7 +147,8 @@ with BeforeAndAfterEach {
             repository,
             espConnector,
             agentMappingConnector,
-            appConfig
+            appConfig,
+            agentEntityTypeService
           )
 
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
@@ -175,7 +180,8 @@ with BeforeAndAfterEach {
             repository,
             espConnector,
             agentMappingConnector,
-            appConfig
+            appConfig,
+            agentEntityTypeService
           )
 
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
@@ -208,7 +214,8 @@ with BeforeAndAfterEach {
             repository,
             espConnector,
             agentMappingConnector,
-            appConfig
+            appConfig,
+            agentEntityTypeService
           )
 
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
@@ -240,7 +247,8 @@ with BeforeAndAfterEach {
             repository,
             espConnector,
             agentMappingConnector,
-            appConfig
+            appConfig,
+            agentEntityTypeService
           )
 
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
@@ -271,7 +279,8 @@ with BeforeAndAfterEach {
             repository,
             espConnector,
             agentMappingConnector,
-            appConfig
+            appConfig,
+            agentEntityTypeService
           )
 
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
@@ -320,7 +329,8 @@ with BeforeAndAfterEach {
             raceRepository,
             espConnector,
             agentMappingConnector,
-            appConfig
+            appConfig,
+            agentEntityTypeService
           )
 
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
@@ -363,7 +373,8 @@ with BeforeAndAfterEach {
             repository,
             espConnector,
             agentMappingConnector,
-            appConfig
+            appConfig,
+            agentEntityTypeService
           )
 
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
@@ -395,7 +406,8 @@ with BeforeAndAfterEach {
             repository,
             espConnector,
             agentMappingConnector,
-            appConfig
+            appConfig,
+            agentEntityTypeService
           )
 
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
@@ -426,7 +438,8 @@ with BeforeAndAfterEach {
             repository,
             espConnector,
             agentMappingConnector,
-            appConfig
+            appConfig,
+            agentEntityTypeService
           )
 
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
@@ -475,7 +488,8 @@ with BeforeAndAfterEach {
             raceRepository,
             espConnector,
             agentMappingConnector,
-            appConfig
+            appConfig,
+            agentEntityTypeService
           )
 
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
@@ -520,7 +534,8 @@ with BeforeAndAfterEach {
           repository,
           espConnector,
           agentMappingConnector,
-          appConfig
+          appConfig,
+          agentEntityTypeService
         )
 
       val requestId = "sa-callback-success-request-id"
@@ -567,7 +582,8 @@ with BeforeAndAfterEach {
           repository,
           espConnector,
           agentMappingConnector,
-          appConfig
+          appConfig,
+          agentEntityTypeService
         )
 
       val requestId = "sa-callback-success-after-failure-request-id"
@@ -614,7 +630,8 @@ with BeforeAndAfterEach {
           repository,
           espConnector,
           agentMappingConnector,
-          appConfig
+          appConfig,
+          agentEntityTypeService
         )
 
       val requestId = "sa-callback-failure-after-success-request-id"

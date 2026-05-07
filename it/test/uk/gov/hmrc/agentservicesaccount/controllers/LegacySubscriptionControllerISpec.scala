@@ -19,16 +19,25 @@ package uk.gov.hmrc.agentservicesaccount.controllers
 import play.api.libs.json.Json
 import play.api.libs.ws.WSBodyReadables.readableAsString
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.{CallbackFailure, CallbackSuccess}
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.Operation.CREATE
-import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.{CESA, COTAX}
+import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.CESA
+import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.COTAX
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
-import uk.gov.hmrc.agentservicesaccount.stubs.{AgentAuthStubs, AgentEpayeRegistrationStubs, AgentMappingStubs, EnrolmentStoreProxyStubs}
+import uk.gov.hmrc.agentservicesaccount.stubs.AgentAuthStubs
+import uk.gov.hmrc.agentservicesaccount.stubs.AgentEpayeRegistrationStubs
+import uk.gov.hmrc.agentservicesaccount.stubs.AgentMappingStubs
+import uk.gov.hmrc.agentservicesaccount.stubs.DesStubs
+import uk.gov.hmrc.agentservicesaccount.stubs.EnrolmentStoreProxyStubs
+import uk.gov.hmrc.agentservicesaccount.stubs.HipStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{Deferred, PermanentlyFailed}
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.Deferred
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 
 import java.util.UUID
 import org.scalatest.OptionValues.*
@@ -38,6 +47,8 @@ extends ComponentSpecHelper
 with AgentEpayeRegistrationStubs
 with AgentMappingStubs
 with EnrolmentStoreProxyStubs
+with HipStubs
+with DesStubs
 with AgentAuthStubs:
 
   lazy val repository: SubscriptionWorkItemRepository = app.injector.instanceOf[SubscriptionWorkItemRepository]
@@ -47,6 +58,7 @@ with AgentAuthStubs:
     super.beforeEach()
 
   val testArn = Arn("AARN0000001")
+  val testUtr = Utr("7000000002")
   val testAgentName = "Test Agency"
   val testContactName = "John Agent"
   val testPhoneNumber = "1234567890"
@@ -115,9 +127,10 @@ with AgentAuthStubs:
 
       givenEs3CallSucceeds(testGroupId)()
 
-      val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(
-        testPayeSubscriptionRequest.copy(address = testAddress.copy(postCode = Some("   ")))
-      )
+      val response =
+        post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(
+          testPayeSubscriptionRequest.copy(address = testAddress.copy(postCode = Some("   ")))
+        )
 
       response.status shouldBe 400
       response.body[String] should include("Postcode is required for legacy subscriptions in UK")
@@ -127,19 +140,25 @@ with AgentAuthStubs:
       isLoggedInAsASAgent(testArn)
 
       givenEs3CallSucceeds(testGroupId)()
+      givenHIPGetAgentRecordSuspendedAgent(testArn, s""""${testUtr.value}"""")
+      givenDESGetRegistrationData(testUtr, isIndividual = true)
       val response = post(s"/legacy-subscription-request/$SA")(testSaSubscriptionRequest)
 
       response.status shouldBe 200
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(SA)
+      repository.coll.find().headOption().futureValue.map(_.item.entityType) shouldBe Some(AgentEntityType.SoleTrader)
 
     "return 200 for CT regime" in:
       isLoggedInAsASAgent(testArn)
 
       givenEs3CallSucceeds(testGroupId)()
+      givenHIPGetAgentRecordSuspendedAgent(testArn, s""""${testUtr.value}"""")
+      givenDESGetRegistrationData(testUtr, isIndividual = false)
       val response = post(s"/legacy-subscription-request/$CT")(testCtSubscriptionRequest)
 
       response.status shouldBe 200
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(CT)
+      repository.coll.find().headOption().futureValue.map(_.item.entityType) shouldBe Some(AgentEntityType.Unknown)
 
   "GET /legacy-subscription-info" should:
     "return 200 with the correct information for an in progress work item" in:
@@ -416,7 +435,7 @@ with AgentAuthStubs:
       response.status shouldBe 204
       repository.coll.find().headOption().futureValue.map(_.status) shouldBe Some(PermanentlyFailed)
 
-    "return 400 when a successful callback does not contain an 'agentId'" in :
+    "return 400 when a successful callback does not contain an 'agentId'" in:
       val requestId = UUID.randomUUID().toString
       val testCallbackRequest = SubscriptionCallback(
         requestId = requestId,
