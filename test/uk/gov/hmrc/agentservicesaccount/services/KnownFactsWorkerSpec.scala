@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import org.apache.pekko.Done
 import org.bson.types.ObjectId
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as eqTo
 import org.mockito.Mockito.*
@@ -36,19 +37,25 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
+import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
+import uk.gov.hmrc.agentservicesaccount.mocks.MockAuditConnector
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.*
 
 class KnownFactsWorkerSpec
 extends UnitSpec
-with BeforeAndAfterEach:
+with BeforeAndAfterEach
+with MockAppConfig
+with MockAuditConnector:
 
   given HeaderCarrier = HeaderCarrier()
 
@@ -63,6 +70,10 @@ with BeforeAndAfterEach:
   private val workItemService = mock[KnownFactsWorkItemService]
   private val connector = mock[EnrolmentStoreProxyConnector]
   private val emailConnector = mock[EmailConnector]
+
+  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+  val auditService = new AuditService(mockAppConfig, mockAuditConnector)(using ec)
+
 
   private def buildWorkItem(
     regime: LegacyRegime,
@@ -134,13 +145,14 @@ with BeforeAndAfterEach:
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    reset(workItemService, connector, emailConnector)
+    reset(workItemService, connector, emailConnector, mockAuditConnector)
 
   private val worker =
     new KnownFactsWorker(
       workItemService = workItemService,
       enrolmentStoreProxyConnector = connector,
-      emailConnector = emailConnector
+      emailConnector = emailConnector,
+      auditService = auditService
     )
 
   testData.foreach { case (regime, subscriptionRequest) =>
@@ -183,6 +195,8 @@ with BeforeAndAfterEach:
         )
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
+        mockSendExtendedEvent(AuditResult.Success)
+
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
@@ -203,6 +217,20 @@ with BeforeAndAfterEach:
 
         verify(workItemService).complete(workItem)
         verify(workItemService, never()).markFailed(workItem)
+        val captor = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
+
+        verify(mockAuditConnector).sendExtendedEvent(
+          captor.capture()
+        )(
+          any[HeaderCarrier],
+          any[ExecutionContext]
+        )
+        val event = captor.getValue
+        event.auditType shouldBe "LegacySubscription"
+        event.auditSource shouldBe "agent-services-account"
+        val json = event.detail
+        (json \ "isSuccessful").as[Boolean] shouldBe true
+        (json \ "legacyAgentService").as[String] shouldBe s"IR-$regime-AGENT"
       }
 
       "send a service-specific completion email after allocating the enrolment" in {
@@ -217,6 +245,8 @@ with BeforeAndAfterEach:
           subscriptionRequest = subscriptionRequestWithEmail
         )
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        mockSendExtendedEvent(AuditResult.Success)
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
@@ -266,6 +296,8 @@ with BeforeAndAfterEach:
         )
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
+        mockSendExtendedEvent(AuditResult.Success)
+
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
@@ -299,6 +331,8 @@ with BeforeAndAfterEach:
           subscriptionRequest = subscriptionRequest
         )
 
+        mockSendExtendedEvent(AuditResult.Success)
+
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
@@ -311,6 +345,20 @@ with BeforeAndAfterEach:
 
         verify(workItemService).markPermanentlyFailed(workItem)
         verify(workItemService, never()).markFailed(workItem)
+        val captor = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
+
+        verify(mockAuditConnector).sendExtendedEvent(
+          captor.capture()
+        )(
+          any[HeaderCarrier],
+          any[ExecutionContext]
+        )
+        val event = captor.getValue
+        event.auditType shouldBe "LegacySubscription"
+        event.auditSource shouldBe "agent-services-account"
+        val json = event.detail
+        (json \ "isSuccessful").as[Boolean] shouldBe false
+        (json \ "legacyAgentService").as[String] shouldBe s"IR-$regime-AGENT"
       }
     }
   }
