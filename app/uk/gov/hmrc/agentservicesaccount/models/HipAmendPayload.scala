@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.models
 
+import play.api.Logger
 import play.api.libs.json.*
 
 case class HipAmendPayload(
@@ -43,33 +44,51 @@ object HipAmendPayload:
   given Writes[HipAmendPayload] = Json.writes[HipAmendPayload]
 
   extension (request: AgentRecordUpdateRequest)
-    def toHipAmendPayload: Either[String, HipAmendPayload] =
-      def agencyFields(ad: AgencyDetails) =
-        HipAmendPayload(
-          name = ad.agencyName,
-          addr1 = ad.agencyAddress.map(_.addressLine1),
-          addr2 = ad.agencyAddress.flatMap(_.addressLine2),
-          addr3 = ad.agencyAddress.flatMap(_.addressLine3),
-          addr4 = ad.agencyAddress.flatMap(_.addressLine4),
-          postcode = ad.agencyAddress.flatMap(_.postalCode),
-          country = ad.agencyAddress.map(_.countryCode),
-          phone = ad.agencyTelephone,
-          email = ad.agencyEmail
-        )
+    def toHipAmendPayload(oldRecord: AgentDetailsDesResponse)(logger: Logger): HipAmendPayload =
+      // TODO replace this with the new PUT API solution when it is implemented on ETMP.
+      def addressLineWithFallback(
+        newLine: Option[String],
+        oldLine: Option[String],
+        fallback: String
+      ): Option[String] =
+        if newLine.nonEmpty then newLine
+        else if oldLine.nonEmpty then
+          logger.warn(s"[HipAmendPayload] old record has optional field defined but update request is not overriding it. Using fallback '$fallback' to force override.")
+          Some(fallback)
+        else None
 
-      def amlsFields(amls: AmlsDetails) =
-        HipAmendPayload(
-          supervisoryBody = Some(amls.supervisoryBody.value),
-          membershipNumber = Some(amls.membershipNumber.value),
-          evidenceObjectReference = amls.evidenceObjectReference.map(_.value)
-        )
-
-      (request.agencyDetails, request.amlsDetails) match
-        case (Some(agencyDetails), None) =>
-          Right(agencyFields(agencyDetails))
-        case (None, Some(amlsDetails)) =>
-          Right(amlsFields(amlsDetails))
-        case (None, None) =>
-          Left("Either agencyDetails or amlsDetails must be provided")
-        case _ =>
-          Left("agencyDetails and amlsDetails cannot both be provided")
+      request match
+        case AmlsUpdateRequest(update) =>
+          HipAmendPayload(
+            supervisoryBody = Some(update.supervisoryBody.value),
+            membershipNumber = Some(update.membershipNumber.value),
+            evidenceObjectReference = update.evidenceObjectReference.map(_.value)
+          )
+        case AgencyDetailsUpdateRequest(update) =>
+          HipAmendPayload(
+            name = update.agencyName,
+            addr1 = update.agencyAddress.map(_.addressLine1),
+            addr2 = addressLineWithFallback(
+              update.agencyAddress.flatMap(_.addressLine2),
+              oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine2)),
+              "Address Line 2"
+            ),
+            addr3 = addressLineWithFallback(
+              update.agencyAddress.flatMap(_.addressLine3),
+              oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine3)),
+              "Address Line 3"
+            ),
+            addr4 = addressLineWithFallback(
+              update.agencyAddress.flatMap(_.addressLine4),
+              oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine4)),
+              "Address Line 4"
+            ),
+            postcode = addressLineWithFallback(
+              update.agencyAddress.flatMap(_.postalCode),
+              oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.postalCode)),
+              "Postcode"
+            ),
+            country = update.agencyAddress.map(_.countryCode),
+            phone = update.agencyTelephone,
+            email = update.agencyEmail
+          )

@@ -375,4 +375,33 @@ with EmailStub {
     }
   }
 
+  "POST /agent-record-update" should {
+    val url = "/agent-record-update"
+    "return OK status when the update was successful" in {
+      isLoggedInAsASAgent(testArn)
+      givenDESGetAgentRecord(testArn, Some(testUtr))
+      givenCitizenIsAlive(testSaUtr)
+      givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
+      givenAutoMappingCallSucceeds(testArn)
+      givenHipAmendAgentRecordSuccess(testArn)
+
+      val requestBody = Json.obj(
+        "agencyDetails" -> Json.obj(
+          "agencyName" -> "New Agency Name",
+          "agencyEmail" -> "test@email.com"
+        )
+      )
+
+      val response = put(url)(requestBody)
+      println(response.body)
+      response.status shouldBe OK
+    }
+    "return bad request when the request body is invalid" in {
+      isLoggedInAsASAgent(testArn)
+
+      val response = put(url)(s"""{"invalid":"data"}""")
+      response.status shouldBe BAD_REQUEST
+    }
+  }
+
 }

@@ -82,13 +82,15 @@ with Logging {
         }
     }
 
+  // TODO unnecessary EitherT usage, should ideally be refactored.
   def agentRecordUpdate: Action[AnyContent] = authActions.authorisedWithArn { request => arn =>
     given Request[AnyContent] = request
     (
       for
         json       <- request.body.toJsonEitherT
         rawRecord  <- json.validateEitherT[AgentRecordUpdateRequest]
-        hipPayload <- rawRecord.toHipAmendPayload.toResultEitherT
+        oldRecord  <- EitherT.liftF(agentEntityService.getAgentDetailsWithChecks(arn))
+        hipPayload = rawRecord.toHipAmendPayload(oldRecord.agentRecord)(logger)
         response   <- EitherT.liftF(hipConnector.putAgentRecord(arn, hipPayload))
       yield Ok(Json.obj("processingDate" -> response.success.processingDate))
     ).value.map {
