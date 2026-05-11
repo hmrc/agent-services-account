@@ -47,14 +47,12 @@ extends MockitoSugar { this: TestSuite =>
     ).thenReturn(Future.failed(ex))
   }
 
-  def mockHipPutAgentRecord(arn: Arn)(response: HipAmendResponse): Unit =
-    when(
-      mockHipConnector.putAgentRecord(meq(arn), any[HipAmendPayload])(using any[RequestHeader])
-    ).thenReturn(Future.successful(response))
+  def mockHipPutAgentRecord(arn: Arn)(response: HipAmendResponse): Unit = when(
+    mockHipConnector.putAgentRecord(meq(arn), any[HipAmendPayload])(using any[RequestHeader])
+  ).thenReturn(Future.successful(response))
 
-  def mockHipPutAgentRecordFailure(arn: Arn)(ex: Throwable): Unit =
-    when(
-      mockHipConnector.putAgentRecord(meq(arn), any[HipAmendPayload])(using any[RequestHeader])
-    ).thenReturn(Future.failed(ex))
+  def mockHipPutAgentRecordFailure(arn: Arn)(ex: Throwable): Unit = when(
+    mockHipConnector.putAgentRecord(meq(arn), any[HipAmendPayload])(using any[RequestHeader])
+  ).thenReturn(Future.failed(ex))
 
 }

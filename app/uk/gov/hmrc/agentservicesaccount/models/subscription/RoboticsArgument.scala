@@ -16,17 +16,17 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class RoboticsArgument(
-                               argumentType: String,
-                               argumentValue: RoboticsArgumentValue,
-                                        )
+  argumentType: String,
+  argumentValue: RoboticsArgumentValue
+)
 
 object RoboticsArgument {
 
-  implicit val roboticsArgument_Writes: Writes[RoboticsArgument] =
-  Writes {
+  implicit val roboticsArgument_Writes: Writes[RoboticsArgument] = Writes {
     argument =>
       Json.obj(
         "type" -> argument.argumentType,

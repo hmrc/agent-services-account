@@ -37,7 +37,6 @@ extends UnitSpec {
         addressLine1 = "Old Address Line 1",
         addressLine2 = Some("Old Address Line 2"),
         addressLine3 = Some("Old Address Line 3"),
-        addressLine4 = Some("Old Address Line 4"),
         postalCode = Some("AA1 1AA"),
         countryCode = "GB"
       ))
@@ -150,6 +149,14 @@ extends UnitSpec {
       request shouldBe a[JsError]
 
     }
+
+    "fail to parse with invalid json" in {
+      val json = Json.obj(
+        "amlsDetails" -> "invalid"
+      )
+      val request = json.validate[AgentRecordUpdateRequest]
+      request shouldBe a[JsError]
+    }
   }
 
   "toHipAmendPayload" should {
@@ -180,7 +187,6 @@ extends UnitSpec {
           addressLine1 = "1 High Street",
           addressLine2 = Some("Floor 2"),
           addressLine3 = Some("Town Centre"),
-          addressLine4 = Some("Telford"),
           postalCode = Some("TF1 1AA"),
           countryCode = "GB"
         ))
@@ -193,7 +199,7 @@ extends UnitSpec {
       payload.addr1 shouldBe Some("1 High Street")
       payload.addr2 shouldBe Some("Floor 2")
       payload.addr3 shouldBe Some("Town Centre")
-      payload.addr4 shouldBe Some("Telford")
+      payload.addr4 shouldBe None
       payload.postcode shouldBe Some("TF1 1AA")
       payload.country shouldBe Some("GB")
 
@@ -224,7 +230,7 @@ extends UnitSpec {
       payload.addr1 shouldBe Some("1 High Street")
       payload.addr2 shouldBe Some("Address Line 2")
       payload.addr3 shouldBe Some("Address Line 3")
-      payload.addr4 shouldBe Some("Address Line 4")
+      payload.addr4 shouldBe None
       payload.postcode shouldBe Some("Postcode")
       payload.country shouldBe Some("EE")
 

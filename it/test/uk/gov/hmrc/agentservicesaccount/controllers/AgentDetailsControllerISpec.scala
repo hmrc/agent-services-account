@@ -399,7 +399,13 @@ with EmailStub {
     "return bad request when the request body is invalid" in {
       isLoggedInAsASAgent(testArn)
 
-      val response = put(url)(s"""{"invalid":"data"}""")
+      val response = put(url)("""{"invalid":"data"}""")
+      response.status shouldBe BAD_REQUEST
+    }
+    "return bad request when the request body is not json" in {
+      isLoggedInAsASAgent(testArn)
+
+      val response = put(url, Seq("Authorization" -> "Bearer 123"))("")
       response.status shouldBe BAD_REQUEST
     }
   }

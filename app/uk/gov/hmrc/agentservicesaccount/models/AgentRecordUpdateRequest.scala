@@ -37,6 +37,6 @@ object AgentRecordUpdateRequest:
       case (JsSuccess(None, _), JsSuccess(Some(agencyDetails), _)) => JsSuccess(AgencyDetailsUpdateRequest(agencyDetails))
       case (JsSuccess(None, _), JsSuccess(None, _)) => JsError("Invalid update request: neither 'amlsDetails' nor 'agencyDetails' provided")
       case (JsSuccess(Some(_), _), JsSuccess(Some(_), _)) => JsError("Invalid update request: both 'amlsDetails' and 'agencyDetails' provided")
-      case (JsError(errorsAmls), JsError(errorsAgency)) => JsError(errorsAmls ++ errorsAgency)
+      case _ => JsError("Invalid update request: unable to parse 'amlsDetails' or 'agencyDetails'")
     }
   }

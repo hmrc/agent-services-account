@@ -85,7 +85,11 @@ class EnrolmentStoreProxyConnector @Inject() (
     agentReference: String,
     postcode: Option[PayePostcode.Valid]
   )(using HeaderCarrier): Future[Option[Es20Response]] =
-    es20RequestFor(regime, agentReference, postcode) match
+    es20RequestFor(
+      regime,
+      agentReference,
+      postcode
+    ) match
       case None => Future.successful(None)
       case Some(request) => executeEs20Lookup(request)
 
@@ -103,30 +107,28 @@ class EnrolmentStoreProxyConnector @Inject() (
             EspKnownFact("IRAgentPostcode", pc.value)
           )
         ))
-      case (LegacyRegime.PAYE, None) =>
-        None
+      case (LegacyRegime.PAYE, None) => None
       case (_, _) =>
         Some(Es20Request(
           service = regime.enrolmentKey,
           knownFacts = Seq(EspKnownFact(regime.agentReferenceKey, agentReference))
         ))
 
-  private def executeEs20Lookup(request: Es20Request)(using HeaderCarrier): Future[Option[Es20Response]] =
-    http
-      .post(url"$baseUrl/enrolment-store-proxy/enrolment-store/enrolments")
-      .withBody(Json.toJson(request))
-      .execute[HttpResponse]
-      .map { response =>
-        response.status match
-          case OK => Some(response.json.as[Es20Response])
-          case NO_CONTENT => None
-          case status =>
-            throw UpstreamErrorResponse(
-              response.body,
-              status,
-              status
-            )
-      }
+  private def executeEs20Lookup(request: Es20Request)(using HeaderCarrier): Future[Option[Es20Response]] = http
+    .post(url"$baseUrl/enrolment-store-proxy/enrolment-store/enrolments")
+    .withBody(Json.toJson(request))
+    .execute[HttpResponse]
+    .map { response =>
+      response.status match
+        case OK => Some(response.json.as[Es20Response])
+        case NO_CONTENT => None
+        case status =>
+          throw UpstreamErrorResponse(
+            response.body,
+            status,
+            status
+          )
+    }
 
   def allocateAgentEnrolment(
     regime: LegacyRegime,

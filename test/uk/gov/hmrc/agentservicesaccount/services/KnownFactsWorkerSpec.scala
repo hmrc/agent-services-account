@@ -171,7 +171,11 @@ with MockLegacySubscriptionAuditService:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(None))
 
         when(workItemService.markFailed(workItem)).thenReturn(Future.successful(Done))
@@ -195,7 +199,11 @@ with MockLegacySubscriptionAuditService:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
@@ -222,10 +230,11 @@ with MockLegacySubscriptionAuditService:
       }
 
       "send a service-specific completion email after allocating the enrolment" in {
-        val subscriptionRequestWithEmail = subscriptionRequest match
-          case request: PayeSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
-          case request: SaSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
-          case request: CtSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+        val subscriptionRequestWithEmail =
+          subscriptionRequest match
+            case request: PayeSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+            case request: SaSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+            case request: CtSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
 
         val workItem = buildWorkItem(
           regime,
@@ -239,7 +248,11 @@ with MockLegacySubscriptionAuditService:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
@@ -272,10 +285,11 @@ with MockLegacySubscriptionAuditService:
       }
 
       "complete the work item when the completion email fails after allocating the enrolment" in {
-        val subscriptionRequestWithEmail = subscriptionRequest match
-          case request: PayeSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
-          case request: SaSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
-          case request: CtSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+        val subscriptionRequestWithEmail =
+          subscriptionRequest match
+            case request: PayeSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+            case request: SaSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+            case request: CtSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
 
         val workItem = buildWorkItem(
           regime,
@@ -289,7 +303,11 @@ with MockLegacySubscriptionAuditService:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
@@ -324,7 +342,11 @@ with MockLegacySubscriptionAuditService:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(None))
 
         when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
@@ -372,8 +394,7 @@ with MockLegacySubscriptionAuditService:
       case _ => None
     }
 
-  private def expectedValidatedPostcode(regime: LegacyRegime): Option[PayePostcode.Valid] =
-    PayePostcode.from(expectedPostcode(regime))
+  private def expectedValidatedPostcode(regime: LegacyRegime): Option[PayePostcode.Valid] = PayePostcode.from(expectedPostcode(regime))
 
   private def expectedServiceName(regime: LegacyRegime): String =
     regime match

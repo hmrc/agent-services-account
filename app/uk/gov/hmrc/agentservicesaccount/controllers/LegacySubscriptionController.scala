@@ -59,18 +59,16 @@ with Logging:
             adminCredId,
             groupId
           ).map(_ => Ok)
-        case Some(JsError(errors)) =>
-          Future.successful(BadRequest(s"Invalid subscription request, reason: ${formatErrors(errors)}"))
+        case Some(JsError(errors)) => Future.successful(BadRequest(s"Invalid subscription request, reason: ${formatErrors(errors)}"))
         case _ => Future.successful(BadRequest("Missing subscription request JSON"))
       }
   }
 
-  private def formatErrors(errors: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])]): String =
-    errors
-      .flatMap(_._2)
-      .flatMap(_.messages)
-      .distinct
-      .mkString(", ")
+  private def formatErrors(errors: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])]): String = errors
+    .flatMap(_._2)
+    .flatMap(_.messages)
+    .distinct
+    .mkString(", ")
 
   def subscriptionInfo(regimes: Seq[LegacyRegime]): Action[AnyContent] = authActions.authorisedWithArnAndGroupId {
     request => (arn, groupId) =>

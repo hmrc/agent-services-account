@@ -20,8 +20,7 @@ object PayePostcode:
 
   opaque type Valid = String
 
-  def from(raw: Option[String]): Option[Valid] =
-    raw.map(_.trim).filter(_.nonEmpty)
+  def from(raw: Option[String]): Option[Valid] = raw.map(_.trim).filter(_.nonEmpty)
 
   extension (postcode: Valid)
     def value: String = postcode
