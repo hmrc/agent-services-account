@@ -219,7 +219,7 @@ extends Logging:
               .auditFailure(
                 arn = workItem.item.arn,
                 regime = workItem.item.regime,
-                failureReason = "Robotics callback failure"
+                failureReason = s"Robotics callback failure: ${callback.requestMessage}"
               )
               .map(_ => SubscriptionService.CallbackHandling.Handled)
           case AlreadyPermanentlyFailed | IgnoredAlreadySucceeded => Future.successful(SubscriptionService.CallbackHandling.Handled)

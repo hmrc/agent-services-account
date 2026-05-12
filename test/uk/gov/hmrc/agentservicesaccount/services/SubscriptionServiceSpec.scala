@@ -17,9 +17,8 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import com.typesafe.config.ConfigFactory
-import org.mockito.Mockito.*
-import org.mockito.ArgumentMatchers.any as Arn
-import org.mockito.Mockito.when
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{verify, when, reset}
 import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
@@ -573,7 +572,7 @@ with BeforeAndAfterEach {
       verify(mockLegacySubscriptionAuditService).auditFailure(
         arn = workItem.item.arn,
         regime = workItem.item.regime,
-        failureReason = "Robotics callback failure"
+        failureReason = "Robotics callback failure: boom"
       )
     }
   }
