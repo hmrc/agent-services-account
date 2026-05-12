@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import org.apache.pekko.Done
 import org.bson.types.ObjectId
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as eqTo
 import org.mockito.Mockito.*
@@ -36,19 +37,22 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
+import uk.gov.hmrc.agentservicesaccount.mocks.{MockAppConfig, MockLegacySubscriptionAuditService}
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem
+import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 import java.time.Instant
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.*
 
 class KnownFactsWorkerSpec
 extends UnitSpec
-with BeforeAndAfterEach:
+with BeforeAndAfterEach
+with MockAppConfig
+with MockLegacySubscriptionAuditService:
 
   given HeaderCarrier = HeaderCarrier()
 
@@ -63,6 +67,8 @@ with BeforeAndAfterEach:
   private val workItemService = mock[KnownFactsWorkItemService]
   private val connector = mock[EnrolmentStoreProxyConnector]
   private val emailConnector = mock[EmailConnector]
+
+  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private def buildWorkItem(
     regime: LegacyRegime,
@@ -134,13 +140,14 @@ with BeforeAndAfterEach:
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    reset(workItemService, connector, emailConnector)
+    reset(workItemService, connector, emailConnector, mockLegacySubscriptionAuditService)
 
   private val worker =
     new KnownFactsWorker(
       workItemService = workItemService,
       enrolmentStoreProxyConnector = connector,
-      emailConnector = emailConnector
+      emailConnector = emailConnector,
+      legacySubscriptionAuditService = mockLegacySubscriptionAuditService
     )
 
   testData.foreach { case (regime, subscriptionRequest) =>
@@ -183,6 +190,8 @@ with BeforeAndAfterEach:
         )
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
+        mockLegacySubscriptionAuditSuccess()
+
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
@@ -203,6 +212,13 @@ with BeforeAndAfterEach:
 
         verify(workItemService).complete(workItem)
         verify(workItemService, never()).markFailed(workItem)
+        val captor = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
+
+        verify(mockLegacySubscriptionAuditService).auditSuccess(
+          arn = workItem.item.arn,
+          regime = regime,
+          legacyAgentCode = Some("A12345")
+        )
       }
 
       "send a service-specific completion email after allocating the enrolment" in {
@@ -217,6 +233,8 @@ with BeforeAndAfterEach:
           subscriptionRequest = subscriptionRequestWithEmail
         )
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        mockLegacySubscriptionAuditSuccess()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
@@ -266,6 +284,8 @@ with BeforeAndAfterEach:
         )
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
+        mockLegacySubscriptionAuditSuccess()
+
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
@@ -299,6 +319,8 @@ with BeforeAndAfterEach:
           subscriptionRequest = subscriptionRequest
         )
 
+        mockLegacySubscriptionAuditFailure()
+
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
@@ -311,6 +333,13 @@ with BeforeAndAfterEach:
 
         verify(workItemService).markPermanentlyFailed(workItem)
         verify(workItemService, never()).markFailed(workItem)
+        val captor = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
+
+        verify(mockLegacySubscriptionAuditService).auditFailure(
+          arn = workItem.item.arn,
+          regime = regime,
+          failureReason = "Max retry attempts reached in KnownFactsWorker"
+        )
       }
     }
   }

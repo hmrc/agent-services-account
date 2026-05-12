@@ -29,7 +29,7 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext
 import play.api.test.FakeRequest
-import play.api.mvc.RequestHeader
+import play.api.mvc.{AnyContentAsEmpty, Request, RequestHeader}
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 class AuditServiceSpec
@@ -37,10 +37,10 @@ extends UnitSpec
 with MockAppConfig
 with MockAuditConnector {
 
-  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
-  implicit val hc: HeaderCarrier = new HeaderCarrier()
-  val auditService = new AuditService(mockAppConfig, mockAuditConnector)(using ec)
-  implicit val request: RequestHeader = FakeRequest()
+  given ExecutionContext = ExecutionContext.global
+  given HeaderCarrier = HeaderCarrier()
+  val auditService = new AuditService(mockAppConfig, mockAuditConnector)
+  given Request[AnyContentAsEmpty.type] = FakeRequest()
 
   "auditEntityCheckFailureNotificationSent" should {
     "send audit event" in {

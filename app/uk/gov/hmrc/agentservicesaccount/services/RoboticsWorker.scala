@@ -41,6 +41,7 @@ import scala.util.control.NonFatal
 class RoboticsWorker @Inject() (
   workItemService: RoboticsWorkItemService,
   roboticsInvocationConnector: RoboticsInvocationConnector,
+  legacySubscriptionAuditService: LegacySubscriptionAuditService,
   appConfig: AppConfig
 )(using
   ec: ExecutionContext
@@ -211,6 +212,13 @@ extends Logging:
 
   def handleFailure(workItem: WorkItem[SubscriptionWorkItem])(using jobConfig: WorkItemJobConfig): Future[Done] =
     if workItem.failureCount + 1 >= jobConfig.maxAttempts then
-      workItemService.markPermanentlyFailed(workItem)
+      legacySubscriptionAuditService
+        .auditFailure(
+          arn = workItem.item.arn,
+          regime = workItem.item.regime,
+          failureReason = "Max retry attempts reached in RoboticsWorker"
+        )
+        .recover { case _ => () }
+        .flatMap(_ => workItemService.markPermanentlyFailed(workItem))
     else
       workItemService.markFailed(workItem)

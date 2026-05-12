@@ -42,7 +42,8 @@ import scala.util.control.NonFatal
 class KnownFactsWorker @Inject() (
   workItemService: KnownFactsWorkItemService,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
-  emailConnector: EmailConnector
+  emailConnector: EmailConnector,
+  legacySubscriptionAuditService: LegacySubscriptionAuditService
 )(using ec: ExecutionContext)
 extends Logging:
 
@@ -94,11 +95,19 @@ extends Logging:
               )
               .flatMap { _ =>
                 logger.info(s"[KnownFactsWorker] $regime enrolment allocated for work item: ${workItem.id}")
-                sendCompletionEmail(workItem.item)
-                  .recover { case NonFatal(error) =>
-                    logger.warn(s"[KnownFactsWorker] $regime completion email failed for work item ${workItem.id}", error)
+                legacySubscriptionAuditService
+                  .auditSuccess(
+                    arn = workItem.item.arn,
+                    regime = regime,
+                    legacyAgentCode = Some(agentReference.value)
+                  )
+                  .flatMap { _ =>
+                    sendCompletionEmail(workItem.item)
+                      .recover { case NonFatal(error) =>
+                        logger.warn(s"[KnownFactsWorker] $regime completion email failed for work item ${workItem.id}", error)
+                      }
+                      .flatMap(_ => workItemService.complete(workItem))
                   }
-                  .flatMap(_ => workItemService.complete(workItem))
               }
         }
 
@@ -142,6 +151,12 @@ extends Logging:
 
   private def handleFailure(workItem: WorkItem[SubscriptionWorkItem])(using jobConfig: WorkItemJobConfig): Future[Done] =
     if workItem.failureCount + 1 >= jobConfig.maxAttempts then
-      workItemService.markPermanentlyFailed(workItem)
+      legacySubscriptionAuditService
+        .auditFailure(
+          arn = workItem.item.arn,
+          regime = workItem.item.regime,
+          failureReason = "Max retry attempts reached in KnownFactsWorker"
+        )
+        .flatMap(_ => workItemService.markPermanentlyFailed(workItem))
     else
       workItemService.markFailed(workItem)
