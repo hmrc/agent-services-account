@@ -35,28 +35,31 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.Correlat
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
+import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.*
 
 class RoboticsWorkerSpec
 extends UnitSpec
-with BeforeAndAfterEach:
+with BeforeAndAfterEach
+with MockLegacySubscriptionAuditService:
 
   private val workItemService = mock[RoboticsWorkItemService]
   private val connector = mock[RoboticsInvocationConnector]
   private val appConfig = mock[AppConfig]
+  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private val worker =
     new RoboticsWorker(
       workItemService,
       connector,
+      mockLegacySubscriptionAuditService,
       appConfig
     )
 
@@ -315,10 +318,16 @@ with BeforeAndAfterEach:
         when(connector.invoke(any[JsObject], any[CorrelationId])(using any[HeaderCarrier]))
           .thenReturn(Future.failed(new RuntimeException("boom")))
         when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
+        mockLegacySubscriptionAuditFailure()
 
         worker.runOnce(using jobConfig, regime).futureValue
 
         verify(workItemService).markPermanentlyFailed(workItem)
+        verify(mockLegacySubscriptionAuditService).auditFailure(
+          arn = workItem.item.arn,
+          regime = regime,
+          failureReason = "Max retry attempts reached in RoboticsWorker"
+        )
       }
     }
   }
@@ -328,5 +337,6 @@ with BeforeAndAfterEach:
     reset(
       workItemService,
       connector,
-      appConfig
+      appConfig,
+      mockLegacySubscriptionAuditService
     )

@@ -17,7 +17,8 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import com.typesafe.config.ConfigFactory
-import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
+import org.mockito.ArgumentMatchers.any as Arn
 import org.mockito.Mockito.when
 import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
@@ -30,6 +31,7 @@ import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentMappingConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
+import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.Enrolment
@@ -48,13 +50,13 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class SubscriptionServiceSpec
 extends UnitSpec
 with IntegrationPatience
 with CleanMongoCollectionSupport
+with MockLegacySubscriptionAuditService
 with BeforeAndAfterEach {
 
   private val testArn = Arn("AARN0000001")
@@ -113,6 +115,8 @@ with BeforeAndAfterEach {
   private val agentEntityTypeService = mock[AgentEntityTypeService]
 
   given Encrypter & Decrypter = SymmetricCryptoFactory.aesCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
+  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+
   private val repoConfig = ConfigFactory.parseString(
     """work-item-repository.subscriptions.retry-in-progress-after = "1s""""
   )
@@ -127,33 +131,53 @@ with BeforeAndAfterEach {
       regime: LegacyRegime
     ): Future[Option[uk.gov.hmrc.mongo.workitem.WorkItem[SubscriptionWorkItem]]] = Future.successful(None)
 
+  val connector = mock[AgentEpayeRegistrationConnector]
+  val appConfig = mock[AppConfig]
+  val espConnector = mock[EnrolmentStoreProxyConnector]
+  val agentMappingConnector = mock[AgentMappingConnector]
+
+  val raceRepository = new RaceSubscriptionWorkItemRepository
+  val service =
+    new SubscriptionService(
+      connector,
+      repository,
+      espConnector,
+      agentMappingConnector,
+      mockLegacySubscriptionAuditService,
+      appConfig,
+      agentEntityTypeService
+    )
+
+  val raceService =
+    new SubscriptionService(
+      connector,
+      raceRepository,
+      espConnector,
+      agentMappingConnector,
+      mockLegacySubscriptionAuditService,
+      appConfig,
+      agentEntityTypeService
+    )
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     repository.coll.drop().toFuture().futureValue
+
+    repository.ensureIndexes().futureValue
+    raceRepository.ensureIndexes().futureValue
+
     when(agentEntityTypeService.resolve(any[Arn])(using any[RequestHeader]))
       .thenReturn(Future.successful(AgentEntityType.SoleTrader))
+
+    reset(connector, appConfig, espConnector, agentMappingConnector)
   }
 
   "startSubscriptionProcess" when {
     "invoked for PAYE" should {
       "capture session and bearer when stubs compatibility mode is enabled" in {
-        val connector = mock[AgentEpayeRegistrationConnector]
-        val appConfig = mock[AppConfig]
-        val espConnector = mock[EnrolmentStoreProxyConnector]
-        val agentMappingConnector = mock[AgentMappingConnector]
-        val service =
-          new SubscriptionService(
-            connector,
-            repository,
-            espConnector,
-            agentMappingConnector,
-            appConfig,
-            agentEntityTypeService
-          )
-
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
         when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+        mockLegacySubscriptionAuditSuccess()
 
         service.startSubscriptionProcess(
           testArn,
@@ -170,23 +194,10 @@ with BeforeAndAfterEach {
       }
 
       "omit session and bearer when stubs compatibility mode is disabled" in {
-        val connector = mock[AgentEpayeRegistrationConnector]
-        val appConfig = mock[AppConfig]
-        val espConnector = mock[EnrolmentStoreProxyConnector]
-        val agentMappingConnector = mock[AgentMappingConnector]
-        val service =
-          new SubscriptionService(
-            connector,
-            repository,
-            espConnector,
-            agentMappingConnector,
-            appConfig,
-            agentEntityTypeService
-          )
-
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+        mockLegacySubscriptionAuditSuccess()
 
         service.startSubscriptionProcess(
           testArn,
@@ -204,22 +215,9 @@ with BeforeAndAfterEach {
     }
     "invoked for SA" should {
       "capture session and bearer when stubs compatibility mode is enabled" in {
-        val connector = mock[AgentEpayeRegistrationConnector]
-        val appConfig = mock[AppConfig]
-        val espConnector = mock[EnrolmentStoreProxyConnector]
-        val agentMappingConnector = mock[AgentMappingConnector]
-        val service =
-          new SubscriptionService(
-            connector,
-            repository,
-            espConnector,
-            agentMappingConnector,
-            appConfig,
-            agentEntityTypeService
-          )
-
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+        mockLegacySubscriptionAuditSuccess()
 
         service.startSubscriptionProcess(
           testArn,
@@ -237,20 +235,6 @@ with BeforeAndAfterEach {
       }
 
       "fail when SA enrolment already exists on the group" in {
-        val connector = mock[AgentEpayeRegistrationConnector]
-        val appConfig = mock[AppConfig]
-        val espConnector = mock[EnrolmentStoreProxyConnector]
-        val agentMappingConnector = mock[AgentMappingConnector]
-        val service =
-          new SubscriptionService(
-            connector,
-            repository,
-            espConnector,
-            agentMappingConnector,
-            appConfig,
-            agentEntityTypeService
-          )
-
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(
           Future.successful(List(Enrolment(service = LegacyRegime.SA.enrolmentKey, state = "Activated")))
@@ -269,22 +253,9 @@ with BeforeAndAfterEach {
       }
 
       "replace a permanently failed work item when SA subscription is retried" in {
-        val connector = mock[AgentEpayeRegistrationConnector]
-        val appConfig = mock[AppConfig]
-        val espConnector = mock[EnrolmentStoreProxyConnector]
-        val agentMappingConnector = mock[AgentMappingConnector]
-        val service =
-          new SubscriptionService(
-            connector,
-            repository,
-            espConnector,
-            agentMappingConnector,
-            appConfig,
-            agentEntityTypeService
-          )
-
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+        mockLegacySubscriptionAuditSuccess()
 
         val failedItem =
           repository.pushNew(
@@ -317,27 +288,11 @@ with BeforeAndAfterEach {
       }
 
       "return 429 when a concurrent SA start hits the unique (arn, regime) index" in {
-        val connector = mock[AgentEpayeRegistrationConnector]
-        val appConfig = mock[AppConfig]
-        val espConnector = mock[EnrolmentStoreProxyConnector]
-        val agentMappingConnector = mock[AgentMappingConnector]
-
-        val raceRepository = new RaceSubscriptionWorkItemRepository
-        val service =
-          new SubscriptionService(
-            connector,
-            raceRepository,
-            espConnector,
-            agentMappingConnector,
-            appConfig,
-            agentEntityTypeService
-          )
-
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
 
         // Seed an existing SA work item so the insert below will hit the unique index.
-        repository.pushNew(
+        raceRepository.pushNew(
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = saSubscriptionRequest,
@@ -349,7 +304,7 @@ with BeforeAndAfterEach {
         ).futureValue
 
         val ex =
-          service.startSubscriptionProcess(
+          raceService.startSubscriptionProcess(
             testArn,
             saSubscriptionRequest,
             SA,
@@ -363,22 +318,9 @@ with BeforeAndAfterEach {
     }
     "invoked for CT" should {
       "capture session and bearer when stubs compatibility mode is enabled" in {
-        val connector = mock[AgentEpayeRegistrationConnector]
-        val appConfig = mock[AppConfig]
-        val espConnector = mock[EnrolmentStoreProxyConnector]
-        val agentMappingConnector = mock[AgentMappingConnector]
-        val service =
-          new SubscriptionService(
-            connector,
-            repository,
-            espConnector,
-            agentMappingConnector,
-            appConfig,
-            agentEntityTypeService
-          )
-
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+        mockLegacySubscriptionAuditSuccess()
 
         service.startSubscriptionProcess(
           testArn,
@@ -396,20 +338,6 @@ with BeforeAndAfterEach {
       }
 
       "fail when SA enrolment already exists on the group" in {
-        val connector = mock[AgentEpayeRegistrationConnector]
-        val appConfig = mock[AppConfig]
-        val espConnector = mock[EnrolmentStoreProxyConnector]
-        val agentMappingConnector = mock[AgentMappingConnector]
-        val service =
-          new SubscriptionService(
-            connector,
-            repository,
-            espConnector,
-            agentMappingConnector,
-            appConfig,
-            agentEntityTypeService
-          )
-
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(
           Future.successful(List(Enrolment(service = LegacyRegime.CT.enrolmentKey, state = "Activated")))
@@ -428,22 +356,9 @@ with BeforeAndAfterEach {
       }
 
       "replace a permanently failed work item when SA subscription is retried" in {
-        val connector = mock[AgentEpayeRegistrationConnector]
-        val appConfig = mock[AppConfig]
-        val espConnector = mock[EnrolmentStoreProxyConnector]
-        val agentMappingConnector = mock[AgentMappingConnector]
-        val service =
-          new SubscriptionService(
-            connector,
-            repository,
-            espConnector,
-            agentMappingConnector,
-            appConfig,
-            agentEntityTypeService
-          )
-
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+        mockLegacySubscriptionAuditSuccess()
 
         val failedItem =
           repository.pushNew(
@@ -476,27 +391,12 @@ with BeforeAndAfterEach {
       }
 
       "return 429 when a concurrent SA start hits the unique (arn, regime) index" in {
-        val connector = mock[AgentEpayeRegistrationConnector]
-        val appConfig = mock[AppConfig]
-        val espConnector = mock[EnrolmentStoreProxyConnector]
-        val agentMappingConnector = mock[AgentMappingConnector]
-
-        val raceRepository = new RaceSubscriptionWorkItemRepository
-        val service =
-          new SubscriptionService(
-            connector,
-            raceRepository,
-            espConnector,
-            agentMappingConnector,
-            appConfig,
-            agentEntityTypeService
-          )
-
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
+        mockLegacySubscriptionAuditSuccess()
 
         // Seed an existing SA work item so the insert below will hit the unique index.
-        repository.pushNew(
+        raceRepository.pushNew(
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = saSubscriptionRequest,
@@ -508,7 +408,7 @@ with BeforeAndAfterEach {
         ).futureValue
 
         val ex =
-          service.startSubscriptionProcess(
+          raceService.startSubscriptionProcess(
             testArn,
             ctSubscriptionRequest,
             CT,
@@ -524,20 +424,6 @@ with BeforeAndAfterEach {
 
   "handleRoboticsCallback" should {
     "set agentReference and return the work item to ToDo on successful callback" in {
-      val connector = mock[AgentEpayeRegistrationConnector]
-      val appConfig = mock[AppConfig]
-      val espConnector = mock[EnrolmentStoreProxyConnector]
-      val agentMappingConnector = mock[AgentMappingConnector]
-      val service =
-        new SubscriptionService(
-          connector,
-          repository,
-          espConnector,
-          agentMappingConnector,
-          appConfig,
-          agentEntityTypeService
-        )
-
       val requestId = "sa-callback-success-request-id"
       val workItem =
         repository.pushNew(
@@ -572,20 +458,6 @@ with BeforeAndAfterEach {
     }
 
     "ignore a success callback if the work item is already PermanentlyFailed" in {
-      val connector = mock[AgentEpayeRegistrationConnector]
-      val appConfig = mock[AppConfig]
-      val espConnector = mock[EnrolmentStoreProxyConnector]
-      val agentMappingConnector = mock[AgentMappingConnector]
-      val service =
-        new SubscriptionService(
-          connector,
-          repository,
-          espConnector,
-          agentMappingConnector,
-          appConfig,
-          agentEntityTypeService
-        )
-
       val requestId = "sa-callback-success-after-failure-request-id"
       val workItem =
         repository.pushNew(
@@ -620,20 +492,6 @@ with BeforeAndAfterEach {
     }
 
     "ignore a failure callback if success has already been recorded" in {
-      val connector = mock[AgentEpayeRegistrationConnector]
-      val appConfig = mock[AppConfig]
-      val espConnector = mock[EnrolmentStoreProxyConnector]
-      val agentMappingConnector = mock[AgentMappingConnector]
-      val service =
-        new SubscriptionService(
-          connector,
-          repository,
-          espConnector,
-          agentMappingConnector,
-          appConfig,
-          agentEntityTypeService
-        )
-
       val requestId = "sa-callback-failure-after-success-request-id"
       val workItem =
         repository.pushNew(
@@ -676,6 +534,47 @@ with BeforeAndAfterEach {
       val persisted = repository.coll.find().first().toFuture().futureValue
       persisted.status shouldBe ToDo
       persisted.item.agentReference shouldBe Some(testAgentRef)
+    }
+
+    "send audit failure when callback results in permanent failure" in {
+      val requestId = "audit-fail-request"
+
+      val workItem =
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = testArn,
+            subscriptionRequest = saSubscriptionRequest,
+            regime = SA,
+            agentReference = None,
+            requestId = requestId,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
+          )
+        ).futureValue
+
+      repository.markAs(workItem.id, InProgress).futureValue
+
+      mockLegacySubscriptionAuditFailure()
+
+      val callbackResult =
+        service.handleRoboticsCallback(
+          SubscriptionCallback(
+            requestId = requestId,
+            targetSystem = TargetSystem.CESA,
+            operationRequired = Operation.CREATE,
+            agentId = None,
+            status = CallbackStatus.CallbackFailure,
+            requestMessage = "boom"
+          )
+        ).futureValue
+
+      callbackResult shouldBe SubscriptionService.CallbackHandling.Handled
+
+      verify(mockLegacySubscriptionAuditService).auditFailure(
+        arn = workItem.item.arn,
+        regime = workItem.item.regime,
+        failureReason = "Robotics callback failure"
+      )
     }
   }
 

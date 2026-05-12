@@ -41,6 +41,8 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.N
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.SubscriptionMapped
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.SubscriptionOnAgency
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
+import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository.FailureCallbackHandling.AlreadyPermanentlyFailed
+import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository.FailureCallbackHandling.IgnoredAlreadySucceeded
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
@@ -51,6 +53,7 @@ class SubscriptionService @Inject() (
   subscriptionWorkItemRepository: SubscriptionWorkItemRepository,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   agentMappingConnector: AgentMappingConnector,
+  legacySubscriptionAuditService: LegacySubscriptionAuditService,
   appConfig: AppConfig,
   agentEntityTypeService: AgentEntityTypeService
 )(using ec: ExecutionContext)
@@ -210,9 +213,17 @@ extends Logging:
           case false => SubscriptionService.CallbackHandling.NotFound
         }
       case CallbackFailure =>
-        subscriptionWorkItemRepository.handleFailureCallback(callback.requestId).map {
-          case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound => SubscriptionService.CallbackHandling.NotFound
-          case _ => SubscriptionService.CallbackHandling.Handled
+        subscriptionWorkItemRepository.handleFailureCallback(callback.requestId).flatMap {
+          case SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed(workItem) =>
+            legacySubscriptionAuditService
+              .auditFailure(
+                arn = workItem.item.arn,
+                regime = workItem.item.regime,
+                failureReason = "Robotics callback failure"
+              )
+              .map(_ => SubscriptionService.CallbackHandling.Handled)
+          case AlreadyPermanentlyFailed | IgnoredAlreadySucceeded => Future.successful(SubscriptionService.CallbackHandling.Handled)
+          case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound => Future.successful(SubscriptionService.CallbackHandling.NotFound)
         }
     }
 

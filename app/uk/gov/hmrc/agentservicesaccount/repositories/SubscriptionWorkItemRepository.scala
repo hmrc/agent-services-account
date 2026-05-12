@@ -26,7 +26,6 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.{AgentReference, LegacyRegime, SubscriptionWorkItem}
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.*
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem, WorkItemFields, WorkItemRepository}
 
@@ -245,7 +244,15 @@ with Logging:
     )
     .toFuture()
     .flatMap { update =>
-      if update.getModifiedCount > 0 then Future.successful(SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed)
+      if update.getModifiedCount > 0 then
+        findByRequestId(requestId).map {
+          case Some(workItem) =>
+            SubscriptionWorkItemRepository.FailureCallbackHandling
+              .MarkedPermanentlyFailed(workItem)
+
+          case None =>
+            SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound
+        }
       else
         findByRequestId(requestId).map {
           case Some(workItem) if workItem.status == PermanentlyFailed => SubscriptionWorkItemRepository.FailureCallbackHandling.AlreadyPermanentlyFailed
@@ -273,7 +280,7 @@ with Logging:
 object SubscriptionWorkItemRepository:
   enum FailureCallbackHandling:
 
-    case MarkedPermanentlyFailed
+    case MarkedPermanentlyFailed(workItem: WorkItem[SubscriptionWorkItem])
     case AlreadyPermanentlyFailed
     case IgnoredAlreadySucceeded
     case NotFound

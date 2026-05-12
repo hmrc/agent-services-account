@@ -43,7 +43,7 @@ class KnownFactsWorker @Inject() (
   workItemService: KnownFactsWorkItemService,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   emailConnector: EmailConnector,
-  auditService: AuditService
+  legacySubscriptionAuditService: LegacySubscriptionAuditService
 )(using ec: ExecutionContext)
 extends Logging:
 
@@ -95,11 +95,19 @@ extends Logging:
               )
               .flatMap { _ =>
                 logger.info(s"[KnownFactsWorker] $regime enrolment allocated for work item: ${workItem.id}")
-                auditSuccess(workItem).flatMap { _ =>
-                  sendCompletionEmail(workItem.item)
-                    .recover { case NonFatal(error) => logger.warn(s"[KnownFactsWorker] $regime completion email failed for work item ${workItem.id}", error) }
-                    .flatMap(_ => workItemService.complete(workItem))
-                }
+                legacySubscriptionAuditService
+                  .auditSuccess(
+                    arn = workItem.item.arn,
+                    regime = regime,
+                    legacyAgentCode = Some(agentReference.value)
+                  )
+                  .flatMap { _ =>
+                    sendCompletionEmail(workItem.item)
+                      .recover { case NonFatal(error) =>
+                        logger.warn(s"[KnownFactsWorker] $regime completion email failed for work item ${workItem.id}", error)
+                      }
+                      .flatMap(_ => workItemService.complete(workItem))
+                  }
               }
         }
 
@@ -143,48 +151,12 @@ extends Logging:
 
   private def handleFailure(workItem: WorkItem[SubscriptionWorkItem])(using jobConfig: WorkItemJobConfig): Future[Done] =
     if workItem.failureCount + 1 >= jobConfig.maxAttempts then
-      auditFailure(workItem, "Max retry attempts reached in KnownFactsWorker")
+      legacySubscriptionAuditService
+        .auditFailure(
+          arn = workItem.item.arn,
+          regime = workItem.item.regime,
+          failureReason = "Max retry attempts reached in KnownFactsWorker"
+        )
         .flatMap(_ => workItemService.markPermanentlyFailed(workItem))
     else
       workItemService.markFailed(workItem)
-
-  private def auditSuccess(
-    workItem: WorkItem[SubscriptionWorkItem]
-  ): Future[Unit] =
-    given play.api.mvc.RequestHeader = RequestSupport.thereIsNoRequest
-
-    auditService.auditLegacySubscription(
-      arn = workItem.item.arn,
-      regime = workItem.item.regime,
-      isSuccessful = true,
-      legacyAgentCode = workItem.item.agentReference.map(_.value),
-      failureReason = None
-    ).map(_ => ())
-      .recover {
-        case NonFatal(error) =>
-          logger.warn(
-            s"[KnownFactsWorker] Success audit failed for work item ${workItem.id}",
-            error
-          )
-      }
-
-  private def auditFailure(
-    workItem: WorkItem[SubscriptionWorkItem],
-    reason: String
-  ): Future[Unit] =
-    given play.api.mvc.RequestHeader = RequestSupport.thereIsNoRequest
-
-    auditService.auditLegacySubscription(
-      arn = workItem.item.arn,
-      regime = workItem.item.regime,
-      isSuccessful = false,
-      legacyAgentCode = workItem.item.agentReference.map(_.value),
-      failureReason = Some(reason)
-    ).map(_ => ())
-      .recover {
-        case NonFatal(error) =>
-          logger.warn(
-            s"[KnownFactsWorker] Failure audit failed for work item ${workItem.id}",
-            error
-          )
-      }
