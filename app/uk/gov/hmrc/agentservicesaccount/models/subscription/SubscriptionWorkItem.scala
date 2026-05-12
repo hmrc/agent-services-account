@@ -19,8 +19,10 @@ package uk.gov.hmrc.agentservicesaccount.models.subscription
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
-import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
+import uk.gov.hmrc.agentservicesaccount.models.CredId
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
+import uk.gov.hmrc.crypto.Decrypter
+import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.json.JsonEncryption.stringEncrypterDecrypter
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
@@ -37,7 +39,8 @@ case class SubscriptionWorkItem(
   requestId: String = UUID.randomUUID().toString,
   roboticsInvokedAt: Option[Instant] = None,
   sessionId: Option[String] = None, // Local stub-only: ESP stubs require X-Session-ID; keep None for QA/Prod.
-  bearerToken: Option[String] = None // Local stub-only: ESP stubs require Authorization; never persist in QA/Prod.
+  bearerToken: Option[String] = None, // Local stub-only: ESP stubs require Authorization; never persist in QA/Prod.
+  entityType: String = AgentEntityType.Unknown
 )
 
 object SubscriptionWorkItem:
@@ -55,7 +58,8 @@ object SubscriptionWorkItem:
         (__ \ "requestId").read[String] and
         (__ \ "roboticsInvokedAt").readNullable[Instant](using MongoJavatimeFormats.instantFormat) and
         (__ \ "sessionId").readNullable[String] and
-        (__ \ "bearerToken").readNullable[String]
+        (__ \ "bearerToken").readNullable[String] and
+        (__ \ "entityType").readNullable[String].map(_.getOrElse(AgentEntityType.Unknown))
     )(SubscriptionWorkItem.apply)
   }
 
@@ -72,7 +76,8 @@ object SubscriptionWorkItem:
         (__ \ "requestId").write[String] and
         (__ \ "roboticsInvokedAt").writeNullable[Instant](using MongoJavatimeFormats.instantFormat) and
         (__ \ "sessionId").writeNullable[String] and
-        (__ \ "bearerToken").writeNullable[String]
+        (__ \ "bearerToken").writeNullable[String] and
+        (__ \ "entityType").write[String]
     )(o => Tuple.fromProductTyped(o))
 
   def mongoFormat(using crypto: Encrypter & Decrypter): Format[SubscriptionWorkItem] = Format(mongoReads, mongoWrites)

@@ -445,6 +445,26 @@ trait DesStubs {
       )
   )
 
+  def givenDESGetRegistrationData(
+    utr: Utr,
+    isIndividual: Boolean
+  ): StubMapping = stubFor(
+    post(urlEqualTo(s"/registration/individual/utr/${utr.value}"))
+      .willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody(registrationData(isIndividual))
+      )
+  )
+
+  def givenDESGetRegistrationNotFound(utr: Utr): StubMapping = stubFor(
+    post(urlEqualTo(s"/registration/individual/utr/${utr.value}"))
+      .willReturn(
+        aResponse()
+          .withStatus(404)
+      )
+  )
+
   def verifyDESGetAgentRegistrationData(
     identifier: TaxIdentifier,
     count: Int = 1
@@ -454,6 +474,19 @@ trait DesStubs {
         count,
         postRequestedFor(
           urlEqualTo(s"/registration/individual/${identifier.getClass.getSimpleName.toLowerCase}/${identifier.value}")
+        )
+      )
+    }
+
+  def verifyDESGetRegistrationData(
+    utr: Utr,
+    count: Int = 1
+  ): Unit =
+    eventually(Timeout(Span(5, Seconds))) {
+      verify(
+        count,
+        postRequestedFor(
+          urlEqualTo(s"/registration/individual/utr/${utr.value}")
         )
       )
     }

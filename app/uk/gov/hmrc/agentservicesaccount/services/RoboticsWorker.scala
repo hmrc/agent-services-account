@@ -18,16 +18,23 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import org.apache.pekko.Done
 import play.api.Logging
-import play.api.libs.json.{JsObject, Json}
-import uk.gov.hmrc.agentservicesaccount.config.{AppConfig, WorkItemJobConfig}
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
+import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.RoboticsInvocationConnector
-import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.{CorrelationId, RequestId}
+import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
+import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.RequestId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
-import uk.gov.hmrc.http.{Authorization, HeaderCarrier, SessionId}
+import uk.gov.hmrc.http.Authorization
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.SessionId
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 @Singleton
@@ -39,12 +46,6 @@ class RoboticsWorker @Inject() (
   ec: ExecutionContext
 )
 extends Logging:
-
-  // Robotics OpenAPI spec requires `entityType` (e.g. Sole Trader / Partnership / Limited Company).
-  // However, APB-10568 does not introduce capture/validation of entity type in the inbound SA request yet (see story N1),
-  // and the field spec marks the source as TBC. For now, we send "Sole Trader" as a placeholder, to be replaced once
-  // entity type is captured and the contract is finalised.
-  private val defaultEntityType: String = "Sole Trader"
 
   def runOnce(using
     jobConfig: WorkItemJobConfig,
@@ -65,16 +66,16 @@ extends Logging:
   }
 
   private def createRoboticsRequestBodyForStubs(
-                                         workItem: WorkItem[SubscriptionWorkItem],
-                                         targetSystem: TargetSystem,
-                                         request: SubscriptionRequest
-                                       ) = {
+    workItem: WorkItem[SubscriptionWorkItem],
+    targetSystem: TargetSystem,
+    request: SubscriptionRequest
+  ) = {
 
     val roboticsArgumentValueForStubs = RoboticsArgumentValueForStubs(
       requestId = workItem.item.requestId,
       targetSystem = targetSystem.toString,
       postcode = request.address.postCode,
-      operationRequired = Operation.CREATE.toString,
+      operationRequired = Operation.CREATE.toString
     )
 
     val roboticsArgumentForStubs = RoboticsArgumentForStubs(
@@ -98,16 +99,16 @@ extends Logging:
   }
 
   private def createRoboticsRequestBodyForAllEnvironments(
-                                                   workItem: WorkItem[SubscriptionWorkItem],
-                                                   targetSystem: TargetSystem,
-                                                   request: SubscriptionRequest
-                                                 ) = {
+    workItem: WorkItem[SubscriptionWorkItem],
+    targetSystem: TargetSystem,
+    request: SubscriptionRequest
+  ) = {
 
     val roboticsArgumentValue = RoboticsArgumentValue(
       requestId = workItem.item.requestId,
       targetSystem = targetSystem.toString,
       operationRequired = Operation.CREATE.toString,
-      entityType = defaultEntityType,
+      entityType = workItem.item.entityType,
       agentName = request.agentName,
       tradingAs = request.agentName,
       isAbroad = request.isAbroad,
@@ -165,14 +166,22 @@ extends Logging:
         case LegacyRegime.SA => TargetSystem.CESA
         case LegacyRegime.CT => TargetSystem.COTAX
       }
-    
+
     val operationData: JsObject = {
 
       if appConfig.stubsCompatibilityMode then
         // TODO update stubs to accept the same contract as QA/Prod, then remove this branch. Abroad currently not supported by the stub
-        createRoboticsRequestBodyForStubs(workItem, targetSystem, request)
+        createRoboticsRequestBodyForStubs(
+          workItem,
+          targetSystem,
+          request
+        )
       else
-        createRoboticsRequestBodyForAllEnvironments(workItem, targetSystem, request)
+        createRoboticsRequestBodyForAllEnvironments(
+          workItem,
+          targetSystem,
+          request
+        )
       end if
 
     }

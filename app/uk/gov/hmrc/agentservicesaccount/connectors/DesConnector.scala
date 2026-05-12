@@ -21,16 +21,23 @@ import org.apache.pekko.actor.ActorSystem
 import play.api.Logging
 import play.api.libs.json.*
 import play.api.mvc.RequestHeader
+import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationRequest
+import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationResponse
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
+import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.HeaderNames
 import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.StringContextOps
+import play.api.http.Status.NOT_FOUND
+import play.api.http.Status.OK
 
 import java.net.URL
 import java.util.UUID
@@ -62,6 +69,26 @@ with Logging {
     val url = url"$baseUrl/registration/personal-details/arn/${arn.value}"
     agentCacheProvider.agentDetailsCache(arn.value) {
       getWithDesHeadersWithRetry[AgentDetailsDesResponse]("GetAgentRecordCached", url)
+    }
+  }
+
+  // API #1163 / #1164 (API 1 / 4) Registration. Existing agent-subscription uses the individual path for UTR lookups.
+  def getRegistration(utr: Utr)(using request: RequestHeader): Future[Option[DesRegistrationResponse]] = {
+    val url = url"$baseUrl/registration/individual/utr/${utr.value}"
+    retryFor[Option[DesRegistrationResponse]](s"GetRegistration connector post $url")(retryCondition) {
+      httpV2
+        .post(url)
+        .setHeader(desHeaders(
+          authorizationToken,
+          environment
+        )*)
+        .withBody(Json.toJson(DesRegistrationRequest()))
+        .execute[HttpResponse]
+        .flatMap {
+          case response if response.status == OK => response.as[DesRegistrationResponse].map(Some(_))
+          case response if response.status == NOT_FOUND => Future.successful(None)
+          case response => response.error
+        }
     }
   }
 
