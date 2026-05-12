@@ -260,8 +260,7 @@ with Logging:
             SubscriptionWorkItemRepository.FailureCallbackHandling
               .MarkedPermanentlyFailed(workItem)
 
-          case None =>
-            SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound
+          case None => SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound
         }
       else
         findByRequestId(requestId).map {

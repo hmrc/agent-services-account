@@ -260,7 +260,9 @@ extends Logging:
               case _ =>
                 SubscriptionInfo(
                   regime = regime,
-                  subscriptionStatus = optWorkItem.fold[SubscriptionStatus](NotSubscribed)(workItem => SubscriptionStatus.fromProcessingStatus(workItem.status))
+                  subscriptionStatus =
+                    optWorkItem.fold[SubscriptionStatus](NotSubscribed)(workItem => SubscriptionStatus.fromProcessingStatus(workItem.status)),
+                  creationDate = optWorkItem.map(_.receivedAt)
                 )
             }
         }

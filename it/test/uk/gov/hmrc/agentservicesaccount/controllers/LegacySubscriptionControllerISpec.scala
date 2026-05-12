@@ -187,6 +187,8 @@ with AgentAuthStubs:
 
     "return 200 with the correct information for a permanently failed work item" in:
       isLoggedInAsASAgent(testArn)
+      givenEs3CallSucceeds(testGroupId)()
+      givenGetMappingsCallSucceeds(testArn, SA)()
 
       val model =
         repository.pushNew(SubscriptionWorkItem(

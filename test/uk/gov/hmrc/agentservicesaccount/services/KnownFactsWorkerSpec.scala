@@ -37,7 +37,8 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
-import uk.gov.hmrc.agentservicesaccount.mocks.{MockAppConfig, MockLegacySubscriptionAuditService}
+import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
+import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
@@ -45,7 +46,8 @@ import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 import java.time.Instant
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.*
 
 class KnownFactsWorkerSpec
@@ -140,7 +142,12 @@ with MockLegacySubscriptionAuditService:
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    reset(workItemService, connector, emailConnector, mockLegacySubscriptionAuditService)
+    reset(
+      workItemService,
+      connector,
+      emailConnector,
+      mockLegacySubscriptionAuditService
+    )
 
   private val worker =
     new KnownFactsWorker(

@@ -134,8 +134,7 @@ extends Logging:
             )
           )
         )
-      case _ =>
-        Future.unit
+      case _ => Future.unit
 
   private def serviceName(regime: LegacyRegime): String =
     regime match

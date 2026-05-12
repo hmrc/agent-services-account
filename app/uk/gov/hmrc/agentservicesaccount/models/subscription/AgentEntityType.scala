@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
 object AgentEntityType:
+
   val LimitedCompany = "Limited Company"
   val Partnership = "Partnership"
   val SoleTrader = "Sole Trader"

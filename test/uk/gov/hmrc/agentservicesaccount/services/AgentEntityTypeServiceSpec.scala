@@ -43,7 +43,12 @@ with BeforeAndAfterEach:
   private val appConfig = mock[AppConfig]
   private val desConnector = mock[DesConnector]
   private val hipConnector = mock[HipConnector]
-  private val service = new AgentEntityTypeService(appConfig, desConnector, hipConnector)
+  private val service =
+    new AgentEntityTypeService(
+      appConfig,
+      desConnector,
+      hipConnector
+    )
 
   private val testArn = Arn("AARN0000001")
   private val testUtr = Utr("7000000002")
@@ -135,4 +140,8 @@ with BeforeAndAfterEach:
 
   override protected def beforeEach(): Unit =
     super.beforeEach()
-    reset(appConfig, desConnector, hipConnector)
+    reset(
+      appConfig,
+      desConnector,
+      hipConnector
+    )
