@@ -63,7 +63,7 @@ with Logging {
   // clients, stride
   def clientGetWithChecks(arn: Arn): Action[AnyContent] = internalAuth.async { implicit request =>
     agentEntityService
-      .getAgentDetailsWithChecks(arn)
+      .getAgentDetailsWithChecks(arn, doAutoMapping = false)
       .map(entityCheckResult => Ok(Json.toJson(entityCheckResult.agentRecord)))
   }
 

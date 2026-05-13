@@ -35,7 +35,7 @@ extends MockitoSugar {
   val mockAgentEntityService: AgentDetailsService = mock[AgentDetailsService]
 
   def mockVerifyEntitySuccess(arn: Arn)(returns: EntityCheckResult): Unit = {
-    when(mockAgentEntityService.getAgentDetailsWithChecks(meq(arn))(using any[RequestHeader]))
+    when(mockAgentEntityService.getAgentDetailsWithChecks(meq(arn), any[Boolean])(using any[RequestHeader]))
       .thenReturn(Future.successful(returns))
   }
 
