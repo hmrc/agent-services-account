@@ -16,21 +16,20 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
-case class RoboticsRequestForStubs (
-                             requestData: Seq[RoboticsRequestDataForStubs]
-                           )
+case class RoboticsRequestForStubs(
+  requestData: Seq[RoboticsRequestDataForStubs]
+)
 
 object RoboticsRequestForStubs {
 
-  implicit val roboticsRequestForStubsWrites: Writes[RoboticsRequestForStubs] =
-    Writes {
-      request =>
-        Json.obj(
-          "requestData" -> request.requestData,
-        )
-    }
+  implicit val roboticsRequestForStubsWrites: Writes[RoboticsRequestForStubs] = Writes {
+    request =>
+      Json.obj(
+        "requestData" -> request.requestData
+      )
+  }
 
 }
-

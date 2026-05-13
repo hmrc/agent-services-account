@@ -15,7 +15,7 @@
  */
 
 package uk.gov.hmrc.agentservicesaccount.controllers
-import cats.data.EitherT
+
 import play.api.Logging
 import play.api.libs.json.*
 import play.api.mvc.*
@@ -23,18 +23,20 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
-import uk.gov.hmrc.agentservicesaccount.controllers.RequestValidation.*
 import uk.gov.hmrc.agentservicesaccount.models.AgentRecordUpdateRequest
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.toHipAmendPayload
 import uk.gov.hmrc.agentservicesaccount.models.dms.DmsSubmissionReference
-import uk.gov.hmrc.agentservicesaccount.services.{AgentDetailsService, DmsService}
+import uk.gov.hmrc.agentservicesaccount.services.AgentDetailsService
+import uk.gov.hmrc.agentservicesaccount.services.DmsService
 import uk.gov.hmrc.internalauth.client.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class AgentDetailsController @Inject() (
@@ -82,20 +84,19 @@ with Logging {
         }
     }
 
-  def agentRecordUpdate: Action[AnyContent] = authActions.authorisedWithArn { request => arn =>
-    given Request[AnyContent] = request
-    (
-      for
-        json       <- request.body.toJsonEitherT
-        rawRecord  <- json.validateEitherT[AgentRecordUpdateRequest]
-        hipPayload <- rawRecord.toHipAmendPayload.toResultEitherT
-        response   <- EitherT.liftF(hipConnector.putAgentRecord(arn, hipPayload))
-      yield Ok(Json.obj("processingDate" -> response.success.processingDate))
-    ).value.map {
-      case Right(result) => result
-      case Left(error)   => error
-    }
-  }
+  def agentRecordUpdate: Action[AnyContent] = authActions.authorisedWithArn: request =>
+    arn =>
+      given Request[AnyContent] = request
+
+      request.body.asJson.map(_.validate[AgentRecordUpdateRequest]) match
+        case Some(JsSuccess(updateRequest, _)) =>
+          for
+            oldRecord <- agentEntityService.getAgentDetailsWithChecks(arn)
+            hipPayload = updateRequest.toHipAmendPayload(oldRecord.agentRecord)(logger)
+            response <- hipConnector.putAgentRecord(arn, hipPayload)
+          yield Ok(Json.obj("processingDate" -> response.success.processingDate))
+        case Some(JsError(errors)) => Future.successful(BadRequest(s"Invalid agent record update request, errors: $errors"))
+        case None => Future.successful(BadRequest("Missing JSON body for agent record update"))
 
   private val strideRoles = Seq(appConfig.manuallyAssuredStrideRole)
 

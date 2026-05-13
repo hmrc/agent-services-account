@@ -27,11 +27,13 @@ import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
 
 trait Cache[T] {
+
   def apply(key: String)(
     body: => Future[T]
   )(implicit ec: ExecutionContext): Future[T]
 
   def delete(key: String)(using ec: ExecutionContext): Future[Unit] = Future.unit
+
 }
 
 class DoNotCache[T]

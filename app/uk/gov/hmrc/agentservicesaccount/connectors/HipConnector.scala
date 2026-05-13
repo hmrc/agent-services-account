@@ -96,7 +96,10 @@ with Logging {
     )
   }
 
-  def putAgentRecord(arn: Arn, payload: HipAmendPayload)(using request: RequestHeader): Future[HipAmendResponse] =
+  def putAgentRecord(
+    arn: Arn,
+    payload: HipAmendPayload
+  )(using request: RequestHeader): Future[HipAmendResponse] =
     val url = url"$baseUrl/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"
     retryFor[HipAmendResponse](s"HIP put $url")(retryCondition) {
       httpV2
@@ -119,14 +122,15 @@ with Logging {
       suspensionStatus = s.suspensionStatus == "T",
       regimes = s.regime.filter(_.nonEmpty).map(_.toSet)
     )
-    val amlsDetails = for {
-      sb <- s.supervisoryBody
-      mn <- s.membershipNumber
-    } yield AmlsDetails(
-      SupervisoryBody(sb),
-      MembershipNumber(mn),
-      s.evidenceObjectReference.map(EvidenceObjectReference(_))
-    )
+    val amlsDetails =
+      for {
+        sb <- s.supervisoryBody
+        mn <- s.membershipNumber
+      } yield AmlsDetails(
+        SupervisoryBody(sb),
+        MembershipNumber(mn),
+        s.evidenceObjectReference.map(EvidenceObjectReference(_))
+      )
     AgentDetailsDesResponse(
       uniqueTaxReference = s.utr.map(Utr(_)),
       agencyDetails = Some(

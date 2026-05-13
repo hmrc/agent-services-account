@@ -52,10 +52,11 @@ with HttpErrorFunctions:
     payload: JsObject,
     correlationId: CorrelationId
   )(using HeaderCarrier): Future[Done] = {
-    val roboticsURL = if appConfig.stubsCompatibilityMode then
-      s"$baseUrl/RTServer/rest/nice/rti/ra/invocation"
-    else
-      s"$baseUrl/customer-management-and-engagement/automation/invocations"
+    val roboticsURL =
+      if appConfig.stubsCompatibilityMode then
+        s"$baseUrl/RTServer/rest/nice/rti/ra/invocation"
+      else
+        s"$baseUrl/customer-management-and-engagement/automation/invocations"
     end roboticsURL
 
     http

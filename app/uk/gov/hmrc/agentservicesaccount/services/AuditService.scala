@@ -22,7 +22,11 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.audit.{AgentCheckAuditEvent, AgentCheckFailureNotificationAuditEvent, AuditDetail, EmailData, LegacySubscriptionAuditEvent}
+import uk.gov.hmrc.agentservicesaccount.models.audit.AgentCheckAuditEvent
+import uk.gov.hmrc.agentservicesaccount.models.audit.AgentCheckFailureNotificationAuditEvent
+import uk.gov.hmrc.agentservicesaccount.models.audit.AuditDetail
+import uk.gov.hmrc.agentservicesaccount.models.audit.EmailData
+import uk.gov.hmrc.agentservicesaccount.models.audit.LegacySubscriptionAuditEvent
 import uk.gov.hmrc.agentservicesaccount.models.AgentCheckOutcome
 import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
@@ -93,7 +97,7 @@ class AuditService @Inject() (
       )
     )
   }
-  
+
   private def audit[A <: AuditDetail: Writes](a: A)(using request: RequestHeader): Future[AuditResult] = {
     auditConnector
       .sendExtendedEvent(

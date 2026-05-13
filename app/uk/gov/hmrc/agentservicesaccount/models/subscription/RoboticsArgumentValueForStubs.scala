@@ -16,27 +16,26 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class RoboticsArgumentValueForStubs(
-                                                requestId: String,
-                                                targetSystem: String,
-                                                postcode: Option[String] = None,
-                                                operationRequired: String,
-                                              )
+  requestId: String,
+  targetSystem: String,
+  postcode: Option[String] = None,
+  operationRequired: String
+)
 
 object RoboticsArgumentValueForStubs {
-  
-  implicit val roboticsArgumentValueForStubsWrites: Writes[RoboticsArgumentValueForStubs] =
-    Writes {
-      value =>
-        Json.obj(
-          "requestId" -> value.requestId,
-          "targetSystem" -> value.targetSystem,
-          "postcode" -> value.postcode,
-          "operationRequired" -> value.operationRequired,
-        )
-  }
 
+  implicit val roboticsArgumentValueForStubsWrites: Writes[RoboticsArgumentValueForStubs] = Writes {
+    value =>
+      Json.obj(
+        "requestId" -> value.requestId,
+        "targetSystem" -> value.targetSystem,
+        "postcode" -> value.postcode,
+        "operationRequired" -> value.operationRequired
+      )
+  }
 
 }

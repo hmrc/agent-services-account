@@ -37,7 +37,8 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
-import uk.gov.hmrc.agentservicesaccount.mocks.{MockAppConfig, MockLegacySubscriptionAuditService}
+import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
+import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
@@ -45,7 +46,8 @@ import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 import java.time.Instant
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.*
 
 class KnownFactsWorkerSpec
@@ -140,7 +142,12 @@ with MockLegacySubscriptionAuditService:
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    reset(workItemService, connector, emailConnector, mockLegacySubscriptionAuditService)
+    reset(
+      workItemService,
+      connector,
+      emailConnector,
+      mockLegacySubscriptionAuditService
+    )
 
   private val worker =
     new KnownFactsWorker(
@@ -171,7 +178,11 @@ with MockLegacySubscriptionAuditService:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(None))
 
         when(workItemService.markFailed(workItem)).thenReturn(Future.successful(Done))
@@ -195,7 +206,11 @@ with MockLegacySubscriptionAuditService:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
@@ -222,10 +237,11 @@ with MockLegacySubscriptionAuditService:
       }
 
       "send a service-specific completion email after allocating the enrolment" in {
-        val subscriptionRequestWithEmail = subscriptionRequest match
-          case request: PayeSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
-          case request: SaSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
-          case request: CtSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+        val subscriptionRequestWithEmail =
+          subscriptionRequest match
+            case request: PayeSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+            case request: SaSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+            case request: CtSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
 
         val workItem = buildWorkItem(
           regime,
@@ -239,7 +255,11 @@ with MockLegacySubscriptionAuditService:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
@@ -272,10 +292,11 @@ with MockLegacySubscriptionAuditService:
       }
 
       "complete the work item when the completion email fails after allocating the enrolment" in {
-        val subscriptionRequestWithEmail = subscriptionRequest match
-          case request: PayeSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
-          case request: SaSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
-          case request: CtSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+        val subscriptionRequestWithEmail =
+          subscriptionRequest match
+            case request: PayeSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+            case request: SaSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
+            case request: CtSubscriptionRequest => request.copy(emailAddress = Some("agent@example.com"))
 
         val workItem = buildWorkItem(
           regime,
@@ -289,7 +310,11 @@ with MockLegacySubscriptionAuditService:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
@@ -324,7 +349,11 @@ with MockLegacySubscriptionAuditService:
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
 
-        when(connector.queryKnownFactsForAgent(eqTo(regime), eqTo("A12345"), eqTo(expectedValidatedPostcode(regime)))(using any[HeaderCarrier]))
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(None))
 
         when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
@@ -372,8 +401,7 @@ with MockLegacySubscriptionAuditService:
       case _ => None
     }
 
-  private def expectedValidatedPostcode(regime: LegacyRegime): Option[PayePostcode.Valid] =
-    PayePostcode.from(expectedPostcode(regime))
+  private def expectedValidatedPostcode(regime: LegacyRegime): Option[PayePostcode.Valid] = PayePostcode.from(expectedPostcode(regime))
 
   private def expectedServiceName(regime: LegacyRegime): String =
     regime match

@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
-import play.api.libs.json.{Format, Json, Writes}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class SubscriptionAddress(
   line1: String,

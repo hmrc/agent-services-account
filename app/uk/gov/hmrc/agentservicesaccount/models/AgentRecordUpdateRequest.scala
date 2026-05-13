@@ -18,10 +18,25 @@ package uk.gov.hmrc.agentservicesaccount.models
 
 import play.api.libs.json.*
 
-case class AgentRecordUpdateRequest(
-  amlsDetails: Option[AmlsDetails],
-  agencyDetails: Option[AgencyDetails]
+sealed trait AgentRecordUpdateRequest
+
+case class AmlsUpdateRequest(
+  amlsDetails: AmlsDetails
 )
+extends AgentRecordUpdateRequest
+
+case class AgencyDetailsUpdateRequest(
+  agencyDetails: AgencyDetails
+)
+extends AgentRecordUpdateRequest
 
 object AgentRecordUpdateRequest:
-  given Format[AgentRecordUpdateRequest] = Json.format[AgentRecordUpdateRequest]
+  given Reads[AgentRecordUpdateRequest] = Reads { json =>
+    ((json \ "amlsDetails").validateOpt[AmlsDetails], (json \ "agencyDetails").validateOpt[AgencyDetails]) match {
+      case (JsSuccess(Some(amlsDetails), _), JsSuccess(None, _)) => JsSuccess(AmlsUpdateRequest(amlsDetails))
+      case (JsSuccess(None, _), JsSuccess(Some(agencyDetails), _)) => JsSuccess(AgencyDetailsUpdateRequest(agencyDetails))
+      case (JsSuccess(None, _), JsSuccess(None, _)) => JsError("Invalid update request: neither 'amlsDetails' nor 'agencyDetails' provided")
+      case (JsSuccess(Some(_), _), JsSuccess(Some(_), _)) => JsError("Invalid update request: both 'amlsDetails' and 'agencyDetails' provided")
+      case _ => JsError("Invalid update request: unable to parse 'amlsDetails' or 'agencyDetails'")
+    }
+  }

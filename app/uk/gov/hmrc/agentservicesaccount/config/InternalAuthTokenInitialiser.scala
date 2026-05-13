@@ -39,7 +39,7 @@ abstract class InternalAuthTokenInitialiser {
 
 @Singleton
 class NoOpInternalAuthTokenInitialiser @Inject()
-  extends InternalAuthTokenInitialiser {
+extends InternalAuthTokenInitialiser {
   override val initialised: Future[Done] = Future.successful(Done)
 }
 

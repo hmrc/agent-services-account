@@ -29,7 +29,9 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext
 import play.api.test.FakeRequest
-import play.api.mvc.{AnyContentAsEmpty, Request, RequestHeader}
+import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.Request
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 class AuditServiceSpec

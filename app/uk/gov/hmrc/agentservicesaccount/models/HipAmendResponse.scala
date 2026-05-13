@@ -26,5 +26,4 @@ object HipAmendSuccess:
 case class HipAmendResponse(success: HipAmendSuccess)
 
 object HipAmendResponse:
-  given Reads[HipAmendResponse] =
-    (__ \ "success").read[HipAmendSuccess].map(HipAmendResponse.apply)
+  given Reads[HipAmendResponse] = (__ \ "success").read[HipAmendSuccess].map(HipAmendResponse.apply)

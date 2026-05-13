@@ -18,7 +18,9 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verify, when, reset}
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.when
+import org.mockito.Mockito.reset
 import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
@@ -167,7 +169,12 @@ with BeforeAndAfterEach {
     when(agentEntityTypeService.resolve(any[Arn])(using any[RequestHeader]))
       .thenReturn(Future.successful(AgentEntityType.SoleTrader))
 
-    reset(connector, appConfig, espConnector, agentMappingConnector)
+    reset(
+      connector,
+      appConfig,
+      espConnector,
+      agentMappingConnector
+    )
   }
 
   "startSubscriptionProcess" when {

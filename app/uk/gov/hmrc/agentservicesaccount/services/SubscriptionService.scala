@@ -233,7 +233,7 @@ extends Logging:
     regimes: Seq[LegacyRegime]
   )(using requestHeader: RequestHeader): Future[Seq[SubscriptionInfo]] = Future.sequence(regimes.map { regime =>
     subscriptionWorkItemRepository.findByArnAndRegime(arn, regime).flatMap {
-      case Some(workItem) =>
+      case Some(workItem) if workItem.status != PermanentlyFailed =>
         Future.successful(
           SubscriptionInfo(
             regime = regime,
@@ -241,7 +241,7 @@ extends Logging:
             creationDate = Some(workItem.receivedAt)
           )
         )
-      case None =>
+      case optWorkItem =>
         enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).flatMap {
           case enrolments if enrolments.exists(e => e.service == regime.enrolmentKey && e.state == "Activated") =>
             Future.successful(
@@ -260,7 +260,9 @@ extends Logging:
               case _ =>
                 SubscriptionInfo(
                   regime = regime,
-                  subscriptionStatus = NotSubscribed
+                  subscriptionStatus =
+                    optWorkItem.fold[SubscriptionStatus](NotSubscribed)(workItem => SubscriptionStatus.fromProcessingStatus(workItem.status)),
+                  creationDate = optWorkItem.map(_.receivedAt)
                 )
             }
         }

@@ -24,20 +24,24 @@ import uk.gov.hmrc.crypto.Encrypter
 import AmlsDetails.*
 
 object AmlsDetails:
+
   opaque type SupervisoryBody = String
   object SupervisoryBody:
+
     def apply(value: String): SupervisoryBody = value
     given Format[SupervisoryBody] = Format(Reads.StringReads.map(apply), Writes.StringWrites)
     extension (sb: SupervisoryBody) def value: String = sb
 
   opaque type MembershipNumber = String
   object MembershipNumber:
+
     def apply(value: String): MembershipNumber = value
     given Format[MembershipNumber] = Format(Reads.StringReads.map(apply), Writes.StringWrites)
     extension (mn: MembershipNumber) def value: String = mn
 
   opaque type EvidenceObjectReference = String
   object EvidenceObjectReference:
+
     def apply(value: String): EvidenceObjectReference = value
     given Format[EvidenceObjectReference] = Format(Reads.StringReads.map(apply), Writes.StringWrites)
     extension (eor: EvidenceObjectReference) def value: String = eor

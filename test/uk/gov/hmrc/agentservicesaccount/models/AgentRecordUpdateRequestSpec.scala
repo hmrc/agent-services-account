@@ -16,12 +16,39 @@
 
 package uk.gov.hmrc.agentservicesaccount.models
 
+import play.api.Logger
 import play.api.libs.json.*
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.toHipAmendPayload
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
-class AgentRecordUpdateRequestSpec extends UnitSpec {
+class AgentRecordUpdateRequestSpec
+extends UnitSpec {
+
+  val logger = Logger("")
+  val oldRecord = AgentDetailsDesResponse(
+    uniqueTaxReference = Some(Utr("1234567890")),
+    agencyDetails = Some(AgencyDetails(
+      agencyName = Some("Old Agency Name"),
+      agencyEmail = Some("test@email.com"),
+      agencyTelephone = Some("07123456789"),
+      agencyAddress = Some(BusinessAddress(
+        addressLine1 = "Old Address Line 1",
+        addressLine2 = Some("Old Address Line 2"),
+        addressLine3 = Some("Old Address Line 3"),
+        postalCode = Some("AA1 1AA"),
+        countryCode = "GB"
+      ))
+    )),
+    amlsDetails = Some(AmlsDetails(
+      supervisoryBody = SupervisoryBody("SRA"),
+      membershipNumber = MembershipNumber("XAML00000123456"),
+      evidenceObjectReference = Some(EvidenceObjectReference("old-ref-456"))
+    )),
+    suspensionDetails = None,
+    isAnIndividual = None
+  )
 
   "UpdateStatus" should {
     "serialise to JSON strings" in {
@@ -75,8 +102,13 @@ class AgentRecordUpdateRequestSpec extends UnitSpec {
         )
       )
       val request = json.as[AgentRecordUpdateRequest]
-      request.amlsDetails shouldBe defined
-      request.agencyDetails shouldBe empty
+      request shouldBe AmlsUpdateRequest(
+        AmlsDetails(
+          supervisoryBody = SupervisoryBody("SRA"),
+          membershipNumber = MembershipNumber("XAML00000123456"),
+          evidenceObjectReference = None
+        )
+      )
     }
 
     "parse with agencyDetails only" in {
@@ -87,11 +119,17 @@ class AgentRecordUpdateRequestSpec extends UnitSpec {
         )
       )
       val request = json.as[AgentRecordUpdateRequest]
-      request.amlsDetails shouldBe empty
-      request.agencyDetails shouldBe defined
+      request shouldBe AgencyDetailsUpdateRequest(
+        AgencyDetails(
+          agencyName = Some("Test Agency"),
+          agencyEmail = Some("test@example.com"),
+          agencyTelephone = None,
+          agencyAddress = None
+        )
+      )
     }
 
-    "parse with both sections" in {
+    "fail to parse with both sections" in {
       val json = Json.obj(
         "amlsDetails" -> Json.obj(
           "supervisoryBody" -> "SRA",
@@ -101,138 +139,123 @@ class AgentRecordUpdateRequestSpec extends UnitSpec {
           "agencyName" -> "Test Agency"
         )
       )
-      val request = json.as[AgentRecordUpdateRequest]
-      request.amlsDetails shouldBe defined
-      request.agencyDetails shouldBe defined
+      val request = json.validate[AgentRecordUpdateRequest]
+      request shouldBe a[JsError]
     }
 
-    "parse with neither section" in {
+    "fail to parse with neither section" in {
       val json = Json.obj()
-      val request = json.as[AgentRecordUpdateRequest]
-      request.amlsDetails shouldBe empty
-      request.agencyDetails shouldBe empty
+      val request = json.validate[AgentRecordUpdateRequest]
+      request shouldBe a[JsError]
+
+    }
+
+    "fail to parse with invalid json" in {
+      val json = Json.obj(
+        "amlsDetails" -> "invalid"
+      )
+      val request = json.validate[AgentRecordUpdateRequest]
+      request shouldBe a[JsError]
     }
   }
 
   "toHipAmendPayload" should {
     "map AMLS details correctly" in {
-      val request = AgentRecordUpdateRequest(
-        amlsDetails = Some(AmlsDetails(
-          supervisoryBody = SupervisoryBody("SRA"),
-          membershipNumber = MembershipNumber("XAML00000123456"),
-          evidenceObjectReference = Some(EvidenceObjectReference("ref-123"))
-        )),
-        agencyDetails = None
-      )
+      val request = AmlsUpdateRequest(AmlsDetails(
+        supervisoryBody = SupervisoryBody("SRA"),
+        membershipNumber = MembershipNumber("XAML00000123456"),
+        evidenceObjectReference = Some(EvidenceObjectReference("ref-123"))
+      ))
 
-      request.toHipAmendPayload match
-        case Right(payload) =>
-          payload.supervisoryBody shouldBe Some("SRA")
-          payload.membershipNumber shouldBe Some("XAML00000123456")
-          payload.evidenceObjectReference shouldBe Some("ref-123")
+      val payload = request.toHipAmendPayload(oldRecord)(logger)
+      payload.supervisoryBody shouldBe Some("SRA")
+      payload.membershipNumber shouldBe Some("XAML00000123456")
+      payload.evidenceObjectReference shouldBe Some("ref-123")
 
-          payload.name shouldBe None
-          payload.addr1 shouldBe None
-          payload.amlSupervisionUpdateStatus shouldBe None
-          payload.updateDetailsStatus shouldBe None
-        case _ =>
-          fail()
-
-
-
+      payload.name shouldBe None
+      payload.addr1 shouldBe None
+      payload.amlSupervisionUpdateStatus shouldBe None
+      payload.updateDetailsStatus shouldBe None
     }
 
     "map agency details correctly" in {
-      val request = AgentRecordUpdateRequest(
-        amlsDetails = None,
-        agencyDetails = Some(AgencyDetails(
-          agencyName = Some("Test Agency"),
-          agencyEmail = Some("test@example.com"),
-          agencyTelephone = Some("07123456789"),
-          agencyAddress = Some(BusinessAddress(
-            addressLine1 = "1 High Street",
-            addressLine2 = Some("Floor 2"),
-            addressLine3 = Some("Town Centre"),
-            addressLine4 = Some("Telford"),
-            postalCode = Some("TF1 1AA"),
-            countryCode = "GB"
-          ))
+      val request = AgencyDetailsUpdateRequest(AgencyDetails(
+        agencyName = Some("Test Agency"),
+        agencyEmail = Some("test@example.com"),
+        agencyTelephone = Some("07123456789"),
+        agencyAddress = Some(BusinessAddress(
+          addressLine1 = "1 High Street",
+          addressLine2 = Some("Floor 2"),
+          addressLine3 = Some("Town Centre"),
+          postalCode = Some("TF1 1AA"),
+          countryCode = "GB"
         ))
-      )
+      ))
 
-      request.toHipAmendPayload match {
-        case Right(payload) =>
-          payload.name shouldBe Some("Test Agency")
-          payload.email shouldBe Some("test@example.com")
-          payload.phone shouldBe Some("07123456789")
-          payload.addr1 shouldBe Some("1 High Street")
-          payload.addr2 shouldBe Some("Floor 2")
-          payload.addr3 shouldBe Some("Town Centre")
-          payload.addr4 shouldBe Some("Telford")
-          payload.postcode shouldBe Some("TF1 1AA")
-          payload.country shouldBe Some("GB")
+      val payload = request.toHipAmendPayload(oldRecord)(logger)
+      payload.name shouldBe Some("Test Agency")
+      payload.email shouldBe Some("test@example.com")
+      payload.phone shouldBe Some("07123456789")
+      payload.addr1 shouldBe Some("1 High Street")
+      payload.addr2 shouldBe Some("Floor 2")
+      payload.addr3 shouldBe Some("Town Centre")
+      payload.addr4 shouldBe None
+      payload.postcode shouldBe Some("TF1 1AA")
+      payload.country shouldBe Some("GB")
 
-          payload.supervisoryBody shouldBe None
-          payload.updateDetailsStatus shouldBe None
-          payload.amlSupervisionUpdateStatus shouldBe None
-
-        case _ =>
-          fail()
-      }
+      payload.supervisoryBody shouldBe None
+      payload.updateDetailsStatus shouldBe None
+      payload.amlSupervisionUpdateStatus shouldBe None
     }
 
-    "return Left when both sections are provided" in {
-      val request = AgentRecordUpdateRequest(
-        amlsDetails = Some(AmlsDetails(
-          supervisoryBody = SupervisoryBody("SRA"),
-          membershipNumber = MembershipNumber("XAML00000123456")
-        )),
-        agencyDetails = Some(AgencyDetails(
-          agencyName = Some("Test Agency"),
-          agencyEmail = Some("test@example.com"),
-          agencyTelephone = None,
-          agencyAddress = None
+    "fill in fallback values for optional address lines when old record has them defined but update request does not override them" in {
+      val request = AgencyDetailsUpdateRequest(AgencyDetails(
+        agencyName = Some("Test Agency"),
+        agencyEmail = Some("test@example.com"),
+        agencyTelephone = Some("07123456789"),
+        agencyAddress = Some(BusinessAddress(
+          addressLine1 = "1 High Street",
+          addressLine2 = None,
+          addressLine3 = None,
+          addressLine4 = None,
+          postalCode = None,
+          countryCode = "EE"
         ))
-      )
+      ))
 
-      request.toHipAmendPayload shouldBe a[Left[?, ?]]
-      request.toHipAmendPayload.left.foreach(_ should include("cannot both"))
-    }
+      val payload = request.toHipAmendPayload(oldRecord)(logger)
+      payload.name shouldBe Some("Test Agency")
+      payload.email shouldBe Some("test@example.com")
+      payload.phone shouldBe Some("07123456789")
+      payload.addr1 shouldBe Some("1 High Street")
+      payload.addr2 shouldBe Some("Address Line 2")
+      payload.addr3 shouldBe Some("Address Line 3")
+      payload.addr4 shouldBe None
+      payload.postcode shouldBe Some("Postcode")
+      payload.country shouldBe Some("EE")
 
-    "return Left when neither section is provided" in {
-      val request = AgentRecordUpdateRequest(
-        amlsDetails = None,
-        agencyDetails = None
-      )
-
-      request.toHipAmendPayload shouldBe a[Left[?, ?]]
+      payload.supervisoryBody shouldBe None
+      payload.updateDetailsStatus shouldBe None
+      payload.amlSupervisionUpdateStatus shouldBe None
     }
 
     "omit None fields in JSON output" in {
-      val request = AgentRecordUpdateRequest(
-        amlsDetails = Some(AmlsDetails(
-          supervisoryBody = SupervisoryBody("SRA"),
-          membershipNumber = MembershipNumber("XAML00000123456")
-        )),
-        agencyDetails = None
-      )
+      val request = AmlsUpdateRequest(AmlsDetails(
+        supervisoryBody = SupervisoryBody("SRA"),
+        membershipNumber = MembershipNumber("XAML00000123456")
+      ))
 
-      request.toHipAmendPayload.map(Json.toJson(_)) match {
-        case Right(json) =>
-          val fields = json.as[JsObject].keys
+      val payload = request.toHipAmendPayload(oldRecord)(logger)
 
-          fields should contain("supervisoryBody")
-          fields should contain("membershipNumber")
-          fields should not contain "name"
-          fields should not contain "addr1"
-          fields should not contain "updateDetailsStatus"
-          fields should not contain "amlSupervisionUpdateStatus"
-          fields should not contain "directorPartnerUpdateStatus"
+      val fields = Json.toJson(payload).as[JsObject].keys
 
-        case _ =>
-          fail()
-      }
-
+      fields should contain("supervisoryBody")
+      fields should contain("membershipNumber")
+      fields should not contain "name"
+      fields should not contain "addr1"
+      fields should not contain "updateDetailsStatus"
+      fields should not contain "amlSupervisionUpdateStatus"
+      fields should not contain "directorPartnerUpdateStatus"
     }
   }
 
@@ -243,4 +266,5 @@ class AgentRecordUpdateRequestSpec extends UnitSpec {
       response.success.processingDate shouldBe "2024-07-15T09:30:47Z"
     }
   }
+
 }

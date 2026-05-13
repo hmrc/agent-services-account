@@ -18,16 +18,21 @@ package uk.gov.hmrc.agentservicesaccount.repositories
 
 import com.typesafe.config.ConfigFactory
 import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.model.{Filters, Updates}
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.Updates
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.CredId
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
-import uk.gov.hmrc.crypto.{Decrypter, Encrypter, SymmetricCryptoFactory}
+import uk.gov.hmrc.crypto.Decrypter
+import uk.gov.hmrc.crypto.Encrypter
+import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{InProgress, ToDo}
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.InProgress
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
