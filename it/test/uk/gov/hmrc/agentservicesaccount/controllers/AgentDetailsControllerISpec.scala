@@ -142,12 +142,11 @@ with EmailStub {
 
   "GET client /agent-services-account/agent-record-with-checks/arn/:arn" should {
 
-    "return suspension details when agent record contains suspension details" in {
+    "return suspension details when agent record contains suspension details (without making auto mapping call)" in {
       stubInternalAuthorised()
       givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
       givenCitizenIsAlive(testSaUtr)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
-      givenAutoMappingCallSucceeds(testArn)
 
       val response: WSResponse = get(clientUrl(testArn))
 
@@ -158,58 +157,7 @@ with EmailStub {
       )
       response.status shouldBe OK
 
-    }
-
-    "trigger auto-mapping when agent record is fetched" in {
-      retry(5) {
-        stubInternalAuthorised()
-        givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
-        givenCitizenIsAlive(testSaUtr)
-        givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
-        givenAutoMappingCallSucceeds(testArn)
-
-        val response: WSResponse = get(clientUrl(testArn))
-
-        response.json shouldBe expectedAgentRecordJson(
-          Some(testUtr),
-          suspensionStatus = true,
-          isAnIndividual = true
-        )
-        response.status shouldBe OK
-        verifyAutoMappingCallWasMade(testArn, times = 1)
-      }
-    }
-
-    "NOT trigger auto-mapping again within lock TTL" in {
-      retry(5) {
-        stubInternalAuthorised()
-        givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
-        givenCitizenIsAlive(testSaUtr)
-        givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
-        givenAutoMappingCallSucceeds(testArn)
-
-        get(clientUrl(testArn)).status shouldBe OK
-        get(clientUrl(testArn)).status shouldBe OK
-
-        verifyAutoMappingCallWasMade(testArn, times = 1)
-      }
-    }
-
-    "trigger auto-mapping again after lock TTL expires" in {
-      retry(5) {
-        stubInternalAuthorised()
-        givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
-        givenCitizenIsAlive(testSaUtr)
-        givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
-
-        givenAutoMappingCallSucceeds(testArn)
-
-        get(clientUrl(testArn)).status shouldBe OK
-        Thread.sleep(1500)
-        get(clientUrl(testArn)).status shouldBe OK
-
-        verifyAutoMappingCallWasMade(testArn, times = 2)
-      }
+      verifyAutoMappingCallWasMade(testArn, times = 0)
     }
 
     "return suspension details and send email for deceased" in {
@@ -223,7 +171,6 @@ with EmailStub {
           testUtr,
           List("Agent is deceased", "Agent is on the 'Refuse To Deal With' list")
         ))
-        givenAutoMappingCallSucceeds(testArn)
 
         val response: WSResponse = get(clientUrl(testArn))
 

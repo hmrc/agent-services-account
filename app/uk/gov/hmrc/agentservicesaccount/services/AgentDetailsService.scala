@@ -58,7 +58,8 @@ class AgentDetailsService @Inject() (
 )(implicit ec: ExecutionContext) {
 
   def getAgentDetailsWithChecks(
-    arn: Arn
+    arn: Arn,
+    doAutoMapping: Boolean = true
   )(using request: RequestHeader): Future[EntityCheckResult] = {
 
     for {
@@ -69,9 +70,10 @@ class AgentDetailsService @Inject() (
           desConnector.getAgentRecord(arn)
 
       _ =
-        mongoLockService.automapLock(arn) {
-          agentMappingConnector.performAutoMapping(arn)
-        }
+        if (doAutoMapping)
+          mongoLockService.automapLock(arn) {
+            agentMappingConnector.performAutoMapping(arn)
+          }
 
       entityChecksResult <- agentRecord.uniqueTaxReference
         .map(getEntityChecks(
