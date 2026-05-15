@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentservicesaccount.modules
 
 import com.google.inject.AbstractModule
-import uk.gov.hmrc.agentservicesaccount.services.SubscriptionScheduler
+import uk.gov.hmrc.agentservicesaccount.schedulers.SubscriptionScheduler
 
 class SubscriptionSchedulerModule
 extends AbstractModule:
