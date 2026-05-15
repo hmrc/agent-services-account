@@ -207,7 +207,8 @@ extends Logging:
         // can pick it up.
         subscriptionWorkItemRepository.addAgentReference(
           callback.agentId.getOrElse(throw new RuntimeException("missing agentId after validating model")),
-          callback.requestId
+          callback.requestId,
+          appConfig.knownFactsAvailableAt(callback.targetSystem)
         ).map {
           case true => SubscriptionService.CallbackHandling.Handled
           case false => SubscriptionService.CallbackHandling.NotFound

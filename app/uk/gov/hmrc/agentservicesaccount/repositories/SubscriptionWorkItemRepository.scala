@@ -29,6 +29,8 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.ObservableFuture
+import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.SingleObservableFuture
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem
@@ -37,6 +39,8 @@ import uk.gov.hmrc.mongo.workitem.WorkItemRepository
 
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -194,7 +198,8 @@ with Logging:
 
   def addAgentReference(
     agentReference: AgentReference,
-    requestId: String
+    requestId: String,
+    availableAt: Instant
   ): Future[Boolean] =
     // Callback success puts the work item into a state that can be picked up by the KnownFacts worker
     // Reset failure count so the robotics and known facts workers have separate retry limits
@@ -208,7 +213,7 @@ with Logging:
         Updates.set("item.agentReference", agentReference.value),
         Updates.set(workItemFields.status, ProcessingStatus.ToDo),
         Updates.set(workItemFields.updatedAt, now()),
-        Updates.set(workItemFields.availableAt, now()),
+        Updates.set(workItemFields.availableAt, availableAt),
         Updates.set(workItemFields.failureCount, 0)
       )
     ).toFuture()

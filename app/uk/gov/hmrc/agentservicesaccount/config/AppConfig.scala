@@ -18,11 +18,17 @@ package uk.gov.hmrc.agentservicesaccount.config
 
 import javax.inject.Inject
 import javax.inject.Singleton
-
 import scala.concurrent.duration.*
-
 import play.api.Configuration
+import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem
+import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.CESA
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 
 @Singleton
 class AppConfig @Inject() (
@@ -82,7 +88,8 @@ class AppConfig @Inject() (
     schedulerDelay = config.get[Duration](s"work-item-jobs.$name.scheduler-delay").toMillis.millis,
     schedulerInterval = config.get[Duration](s"work-item-jobs.$name.scheduler-interval").toMillis.millis,
     retryInterval = config.get[Duration](s"work-item-jobs.$name.retry-interval").toMillis.millis,
-    maxAttempts = config.get[Int](s"work-item-jobs.$name.max-attempts")
+    maxAttempts = config.get[Int](s"work-item-jobs.$name.max-attempts"),
+    availableAt = config.getOptional[String](s"work-item-jobs.$name.available-at").map(LocalTime.parse)
   )
   val payeKnownFactsJobConfig: WorkItemJobConfig = getWorkItemJobConfig("paye-known-facts")
 
@@ -93,5 +100,18 @@ class AppConfig @Inject() (
   val saRoboticsJobConfig: WorkItemJobConfig = getWorkItemJobConfig("sa-robotics")
 
   val ctRoboticsJobConfig: WorkItemJobConfig = getWorkItemJobConfig("ct-robotics")
+
+  def knownFactsAvailableAt(callbackTargetSystem: TargetSystem): Instant = {
+    def availableAt: Option[LocalTime] =
+      callbackTargetSystem match {
+        case TargetSystem.CESA => saKnownFactsJobConfig.availableAt
+        case TargetSystem.COTAX => ctKnownFactsJobConfig.availableAt
+      }
+
+    availableAt
+      .map(LocalDateTime.of(LocalDate.now().plusDays(1), _))
+      .map(_.atZone(ZoneId.of("Europe/London")).toInstant)
+      .getOrElse(Instant.now())
+  }
 
   private def baseUrl(key: String) = servicesConfig.baseUrl(key)
