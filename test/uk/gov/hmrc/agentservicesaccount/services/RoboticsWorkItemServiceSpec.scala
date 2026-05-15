@@ -73,7 +73,6 @@ with BeforeAndAfterEach {
     super.beforeEach()
 
     repository.coll.drop().toFuture().futureValue
-    repository.ensureIndexes().futureValue
 
   }
 

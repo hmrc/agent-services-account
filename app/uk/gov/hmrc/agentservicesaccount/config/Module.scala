@@ -18,9 +18,8 @@ package uk.gov.hmrc.agentservicesaccount.config
 
 import com.google.inject.AbstractModule
 import play.api.Configuration
-import uk.gov.hmrc.agentservicesaccount.schedulers.OrphanedWorkItemCleanupScheduler
-import java.time.Clock
-import java.time.ZoneId
+
+import java.time.{Clock, ZoneId}
 
 class Module(
   configuration: Configuration
@@ -29,7 +28,6 @@ extends AbstractModule {
 
   override def configure(): Unit = {
     bind(classOf[Clock]).toInstance(Clock.system(ZoneId.systemDefault()))
-    bind(classOf[OrphanedWorkItemCleanupScheduler]).asEagerSingleton()
     val internalAuthTokenEnabled: Boolean = configuration.get[Boolean]("internal-auth-token-enabled-on-start")
 
     if (internalAuthTokenEnabled) {
