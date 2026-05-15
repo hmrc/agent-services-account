@@ -91,6 +91,29 @@ with Logging:
       .map(_.headOption)
   }
 
+  def findOrphanedWorkItems(
+    olderThan: Instant
+  ): Future[Seq[WorkItem[SubscriptionWorkItem]]] = coll.find(
+    Filters.and(
+      Filters.notEqual(workItemFields.status, PermanentlyFailed),
+      Filters.lt(workItemFields.updatedAt, olderThan)
+    )
+  ).toFuture()
+
+  def markPermanentlyFailed(
+    workItemId: ObjectId
+  ): Future[Boolean] = coll.updateOne(
+    Filters.and(
+      Filters.equal("_id", workItemId),
+      Filters.notEqual(workItemFields.status, PermanentlyFailed)
+    ),
+    Updates.combine(
+      Updates.set(workItemFields.status, PermanentlyFailed),
+      Updates.set(workItemFields.updatedAt, now())
+    )
+  ).toFuture()
+    .map(_.getModifiedCount > 0)
+
   def pullAwaitingKnownFacts(
     regime: LegacyRegime,
     failedBefore: Instant,

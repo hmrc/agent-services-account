@@ -31,8 +31,7 @@ import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.InProgress
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{InProgress, PermanentlyFailed, ToDo}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
@@ -208,5 +207,100 @@ with BeforeAndAfterEach:
       val after = repository.findByRequestId(requestId).futureValue.value
       after.status.shouldBe(InProgress)
       after.item.agentReference.shouldBe(Some(AgentReference("XS1234")))
+    }
+  }
+
+  "findOrphanedWorkItems" should {
+
+    "return non permanently failed work items older than the cutoff" in {
+
+      val oldWorkItem =
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = testArn,
+            subscriptionRequest = request,
+            regime = LegacyRegime.SA,
+            agentReference = None,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
+          )
+        ).futureValue
+
+      repository.markAs(oldWorkItem.id, PermanentlyFailed).futureValue
+
+      val activeWorkItem =
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = Arn("AARN0000002"),
+            subscriptionRequest = request,
+            regime = LegacyRegime.CT,
+            agentReference = None,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
+          )
+        ).futureValue
+
+      repository.coll.updateOne(
+        Filters.equal("_id", activeWorkItem.id),
+        Updates.set("updatedAt", Instant.now().minusSeconds(60 * 60 * 24 * 30))
+      ).toFuture().futureValue
+
+      val results =
+        repository.findOrphanedWorkItems(
+          Instant.now().minusSeconds(60 * 60 * 24 * 14)
+        ).futureValue
+
+      results.map(_.id) should contain(activeWorkItem.id)
+      results.map(_.id) should not contain oldWorkItem.id
+    }
+  }
+
+  "markPermanentlyFailed" should {
+
+    "mark a work item as PermanentlyFailed" in {
+
+      val workItem =
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = testArn,
+            subscriptionRequest = request,
+            regime = LegacyRegime.SA,
+            agentReference = None,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
+          )
+        ).futureValue
+
+      val updated =
+        repository.markPermanentlyFailed(workItem.id).futureValue
+
+      updated shouldBe true
+
+      val persisted =
+        repository.coll.find(Filters.equal("_id", workItem.id)).first().toFuture().futureValue
+
+      persisted.status shouldBe PermanentlyFailed
+    }
+
+    "return false when already PermanentlyFailed" in {
+
+      val workItem =
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = testArn,
+            subscriptionRequest = request,
+            regime = LegacyRegime.SA,
+            agentReference = None,
+            groupId = testGroupId,
+            adminCredId = testAdminCredId
+          )
+        ).futureValue
+
+      repository.markAs(workItem.id, PermanentlyFailed).futureValue
+
+      val updated =
+        repository.markPermanentlyFailed(workItem.id).futureValue
+
+      updated shouldBe false
     }
   }

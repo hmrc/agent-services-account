@@ -13,6 +13,7 @@ object AppDependencies {
     "uk.gov.hmrc"            %% "crypto-json-play-30"               % "8.4.0",
     "uk.gov.hmrc"            %% "internal-auth-client-play-30"      % "4.3.0",
     "io.github.openhtmltopdf" % "openhtmltopdf-pdfbox"              % openHtmlToPdfVersion,
+    "io.github.samueleresca" %% "pekko-quartz-scheduler"            % "1.2.0-pekko-1.0.x"
   )
 
   val test = Seq(
