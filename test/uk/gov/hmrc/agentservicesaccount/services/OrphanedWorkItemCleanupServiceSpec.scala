@@ -17,24 +17,22 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import com.typesafe.config.ConfigFactory
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, argThat, eq as eqTo}
 import org.mockito.Mockito.*
-import org.mockito.ArgumentMatchers.eq as eqTo
 import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.model.Filters.equal as mongoEq
+import org.mongodb.scala.model.Updates.{combine, set}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAuditService
-import uk.gov.hmrc.agentservicesaccount.models.CredId
-import uk.gov.hmrc.agentservicesaccount.models.GroupId
+import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
-import uk.gov.hmrc.crypto.Decrypter
-import uk.gov.hmrc.crypto.Encrypter
-import uk.gov.hmrc.crypto.SymmetricCryptoFactory
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter, SymmetricCryptoFactory}
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 
@@ -118,8 +116,8 @@ with BeforeAndAfterEach {
         ).futureValue
 
       repository.coll.updateOne(
-        org.mongodb.scala.model.Filters.equal("_id", workItem.id),
-        org.mongodb.scala.model.Updates.set(
+        mongoEq("_id", workItem.id),
+        set(
           "updatedAt",
           Instant.now().minusSeconds(60 * 60 * 24 * 30)
         )
@@ -148,13 +146,13 @@ with BeforeAndAfterEach {
         ).futureValue
 
       repository.coll.updateOne(
-        org.mongodb.scala.model.Filters.equal("_id", workItem.id),
-        org.mongodb.scala.model.Updates.combine(
-          org.mongodb.scala.model.Updates.set(
+        mongoEq("_id", workItem.id),
+        combine(
+          set(
             "updatedAt",
             Instant.now().minusSeconds(60 * 60 * 24 * 30)
           ),
-          org.mongodb.scala.model.Updates.set(
+          set(
             "failureCount",
             2
           )
@@ -168,7 +166,7 @@ with BeforeAndAfterEach {
         regime = eqTo(LegacyRegime.SA),
         isSuccessful = eqTo(false),
         legacyAgentCode = eqTo(None),
-        failureReason = org.mockito.ArgumentMatchers.argThat[Option[String]] {
+        failureReason = argThat[Option[String]] {
           case Some(reason) =>
             reason.contains("Orphaned work-item cleanup") &&
             reason.contains("agentReferenceDefined=true") &&
@@ -197,8 +195,8 @@ with BeforeAndAfterEach {
       repository.markAs(workItem.id, PermanentlyFailed).futureValue
 
       repository.coll.updateOne(
-        org.mongodb.scala.model.Filters.equal("_id", workItem.id),
-        org.mongodb.scala.model.Updates.set(
+        mongoEq("_id", workItem.id),
+        set(
           "updatedAt",
           Instant.now().minusSeconds(60 * 60 * 24 * 30)
         )
