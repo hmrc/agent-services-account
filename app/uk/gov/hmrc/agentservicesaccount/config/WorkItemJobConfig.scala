@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.config
 
+import java.time.LocalTime
 import scala.concurrent.duration.FiniteDuration
 
 final case class WorkItemJobConfig(
@@ -23,5 +24,6 @@ final case class WorkItemJobConfig(
   schedulerDelay: FiniteDuration, // Delay after application start before the first execution of the job
   schedulerInterval: FiniteDuration, // Interval between subsequent executions of the job
   retryInterval: FiniteDuration, // Delay before retrying a failed work item
-  maxAttempts: Int // Maximum number of attempts to process a work item before giving up
+  maxAttempts: Int, // Maximum number of attempts to process a work item before giving up,
+  availableAt: Option[LocalTime] = None // Earliest time of next day when the work item should be available for processing (only used for SA/CT know fact config for callbacks)
 )

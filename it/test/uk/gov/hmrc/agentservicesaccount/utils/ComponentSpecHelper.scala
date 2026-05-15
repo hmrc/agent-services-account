@@ -87,7 +87,9 @@ with GuiceOneServerPerSuite:
     "microservice.services.email.host" -> mockHost,
     "microservice.services.dms-submission.host" -> mockHost,
     "microservice.services.dms-submission.port" -> mockPort,
-    "work-item-jobs.sa-robotics.enabled" -> "false"
+    "work-item-jobs.sa-robotics.enabled" -> "false",
+    "work-item-jobs.sa-known-facts.available-at" -> "07:00",
+    "work-item-jobs.ct-known-facts.available-at" -> "07:00"
   )
 
   implicit val ws: WSClient = app.injector.instanceOf[WSClient]

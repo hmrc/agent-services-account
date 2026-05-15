@@ -42,6 +42,10 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 import java.util.UUID
 import org.scalatest.OptionValues.*
 
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+
 class LegacySubscriptionControllerISpec
 extends ComponentSpecHelper
 with AgentEpayeRegistrationStubs
@@ -350,6 +354,8 @@ with AgentAuthStubs:
 
       response.status shouldBe 204
       repository.coll.find().headOption().futureValue.map(_.item) shouldBe Some(expected)
+      repository.coll.find().headOption().futureValue.map(_.availableAt) shouldBe
+        Some(LocalDate.now().plusDays(1).atTime(LocalTime.parse("07:00")).atZone(ZoneId.of("Europe/London")).toInstant)
 
     "return 204 when a work item is already updated by a prior a successful callback" in:
       val requestId = UUID.randomUUID().toString

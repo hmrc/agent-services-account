@@ -50,6 +50,7 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -430,6 +431,7 @@ with BeforeAndAfterEach {
 
   "handleRoboticsCallback" should {
     "set agentReference and return the work item to ToDo on successful callback" in {
+      when(appConfig.knownFactsAvailableAt(any[TargetSystem])).thenReturn(Instant.now)
       val requestId = "sa-callback-success-request-id"
       val workItem =
         repository.pushNew(
@@ -498,6 +500,7 @@ with BeforeAndAfterEach {
     }
 
     "ignore a failure callback if success has already been recorded" in {
+      when(appConfig.knownFactsAvailableAt(any[TargetSystem])).thenReturn(Instant.now)
       val requestId = "sa-callback-failure-after-success-request-id"
       val workItem =
         repository.pushNew(

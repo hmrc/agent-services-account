@@ -71,6 +71,9 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.get[Int](meq("work-item-jobs.paye-known-facts.max-attempts"))(using any()))
       .thenReturn(3)
 
+    when(mockConfig.getOptional[String](meq("work-item-jobs.paye-known-facts.available-at"))(using any()))
+      .thenReturn(None)
+
     when(mockConfig.get[Duration](meq("work-item-jobs.sa-known-facts.scheduler-delay"))(using any()))
       .thenReturn(1.second)
 
@@ -82,6 +85,9 @@ extends MockitoSugar { this: TestSuite =>
 
     when(mockConfig.get[Int](meq("work-item-jobs.sa-known-facts.max-attempts"))(using any()))
       .thenReturn(3)
+
+    when(mockConfig.getOptional[String](meq("work-item-jobs.sa-known-facts.available-at"))(using any()))
+      .thenReturn(Some("07:00"))
 
     when(mockConfig.get[Boolean](meq("stubs-compatibility-mode"))(using any()))
       .thenReturn(false)
@@ -98,6 +104,9 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.get[Duration](meq("work-item-jobs.sa-robotics.retry-interval"))(using any()))
       .thenReturn(1.second)
 
+    when(mockConfig.getOptional[String](meq("work-item-jobs.sa-robotics.available-at"))(using any()))
+      .thenReturn(None)
+
     when(mockConfig.get[Duration](meq("work-item-jobs.ct-known-facts.scheduler-delay"))(using any()))
       .thenReturn(1.second)
 
@@ -110,6 +119,9 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.get[Int](meq("work-item-jobs.ct-known-facts.max-attempts"))(using any()))
       .thenReturn(3)
 
+    when(mockConfig.getOptional[String](meq("work-item-jobs.ct-known-facts.available-at"))(using any()))
+      .thenReturn(Some("07:00"))
+
     when(mockConfig.get[Boolean](meq("work-item-jobs.ct-robotics.enabled"))(using any()))
       .thenReturn(false)
 
@@ -121,6 +133,9 @@ extends MockitoSugar { this: TestSuite =>
 
     when(mockConfig.get[Duration](meq("work-item-jobs.ct-robotics.retry-interval"))(using any()))
       .thenReturn(1.second)
+
+    when(mockConfig.getOptional[String](meq("work-item-jobs.ct-robotics.available-at"))(using any()))
+      .thenReturn(None)
 
     when(mockConfig.get[Boolean](meq("features.get-agent-record-via-hip"))(using any()))
       .thenReturn(false)

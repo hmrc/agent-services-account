@@ -35,6 +35,8 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus.InProgress
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import scala.concurrent.ExecutionContext
 
 class SubscriptionWorkItemRepositorySpec
@@ -196,14 +198,22 @@ with BeforeAndAfterEach:
           )
           .futureValue
 
-      repository.addAgentReference(AgentReference("XS1234"), requestId = requestId).futureValue.shouldBe(true)
+      repository.addAgentReference(
+        AgentReference("XS1234"),
+        requestId = requestId,
+        LocalDateTime.of(2026, 1, 1, 1, 0).atZone(ZoneId.of("Europe/London")).toInstant
+      ).futureValue.shouldBe(true)
       val afterFirstCallback = repository.findByRequestId(requestId).futureValue.value
       afterFirstCallback.status.shouldBe(ToDo)
 
       // Simulate the post-callback worker claiming the item.
       repository.markAs(workItem.id, InProgress).futureValue
 
-      repository.addAgentReference(AgentReference("XS1234"), requestId = requestId).futureValue.shouldBe(true)
+      repository.addAgentReference(
+        AgentReference("XS1234"),
+        requestId = requestId,
+        LocalDateTime.of(2026, 1, 1, 1, 0).atZone(ZoneId.of("Europe/London")).toInstant
+      ).futureValue.shouldBe(true)
 
       val after = repository.findByRequestId(requestId).futureValue.value
       after.status.shouldBe(InProgress)
