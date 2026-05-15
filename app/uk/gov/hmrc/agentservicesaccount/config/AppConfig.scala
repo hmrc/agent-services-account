@@ -102,10 +102,10 @@ class AppConfig @Inject() (
   val ctRoboticsJobConfig: WorkItemJobConfig = getWorkItemJobConfig("ct-robotics")
 
   def knownFactsAvailableAt(callbackTargetSystem: TargetSystem): Instant = {
-    val availableAt: Option[LocalTime] =
+    def availableAt: Option[LocalTime] =
       callbackTargetSystem match {
-        case TargetSystem.CESA => saRoboticsJobConfig.availableAt
-        case TargetSystem.COTAX => ctRoboticsJobConfig.availableAt
+        case TargetSystem.CESA => saKnownFactsJobConfig.availableAt
+        case TargetSystem.COTAX => ctKnownFactsJobConfig.availableAt
       }
 
     availableAt
