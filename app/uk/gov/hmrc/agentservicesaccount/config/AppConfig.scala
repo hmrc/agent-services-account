@@ -80,7 +80,7 @@ class AppConfig @Inject() (
   val orphanedWorkItemCleanupEnabled: Boolean = config.get[Boolean]("orphaned-work-item-cleanup.enabled")
   val orphanedWorkItemCleanupCron: String = config.get[String]("orphaned-work-item-cleanup.cron")
   val orphanedWorkItemMaxAge: Duration = config.get[Duration]("orphaned-work-item-cleanup.max-age")
-    
+
   private def getWorkItemJobConfig(name: String): WorkItemJobConfig = WorkItemJobConfig(
     enabled = config.get[Boolean](s"work-item-jobs.$name.enabled"),
     schedulerDelay = config.get[Duration](s"work-item-jobs.$name.scheduler-delay").toMillis.millis,

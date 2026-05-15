@@ -24,8 +24,10 @@ import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemReposit
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class OrphanedWorkItemCleanupService @Inject() (

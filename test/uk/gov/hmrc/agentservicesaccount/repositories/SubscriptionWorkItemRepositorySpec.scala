@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentservicesaccount.repositories
 
 import com.typesafe.config.ConfigFactory
 import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Updates
 import org.scalatest.BeforeAndAfterEach
@@ -31,7 +32,9 @@ import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{InProgress, PermanentlyFailed, ToDo}
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.InProgress
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
@@ -253,6 +256,29 @@ with BeforeAndAfterEach:
       results.map(_.id) should contain(activeWorkItem.id)
       results.map(_.id) should not contain oldWorkItem.id
     }
+
+    "not return recent work items" in {
+
+      repository.pushNew(
+        SubscriptionWorkItem(
+          arn = testArn,
+          subscriptionRequest = request,
+          regime = LegacyRegime.SA,
+          agentReference = None,
+          groupId = testGroupId,
+          adminCredId = testAdminCredId
+        )
+      ).futureValue
+
+      val result =
+        repository
+          .findOrphanedWorkItems(
+            Instant.now().minusSeconds(60 * 60 * 24 * 14)
+          )
+          .futureValue
+
+      result shouldBe empty
+    }
   }
 
   "markPermanentlyFailed" should {
@@ -271,13 +297,11 @@ with BeforeAndAfterEach:
           )
         ).futureValue
 
-      val updated =
-        repository.markPermanentlyFailed(workItem.id).futureValue
+      val updated = repository.markPermanentlyFailed(workItem.id).futureValue
 
       updated shouldBe true
 
-      val persisted =
-        repository.coll.find(Filters.equal("_id", workItem.id)).first().toFuture().futureValue
+      val persisted = repository.coll.find(Filters.equal("_id", workItem.id)).first().toFuture().futureValue
 
       persisted.status shouldBe PermanentlyFailed
     }
@@ -298,9 +322,18 @@ with BeforeAndAfterEach:
 
       repository.markAs(workItem.id, PermanentlyFailed).futureValue
 
-      val updated =
-        repository.markPermanentlyFailed(workItem.id).futureValue
+      val updated = repository.markPermanentlyFailed(workItem.id).futureValue
 
       updated shouldBe false
+    }
+
+    "return false when work item does not exist" in {
+
+      val result =
+        repository.markPermanentlyFailed(
+          new ObjectId()
+        ).futureValue
+
+      result shouldBe false
     }
   }

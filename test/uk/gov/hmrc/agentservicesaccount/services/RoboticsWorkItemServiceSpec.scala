@@ -17,16 +17,14 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import com.typesafe.config.ConfigFactory
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.*
+import org.apache.pekko.Done
 import org.mockito.ArgumentMatchers.eq as eqTo
-import org.mongodb.scala.SingleObservableFuture
+import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.concurrent.IntegrationPatience
-import play.api.mvc.RequestHeader
+import org.scalatestplus.mockito.MockitoSugar
+import org.mongodb.scala.SingleObservableFuture
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.mocks.MockAuditService
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
@@ -36,17 +34,16 @@ import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.*
+import scala.concurrent.Future
 
-class OrphanedWorkItemCleanupServiceSpec
+class RoboticsWorkItemServiceSpec
 extends UnitSpec
-with IntegrationPatience
 with CleanMongoCollectionSupport
-with MockAuditService
 with BeforeAndAfterEach {
 
   given Encrypter & Decrypter = SymmetricCryptoFactory.aesCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
@@ -61,14 +58,7 @@ with BeforeAndAfterEach {
 
   private val appConfig = mock[AppConfig]
 
-  private val auditService = new LegacySubscriptionAuditService(mockAuditService)
-
-  private val service =
-    new OrphanedWorkItemCleanupService(
-      repository,
-      auditService,
-      appConfig
-    )
+  private val service = new RoboticsWorkItemService(repository)
 
   private val testArn = Arn("AARN0000001")
 
@@ -93,46 +83,11 @@ with BeforeAndAfterEach {
     repository.coll.drop().toFuture().futureValue
     repository.ensureIndexes().futureValue
 
-    reset(mockAuditService)
-
-    mockAuditLegacySubscription()
-
-    when(appConfig.orphanedWorkItemMaxAge)
-      .thenReturn(14.days)
   }
 
-  "cleanup" should {
+  "markFailed" should {
 
-    "mark eligible work items permanently failed" in {
-
-      val workItem =
-        repository.pushNew(
-          SubscriptionWorkItem(
-            arn = testArn,
-            subscriptionRequest = subscriptionRequest,
-            regime = LegacyRegime.SA,
-            agentReference = None,
-            groupId = GroupId("group-1"),
-            adminCredId = CredId("cred-1")
-          )
-        ).futureValue
-
-      repository.coll.updateOne(
-        org.mongodb.scala.model.Filters.equal("_id", workItem.id),
-        org.mongodb.scala.model.Updates.set(
-          "updatedAt",
-          Instant.now().minusSeconds(60 * 60 * 24 * 30)
-        )
-      ).toFuture().futureValue
-
-      service.cleanup().futureValue
-
-      val persisted = repository.coll.find().first().toFuture().futureValue
-
-      persisted.status shouldBe PermanentlyFailed
-    }
-
-    "audit each permanently failed work item" in {
+    "update repository and set status to Failed" in {
 
       val workItem =
         repository.pushNew(
@@ -147,40 +102,17 @@ with BeforeAndAfterEach {
           )
         ).futureValue
 
-      repository.coll.updateOne(
-        org.mongodb.scala.model.Filters.equal("_id", workItem.id),
-        org.mongodb.scala.model.Updates.combine(
-          org.mongodb.scala.model.Updates.set(
-            "updatedAt",
-            Instant.now().minusSeconds(60 * 60 * 24 * 30)
-          ),
-          org.mongodb.scala.model.Updates.set(
-            "failureCount",
-            2
-          )
-        )
-      ).toFuture().futureValue
+      service.markFailed(workItem).futureValue shouldBe Done
 
-      service.cleanup().futureValue
+      val updated = repository.coll.find().first().toFuture().futureValue
 
-      verify(mockAuditService).auditLegacySubscription(
-        arn = eqTo(testArn),
-        regime = eqTo(LegacyRegime.SA),
-        isSuccessful = eqTo(false),
-        legacyAgentCode = eqTo(None),
-        failureReason = org.mockito.ArgumentMatchers.argThat[Option[String]] {
-          case Some(reason) =>
-            reason.contains("Orphaned work-item cleanup") &&
-            reason.contains("agentReferenceDefined=true") &&
-            reason.contains("roboticsInvoked=true") &&
-            reason.contains("retryCount=2")
-
-          case None => false
-        }
-      )(using any[RequestHeader])
+      updated.status shouldBe ProcessingStatus.Failed
     }
+  }
 
-    "skip already permanently failed work items" in {
+  "markAsInvoked" should {
+
+    "mark robotics invoked timestamp" in {
 
       val workItem =
         repository.pushNew(
@@ -188,44 +120,45 @@ with BeforeAndAfterEach {
             arn = testArn,
             subscriptionRequest = subscriptionRequest,
             regime = LegacyRegime.SA,
-            agentReference = None,
+            agentReference = Some(AgentReference("ABC1234")),
+            roboticsInvokedAt = Some(Instant.now()),
             groupId = GroupId("group-1"),
             adminCredId = CredId("cred-1")
           )
         ).futureValue
 
-      repository.markAs(workItem.id, PermanentlyFailed).futureValue
+      service.markAsInvoked(workItem).futureValue shouldBe Done
 
-      repository.coll.updateOne(
-        org.mongodb.scala.model.Filters.equal("_id", workItem.id),
-        org.mongodb.scala.model.Updates.set(
-          "updatedAt",
-          Instant.now().minusSeconds(60 * 60 * 24 * 30)
-        )
-      ).toFuture().futureValue
+      val updated = repository.coll.find().first().toFuture().futureValue
 
-      service.cleanup().futureValue
-
-      verify(mockAuditService, never()).auditLegacySubscription(
-        any[Arn],
-        any[LegacyRegime],
-        any[Boolean],
-        any[Option[String]],
-        any[Option[String]]
-      )(using any[RequestHeader])
+      updated.item.roboticsInvokedAt should not be empty
     }
+  }
 
-    "do nothing when no orphaned work items exist" in {
-      service.cleanup().futureValue
+  "markPermanentlyFailed" should {
 
-      repository.coll.countDocuments().toFuture().futureValue shouldBe 0L
-      verify(mockAuditService, never()).auditLegacySubscription(
-        any[Arn],
-        any[LegacyRegime],
-        any[Boolean],
-        any[Option[String]],
-        any[Option[String]]
-      )(using any[RequestHeader])
+    "set status to PermanentlyFailed" in {
+
+      val workItem =
+        repository.pushNew(
+          SubscriptionWorkItem(
+            arn = testArn,
+            subscriptionRequest = subscriptionRequest,
+            regime = LegacyRegime.SA,
+            agentReference = Some(AgentReference("ABC1234")),
+            roboticsInvokedAt = Some(Instant.now()),
+            groupId = GroupId("group-1"),
+            adminCredId = CredId("cred-1")
+          )
+        ).futureValue
+
+      repository.markAs(workItem.id, ProcessingStatus.InProgress).futureValue
+
+      service.markPermanentlyFailed(workItem).futureValue shouldBe Done
+
+      val updated = repository.coll.find().first().toFuture().futureValue
+
+      updated.status shouldBe ProcessingStatus.PermanentlyFailed
     }
   }
 
