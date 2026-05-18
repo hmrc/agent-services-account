@@ -5,6 +5,7 @@ object AppDependencies {
   private val bootstrapVersion     = "10.7.0"
   private val hmrcMongoVersion     = "2.12.0"
   private val openHtmlToPdfVersion = "1.1.31"
+  private val pekkoVer = "1.0.3"
 
   val compile = Seq(
     "uk.gov.hmrc"            %% "bootstrap-backend-play-30"         % bootstrapVersion,
@@ -13,11 +14,13 @@ object AppDependencies {
     "uk.gov.hmrc"            %% "crypto-json-play-30"               % "8.4.0",
     "uk.gov.hmrc"            %% "internal-auth-client-play-30"      % "4.3.0",
     "io.github.openhtmltopdf" % "openhtmltopdf-pdfbox"              % openHtmlToPdfVersion,
+    "io.github.samueleresca" %% "pekko-quartz-scheduler"            % "1.2.0-pekko-1.0.x"
   )
 
   val test = Seq(
     "uk.gov.hmrc"       %% "bootstrap-test-play-30"  % bootstrapVersion % Test,
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-test-play-30" % hmrcMongoVersion % Test,
+    "org.apache.pekko" %% "pekko-actor-testkit-typed"% pekkoVer         % Test,
     "org.scalamock"     %% "scalamock"               % "7.5.0"          % Test,
   )
 
