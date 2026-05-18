@@ -19,7 +19,8 @@ package uk.gov.hmrc.agentservicesaccount.config
 import com.google.inject.AbstractModule
 import play.api.Configuration
 
-import java.time.{Clock, ZoneId}
+import java.time.Clock
+import java.time.ZoneId
 
 class Module(
   configuration: Configuration

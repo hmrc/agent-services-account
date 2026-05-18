@@ -52,7 +52,7 @@ object HipAmendPayload:
         fallback: String
       ): Option[String] =
         if newLine.nonEmpty then newLine
-        else if oldLine.nonEmpty then
+        else if oldLine.exists(_.nonEmpty) then // If it's an empty string in the record we don't want to touch it.
           logger.warn(s"[HipAmendPayload] old record has optional field defined but update request is not overriding it. Using fallback '$fallback' to force override.")
           Some(fallback)
         else None

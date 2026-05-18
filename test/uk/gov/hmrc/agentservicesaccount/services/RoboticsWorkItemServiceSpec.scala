@@ -22,13 +22,17 @@ import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.{CredId, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.CredId
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
-import uk.gov.hmrc.crypto.{Decrypter, Encrypter, SymmetricCryptoFactory}
+import uk.gov.hmrc.crypto.Decrypter
+import uk.gov.hmrc.crypto.Encrypter
+import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
-import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext

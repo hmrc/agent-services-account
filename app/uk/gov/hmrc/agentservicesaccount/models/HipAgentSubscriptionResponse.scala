@@ -68,10 +68,10 @@ object HipAgentSubscriptionResponse {
         utrReads and
         (__ \ "name").read[String] and
         (__ \ "addr1").read[String] and
-        readNullableString(__ \ "addr2") and
-        readNullableString(__ \ "addr3") and
-        readNullableString(__ \ "addr4") and
-        readNullableString(__ \ "postcode") and
+        readNullableString(__ \ "addr2").map(_.filterNot(_ == "Address Line 2")) and // Filtering out autofilled default values
+        readNullableString(__ \ "addr3").map(_.filterNot(_ == "Address Line 3")) and // Filtering out autofilled default values
+        readNullableString(__ \ "addr4").map(_.filterNot(_ == "Address Line 4")) and // Filtering out autofilled default values
+        readNullableString(__ \ "postcode").map(_.filterNot(_ == "Postcode")) and // Filtering out autofilled default values
         (__ \ "country").read[String] and
         readNullableString(__ \ "phone") and
         (__ \ "email").read[String] and
