@@ -50,12 +50,13 @@ object HipAmendPayload:
         newLine: Option[String],
         oldLine: Option[String],
         fallback: String
-      ): Option[String] =
+      ): Option[String] = {
         if newLine.nonEmpty then newLine
         else if oldLine.exists(_.nonEmpty) then // If it's an empty string in the record we don't want to touch it.
           logger.warn(s"[HipAmendPayload] old record has optional field defined but update request is not overriding it. Using fallback '$fallback' to force override.")
           Some(fallback)
         else None
+      }
 
       request match
         case AmlsUpdateRequest(update) =>
@@ -68,25 +69,33 @@ object HipAmendPayload:
           HipAmendPayload(
             name = update.agencyName,
             addr1 = update.agencyAddress.map(_.addressLine1),
-            addr2 = addressLineWithFallback(
-              update.agencyAddress.flatMap(_.addressLine2),
-              oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine2)),
-              "Address Line 2"
+            addr2 = update.agencyAddress.flatMap(newAddr =>
+              addressLineWithFallback(
+                newAddr.addressLine2,
+                oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine2)),
+                "Address Line 2"
+              )
             ),
-            addr3 = addressLineWithFallback(
-              update.agencyAddress.flatMap(_.addressLine3),
-              oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine3)),
-              "Address Line 3"
+            addr3 = update.agencyAddress.flatMap(newAddr =>
+              addressLineWithFallback(
+                newAddr.addressLine3,
+                oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine3)),
+                "Address Line 3"
+              )
             ),
-            addr4 = addressLineWithFallback(
-              update.agencyAddress.flatMap(_.addressLine4),
-              oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine4)),
-              "Address Line 4"
+            addr4 = update.agencyAddress.flatMap(newAddr =>
+              addressLineWithFallback(
+                newAddr.addressLine4,
+                oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine4)),
+                "Address Line 4"
+              )
             ),
-            postcode = addressLineWithFallback(
-              update.agencyAddress.flatMap(_.postalCode),
-              oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.postalCode)),
-              "Postcode"
+            postcode = update.agencyAddress.flatMap(newAddr =>
+              addressLineWithFallback(
+                newAddr.postalCode,
+                oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.postalCode)),
+                "Postcode"
+              )
             ),
             country = update.agencyAddress.map(_.countryCode),
             phone = update.agencyTelephone,

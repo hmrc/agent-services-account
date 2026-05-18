@@ -239,6 +239,30 @@ extends UnitSpec {
       payload.amlSupervisionUpdateStatus shouldBe None
     }
 
+    "not fill in fallback values for optional address lines when old record has them defined but update request does not change the address" in {
+      val request = AgencyDetailsUpdateRequest(AgencyDetails(
+        agencyName = None,
+        agencyEmail = Some("test@example.com"),
+        agencyTelephone = Some("07123456789"),
+        agencyAddress = None
+      ))
+
+      val payload = request.toHipAmendPayload(oldRecord)(logger)
+      payload.name shouldBe None
+      payload.email shouldBe Some("test@example.com")
+      payload.phone shouldBe Some("07123456789")
+      payload.addr1 shouldBe None
+      payload.addr2 shouldBe None
+      payload.addr3 shouldBe None
+      payload.addr4 shouldBe None
+      payload.postcode shouldBe None
+      payload.country shouldBe None
+
+      payload.supervisoryBody shouldBe None
+      payload.updateDetailsStatus shouldBe None
+      payload.amlSupervisionUpdateStatus shouldBe None
+    }
+
     "omit None fields in JSON output" in {
       val request = AmlsUpdateRequest(AmlsDetails(
         supervisoryBody = SupervisoryBody("SRA"),
@@ -253,6 +277,10 @@ extends UnitSpec {
       fields should contain("membershipNumber")
       fields should not contain "name"
       fields should not contain "addr1"
+      fields should not contain "addr2"
+      fields should not contain "addr3"
+      fields should not contain "addr4"
+      fields should not contain "postcode"
       fields should not contain "updateDetailsStatus"
       fields should not contain "amlSupervisionUpdateStatus"
       fields should not contain "directorPartnerUpdateStatus"
