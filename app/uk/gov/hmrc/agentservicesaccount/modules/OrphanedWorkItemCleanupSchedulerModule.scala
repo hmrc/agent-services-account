@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentservicesaccount.modules
 import com.google.inject.AbstractModule
 import uk.gov.hmrc.agentservicesaccount.schedulers.OrphanedWorkItemCleanupScheduler
 
-class OrphanedWorkItemCleanupSchedulerModule extends AbstractModule {
-  override def configure(): Unit =
-    bind(classOf[OrphanedWorkItemCleanupScheduler]).asEagerSingleton()
+class OrphanedWorkItemCleanupSchedulerModule
+extends AbstractModule {
+  override def configure(): Unit = bind(classOf[OrphanedWorkItemCleanupScheduler]).asEagerSingleton()
 }

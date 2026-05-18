@@ -46,8 +46,7 @@ extends UnitSpec:
     "evidenceObjectReference" -> "evidence-ref-001"
   )
 
-  private def responseJson(regime: Option[(String, JsValue)]): JsObject =
-    Json.obj("success" -> JsObject(baseSuccessJson.fields ++ regime.toSeq))
+  private def responseJson(regime: Option[(String, JsValue)]): JsObject = Json.obj("success" -> JsObject(baseSuccessJson.fields ++ regime.toSeq))
 
   private def readRegime(regime: Option[(String, JsValue)]): Option[Seq[String]] =
     Json.fromJson[HipAgentSubscriptionResponse](responseJson(regime)).get.success.regime
@@ -60,7 +59,11 @@ extends UnitSpec:
       readRegime(Some("regime" -> JsArray(Seq(JsString("ITSA"), JsString("VAT"))))) shouldBe Some(Seq("ITSA", "VAT"))
 
     "filter blank regime values" in:
-      readRegime(Some("regime" -> JsArray(Seq(JsString("ITSA"), JsString(""), JsString(" "))))) shouldBe Some(Seq("ITSA"))
+      readRegime(Some("regime" -> JsArray(Seq(
+        JsString("ITSA"),
+        JsString(""),
+        JsString(" ")
+      )))) shouldBe Some(Seq("ITSA"))
 
     "read missing regime as None" in:
       readRegime(None) shouldBe None
@@ -70,3 +73,39 @@ extends UnitSpec:
 
     "fail when regime has an unsupported JSON type" in:
       Json.fromJson[HipAgentSubscriptionResponse](responseJson(Some("regime" -> JsNumber(1)))).isError shouldBe true
+
+    "filter out defaulted address lines" in:
+      val response = Json.obj(
+        "success" -> Json.obj(
+          "processingDate" -> "2025-02-25",
+          "utr" -> "123456",
+          "name" -> "ABC Accountants",
+          "addr1" -> "Matheson House",
+          "addr2" -> "Address Line 2",
+          "addr3" -> "Address Line 3",
+          "addr4" -> "Address Line 4",
+          "postcode" -> "Postcode",
+          "country" -> "GB",
+          "phone" -> "07345678901",
+          "email" -> "abc@xyz.com",
+          "suspensionStatus" -> "T",
+          "supervisoryBody" -> "HMRC",
+          "membershipNumber" -> "AMLS123",
+          "evidenceObjectReference" -> "evidence-ref-001"
+        )
+      ).as[HipAgentSubscriptionResponse]
+
+      response.success.addr2 shouldBe None
+      response.success.addr3 shouldBe None
+      response.success.addr4 shouldBe None
+      response.success.postcode shouldBe None
+
+    "read normal address lines" in:
+      val response = Json.obj(
+        "success" -> baseSuccessJson
+      ).as[HipAgentSubscriptionResponse]
+
+      response.success.addr2 shouldBe Some("Grange Central")
+      response.success.addr3 shouldBe Some("Town Centre")
+      response.success.addr4 shouldBe Some("Telford")
+      response.success.postcode shouldBe Some("TF3 4ER")
