@@ -19,12 +19,16 @@ package uk.gov.hmrc.agentservicesaccount.stubs
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.time.{Seconds, Span}
+import org.scalatest.time.Seconds
+import org.scalatest.time.Span
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
 trait HipStubs {
 
-  def givenHIPGetAgentRecordSuspendedAgent(arn: Arn, utr:String = "123456") = stubFor(
+  def givenHIPGetAgentRecordSuspendedAgent(
+    arn: Arn,
+    utr: String = "123456"
+  ) = stubFor(
     get(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
       .willReturn(
         okJson(
@@ -43,6 +47,40 @@ trait HipStubs {
                   "phone": "07345678901",
                   "email": "abc@xyz.com",
                   "suspensionStatus": "T",
+                  "supervisoryBody": "HMRC",
+                  "membershipNumber": "AMLS123",
+                  "evidenceObjectReference": "evidence-ref-001"
+                }
+              }
+            """
+        )
+      )
+  )
+
+  def givenHIPGetAgentRecordSuspendedAgentWithStringRegime(
+    arn: Arn,
+    utr: String = "123456",
+    regime: String = "ALL"
+  ) = stubFor(
+    get(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
+      .willReturn(
+        okJson(
+          s"""
+              {
+                "success": {
+                  "processingDate": "2025-02-25",
+                  "utr": $utr,
+                  "name": "ABC Accountants",
+                  "addr1": "Matheson House",
+                  "addr2": "Grange Central",
+                  "addr3": "Town Centre",
+                  "addr4": "Telford",
+                  "postcode": "TF3 4ER",
+                  "country": "GB",
+                  "phone": "07345678901",
+                  "email": "abc@xyz.com",
+                  "suspensionStatus": "T",
+                  "regime": "$regime",
                   "supervisoryBody": "HMRC",
                   "membershipNumber": "AMLS123",
                   "evidenceObjectReference": "evidence-ref-001"
@@ -88,14 +126,20 @@ trait HipStubs {
       )
   )
 
-  def givenHipAmendAgentRecordError(arn: Arn, status: Int) = stubFor(
+  def givenHipAmendAgentRecordError(
+    arn: Arn,
+    status: Int
+  ) = stubFor(
     put(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
       .willReturn(
         aResponse().withStatus(status)
       )
   )
 
-  def verifyHipAmendAgentRecord(arn: Arn, count: Int = 1): Unit =
+  def verifyHipAmendAgentRecord(
+    arn: Arn,
+    count: Int = 1
+  ): Unit =
     eventually(Timeout(Span(5, Seconds))) {
       verify(
         count,
