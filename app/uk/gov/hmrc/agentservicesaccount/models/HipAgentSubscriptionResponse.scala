@@ -55,6 +55,13 @@ object HipAgentSubscriptionResponse {
     case _ => None
   }
 
+  private val regimeReads: Reads[Option[Seq[String]]] = (__ \ "regime").readNullable[JsValue].flatMap {
+    case None => Reads.pure(None)
+    case Some(JsString(regime)) => Reads.pure(Some(Seq(regime).filter(_.trim.nonEmpty)))
+    case Some(array: JsArray) => Reads(_ => array.validate[Seq[String]].map(regimes => Some(regimes.filter(_.trim.nonEmpty))))
+    case Some(_) => Reads(_ => JsError(__ \ "regime", JsonValidationError("error.expected.jsstringorjsarray")))
+  }
+
   given Reads[HipAgentSubscriptionSuccess] =
     (
       (__ \ "processingDate").read[String] and
@@ -69,7 +76,7 @@ object HipAgentSubscriptionResponse {
         readNullableString(__ \ "phone") and
         (__ \ "email").read[String] and
         (__ \ "suspensionStatus").read[String] and
-        (__ \ "regime").readNullable[Seq[String]].map(_.filter(_.nonEmpty)) and
+        regimeReads and
         readNullableString(__ \ "supervisoryBody") and
         readNullableString(__ \ "membershipNumber") and
         readNullableString(__ \ "evidenceObjectReference")

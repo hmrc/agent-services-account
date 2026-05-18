@@ -128,6 +128,14 @@ with HipStubs {
       hipConnector.getAgentRecord(arn).futureValue shouldBe expectedResponse
     }
 
+    "return mapped suspension regime when HIP sends regime as a string" in {
+      givenHIPGetAgentRecordSuspendedAgentWithStringRegime(arn)
+
+      hipConnector.getAgentRecord(arn).futureValue shouldBe expectedResponse.copy(
+        suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ALL"))))
+      )
+    }
+
     "cache agency details after first call" in {
       givenHIPGetAgentRecordSuspendedAgent(arn)
 
