@@ -89,8 +89,6 @@ with Logging:
       else
         legacySubscriptionService.handleRoboticsCallback(request.body).map {
           case SubscriptionService.CallbackHandling.Handled =>
-            if request.body.status == CallbackFailure then
-              logger.warn(s"[roboticsCallback] Robotics failed to process request for ${request.body.requestId}, work item marked as permanently failed")
             NoContent
           case SubscriptionService.CallbackHandling.NotFound =>
             val msg = s"Did not find a work item with requestId: ${request.body.requestId}"
