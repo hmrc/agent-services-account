@@ -18,9 +18,13 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import org.apache.pekko.Done
 import play.api.Logging
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EmailConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.UsersGroupsSearchConnector
+import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayeSubscriptionRequest
@@ -30,6 +34,7 @@ import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 import uk.gov.hmrc.http.Authorization
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.SessionId
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import javax.inject.Inject
@@ -42,6 +47,7 @@ import scala.util.control.NonFatal
 class KnownFactsWorker @Inject() (
   workItemService: KnownFactsWorkItemService,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
+  usersGroupsSearchConnector: UsersGroupsSearchConnector,
   emailConnector: EmailConnector,
   legacySubscriptionAuditService: LegacySubscriptionAuditService
 )(using ec: ExecutionContext)
@@ -86,13 +92,7 @@ extends Logging:
             logger.info(s"[KnownFactsWorker] $regime known facts not available yet for work item: ${workItem.id}")
             handleFailure(workItem)
           case Some(_) =>
-            enrolmentStoreProxyConnector
-              .allocateAgentEnrolment(
-                regime = regime,
-                groupId = workItem.item.groupId,
-                agentReference = agentReference.value,
-                adminCredId = workItem.item.adminCredId
-              )
+            allocateAgentEnrolment(workItem, agentReference.value)
               .flatMap { _ =>
                 logger.info(s"[KnownFactsWorker] $regime enrolment allocated for work item: ${workItem.id}")
                 legacySubscriptionAuditService
@@ -110,6 +110,58 @@ extends Logging:
                   }
               }
         }
+
+  private def allocateAgentEnrolment(
+    workItem: WorkItem[SubscriptionWorkItem],
+    agentReference: String
+  )(using
+    hc: HeaderCarrier,
+    regime: LegacyRegime
+  ): Future[Unit] = allocateAgentEnrolment(
+    workItem = workItem,
+    agentReference = agentReference,
+    adminCredId = workItem.item.adminCredId
+  ).recoverWith {
+    case error: UpstreamErrorResponse if hasInvalidCredentialId(error) =>
+      logger.warn(s"[KnownFactsWorker] $regime ES8 rejected admin cred id for work item ${workItem.id}; looking up another admin")
+      usersGroupsSearchConnector.getFirstAdminCredId(workItem.item.groupId).flatMap {
+        case Some(adminCredId) =>
+          logger.info(s"[KnownFactsWorker] $regime retrying ES8 allocation with replacement admin for work item: ${workItem.id}")
+          allocateAgentEnrolment(
+            workItem = workItem,
+            agentReference = agentReference,
+            adminCredId = adminCredId
+          )
+        case None =>
+          logger.warn(s"[KnownFactsWorker] $regime no replacement admin cred id found for work item: ${workItem.id}")
+          Future.failed(error)
+      }
+  }
+
+  private def allocateAgentEnrolment(
+    workItem: WorkItem[SubscriptionWorkItem],
+    agentReference: String,
+    adminCredId: CredId
+  )(using
+    hc: HeaderCarrier,
+    regime: LegacyRegime
+  ): Future[Unit] = enrolmentStoreProxyConnector.allocateAgentEnrolment(
+    regime = regime,
+    groupId = workItem.item.groupId,
+    agentReference = agentReference,
+    adminCredId = adminCredId
+  )
+
+  private def hasInvalidCredentialId(error: UpstreamErrorResponse): Boolean =
+    val invalidCredentialId = "INVALID_CREDENTIAL_ID"
+
+    def hasInvalidCredentialId(errorJson: JsValue): Boolean =
+      (errorJson \ "code").asOpt[String].contains(invalidCredentialId) ||
+        (errorJson \ "errors").asOpt[Seq[JsValue]].exists(_.exists(error => (error \ "code").asOpt[String].contains(invalidCredentialId)))
+
+    error.message.contains(invalidCredentialId) ||
+    (try hasInvalidCredentialId(Json.parse(error.message))
+    catch case NonFatal(_) => false)
 
   private def postcodeFor(workItem: SubscriptionWorkItem): Option[PayePostcode.Valid] =
     workItem.subscriptionRequest match {
