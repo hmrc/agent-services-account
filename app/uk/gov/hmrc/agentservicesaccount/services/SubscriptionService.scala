@@ -216,6 +216,7 @@ extends Logging:
       case CallbackFailure =>
         subscriptionWorkItemRepository.handleFailureCallback(callback.requestId).flatMap {
           case SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed(workItem) =>
+            logger.warn(s"[handleRoboticsCallback] Robotics failed to process request for ${callback.requestId}, work item marked as permanently failed")
             legacySubscriptionAuditService
               .auditFailure(
                 arn = workItem.item.arn,

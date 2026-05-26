@@ -32,7 +32,7 @@ import play.api.mvc.RequestHeader
 import play.api.Logging
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
+import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.{CallbackFailure, CallbackSuccess}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionInfo.format
 import uk.gov.hmrc.agentservicesaccount.services.SubscriptionService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -88,7 +88,8 @@ with Logging:
         Future.successful(BadRequest(msg))
       else
         legacySubscriptionService.handleRoboticsCallback(request.body).map {
-          case SubscriptionService.CallbackHandling.Handled => NoContent
+          case SubscriptionService.CallbackHandling.Handled =>
+            NoContent
           case SubscriptionService.CallbackHandling.NotFound =>
             val msg = s"Did not find a work item with requestId: ${request.body.requestId}"
             logger.error(s"[roboticsCallback] $msg")

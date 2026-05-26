@@ -229,8 +229,8 @@ with Logging:
     coll.updateOne(
       Filters.and(
         Filters.equal("item.requestId", requestId),
-        Filters.exists(s"${workItemFields.item}.agentReference", false)
-        //Filters.notEqual(workItemFields.status, ProcessingStatus.PermanentlyFailed) TODO Allowing retries for permanently failed items to allow for robotics to reattempt incorrect failures from their end
+        Filters.exists(s"${workItemFields.item}.agentReference", false),
+        Filters.notEqual(workItemFields.status, ProcessingStatus.PermanentlyFailed)
       ),
       Updates.combine(
         Updates.set("item.agentReference", agentReference.value),
