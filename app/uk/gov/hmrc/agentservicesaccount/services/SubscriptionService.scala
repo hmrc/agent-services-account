@@ -69,7 +69,7 @@ extends Logging:
     regime: LegacyRegime,
     groupId: GroupId
   )(using request: RequestHeader): Future[Done] = enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).map { enrolments =>
-    if enrolments.exists(e => e.service == regime.enrolmentKey && e.state == "Activated") then
+    if enrolments.exists(e => e.service == regime.enrolmentKey) then
       throw UpstreamErrorResponse(
         message = s"Already enrolled for ${regime.toString}",
         statusCode = CONFLICT,
@@ -245,7 +245,7 @@ extends Logging:
         )
       case optWorkItem =>
         enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).flatMap {
-          case enrolments if enrolments.exists(e => e.service == regime.enrolmentKey && e.state == "Activated") =>
+          case enrolments if enrolments.exists(e => e.service == regime.enrolmentKey) =>
             Future.successful(
               SubscriptionInfo(
                 regime = regime,
