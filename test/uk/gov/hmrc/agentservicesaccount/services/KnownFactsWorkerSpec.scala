@@ -23,6 +23,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as eqTo
 import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
+import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EmailConnector
@@ -41,6 +42,7 @@ import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
@@ -368,6 +370,57 @@ with MockLegacySubscriptionAuditService:
           arn = workItem.item.arn,
           regime = regime,
           failureReason = "Max retry attempts reached in KnownFactsWorker"
+        )
+      }
+
+      "mark permanenty failed if agent already has the enrolment" in {
+        val errorJson =
+          Json.obj(
+            "code" -> "MULTIPLE_ENROLMENTS_INVALID",
+            "message" -> "Multiple Enrolments are not valid for this service"
+          ).toString
+        val workItem = buildWorkItem(
+          regime,
+          failureCount = 0,
+          subscriptionRequest = subscriptionRequest
+        )
+        val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        mockLegacySubscriptionAuditFailure()
+
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
+
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(response)))
+
+        when(connector.allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.failed(UpstreamErrorResponse(
+            errorJson,
+            409,
+            409
+          )))
+
+        when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
+
+        worker.runOnce(using jobConfig, regime).futureValue
+
+        verify(workItemService).markPermanentlyFailed(workItem)
+        val captor = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
+
+        verify(mockLegacySubscriptionAuditService).auditFailure(
+          arn = workItem.item.arn,
+          regime = regime,
+          failureReason = "Agent already had enrolment for regime"
         )
       }
     }

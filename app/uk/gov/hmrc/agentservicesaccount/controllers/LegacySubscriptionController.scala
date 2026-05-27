@@ -88,8 +88,7 @@ with Logging:
         Future.successful(BadRequest(msg))
       else
         legacySubscriptionService.handleRoboticsCallback(request.body).map {
-          case SubscriptionService.CallbackHandling.Handled =>
-            NoContent
+          case SubscriptionService.CallbackHandling.Handled => NoContent
           case SubscriptionService.CallbackHandling.NotFound =>
             val msg = s"Did not find a work item with requestId: ${request.body.requestId}"
             logger.error(s"[roboticsCallback] $msg")

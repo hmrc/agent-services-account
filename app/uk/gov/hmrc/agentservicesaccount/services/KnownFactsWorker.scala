@@ -30,6 +30,7 @@ import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 import uk.gov.hmrc.http.Authorization
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.SessionId
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import javax.inject.Inject
@@ -53,9 +54,19 @@ extends Logging:
   ): Future[Done] = workItemService.pullOutstanding(regime, jobConfig.retryInterval).flatMap {
     case None => Future.successful(Done)
     case Some(workItem) =>
-      process(workItem).recoverWith { case NonFatal(error) =>
-        logger.warn(s"[KnownFactsWorker] $regime known facts failed for work item ${workItem.id}", error)
-        handleFailure(workItem)
+      process(workItem).recoverWith {
+        case e: UpstreamErrorResponse if e.message.contains("MULTIPLE_ENROLMENTS_INVALID") =>
+          logger.warn(s"[KnownFactsWorker] $regime known facts failed for work item ${workItem.id} because agent already had that enrolment")
+          legacySubscriptionAuditService
+            .auditFailure(
+              arn = workItem.item.arn,
+              regime = workItem.item.regime,
+              failureReason = "Agent already had enrolment for regime"
+            )
+            .flatMap(_ => workItemService.markPermanentlyFailed(workItem))
+        case NonFatal(error) =>
+          logger.warn(s"[KnownFactsWorker] $regime known facts failed for work item ${workItem.id}", error)
+          handleFailure(workItem)
       }
   }
 
