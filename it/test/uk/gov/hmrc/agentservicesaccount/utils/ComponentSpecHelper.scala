@@ -81,6 +81,8 @@ with GuiceOneServerPerSuite:
     "microservice.services.agent-mapping.port" -> mockPort,
     "microservice.services.enrolment-store-proxy.host" -> mockHost,
     "microservice.services.enrolment-store-proxy.port" -> mockPort,
+    "microservice.services.users-groups-search.host" -> mockHost,
+    "microservice.services.users-groups-search.port" -> mockPort,
     "microservice.services.citizen-details.host" -> mockHost,
     "microservice.services.citizen-details.port" -> mockPort,
     "microservice.services.email.port" -> mockPort,

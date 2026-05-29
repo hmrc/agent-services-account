@@ -45,6 +45,7 @@ class AppConfig @Inject() (
 
   val mongoTtl: Long = config.get[Long]("mongodb.timeToLive")
   val enrolmentStoreProxyBaseUrl: String = baseUrl("enrolment-store-proxy")
+  val usersGroupsSearchBaseUrl: String = baseUrl("users-groups-search")
   val citizenDetailsBaseUrl: String = baseUrl("citizen-details")
   val desBaseUrl: String = baseUrl("des")
   val desAuthToken: String = servicesConfig.getString("microservice.services.des.authorization-token")

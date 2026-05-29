@@ -27,6 +27,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EmailConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
+import uk.gov.hmrc.agentservicesaccount.connectors.UsersGroupsSearchConnector
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.models.Es20Enrolment
@@ -41,6 +42,7 @@ import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
@@ -68,6 +70,7 @@ with MockLegacySubscriptionAuditService:
 
   private val workItemService = mock[KnownFactsWorkItemService]
   private val connector = mock[EnrolmentStoreProxyConnector]
+  private val usersGroupsSearchConnector = mock[UsersGroupsSearchConnector]
   private val emailConnector = mock[EmailConnector]
 
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
@@ -145,6 +148,7 @@ with MockLegacySubscriptionAuditService:
     reset(
       workItemService,
       connector,
+      usersGroupsSearchConnector,
       emailConnector,
       mockLegacySubscriptionAuditService
     )
@@ -153,6 +157,7 @@ with MockLegacySubscriptionAuditService:
     new KnownFactsWorker(
       workItemService = workItemService,
       enrolmentStoreProxyConnector = connector,
+      usersGroupsSearchConnector = usersGroupsSearchConnector,
       emailConnector = emailConnector,
       legacySubscriptionAuditService = mockLegacySubscriptionAuditService
     )
@@ -234,6 +239,133 @@ with MockLegacySubscriptionAuditService:
           regime = regime,
           legacyAgentCode = Some("A12345")
         )
+      }
+
+      "recover from INVALID_CREDENTIAL_ID by allocating with another group admin" in {
+        val workItem = buildWorkItem(
+          regime,
+          failureCount = 0,
+          subscriptionRequest = subscriptionRequest
+        )
+        val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+        val replacementAdminCredId = CredId("REPLACEMENT-ADMIN")
+
+        mockLegacySubscriptionAuditSuccess()
+
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
+
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(response)))
+
+        when(connector.allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier]))
+          .thenReturn(
+            Future.failed(invalidCredentialIdError),
+            Future.successful(())
+          )
+
+        when(usersGroupsSearchConnector.getFirstAdminCredId(any[GroupId])(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(replacementAdminCredId)))
+
+        when(workItemService.complete(workItem)).thenReturn(Future.successful(Done))
+
+        worker.runOnce(using jobConfig, regime).futureValue
+
+        verify(usersGroupsSearchConnector).getFirstAdminCredId(any[GroupId])(using any[HeaderCarrier])
+        verify(connector, times(2)).allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier])
+        verify(workItemService).complete(workItem)
+        verify(workItemService, never()).markFailed(workItem)
+      }
+
+      "mark failed when INVALID_CREDENTIAL_ID is returned and no other group admin is available" in {
+        val workItem = buildWorkItem(
+          regime,
+          failureCount = 0,
+          subscriptionRequest = subscriptionRequest
+        )
+        val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
+
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(response)))
+
+        when(connector.allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.failed(multipleErrorsWithInvalidCredentialId))
+
+        when(usersGroupsSearchConnector.getFirstAdminCredId(any[GroupId])(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(None))
+
+        when(workItemService.markFailed(workItem)).thenReturn(Future.successful(Done))
+
+        worker.runOnce(using jobConfig, regime).futureValue
+
+        verify(usersGroupsSearchConnector).getFirstAdminCredId(any[GroupId])(using any[HeaderCarrier])
+        verify(workItemService).markFailed(workItem)
+        verify(workItemService, never()).complete(workItem)
+      }
+
+      "not recover from other ES8 errors" in {
+        val workItem = buildWorkItem(
+          regime,
+          failureCount = 0,
+          subscriptionRequest = subscriptionRequest
+        )
+        val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
+
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(response)))
+
+        when(connector.allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.failed(UpstreamErrorResponse(
+            """{"code":"OTHER_ERROR","message":"No"}""",
+            400,
+            400
+          )))
+
+        when(workItemService.markFailed(workItem)).thenReturn(Future.successful(Done))
+
+        worker.runOnce(using jobConfig, regime).futureValue
+
+        verifyNoInteractions(usersGroupsSearchConnector)
+        verify(workItemService).markFailed(workItem)
+        verify(workItemService, never()).complete(workItem)
       }
 
       "send a service-specific completion email after allocating the enrolment" in {
@@ -414,3 +546,15 @@ with MockLegacySubscriptionAuditService:
       case PAYE => "Pay as you earn (PAYE)/Construction Industry Scheme (CIS)"
       case SA => "Self Assessment"
       case CT => "Corporation Tax"
+
+  private def invalidCredentialIdError: UpstreamErrorResponse = UpstreamErrorResponse(
+    """{"code":"INVALID_CREDENTIAL_ID","message":"Credential id is invalid"}""",
+    400,
+    400
+  )
+
+  private def multipleErrorsWithInvalidCredentialId: UpstreamErrorResponse = UpstreamErrorResponse(
+    """{"code":"MULTIPLE_ERRORS","message":"Multiple errors have occurred","errors":[{"code":"INVALID_CREDENTIAL_ID","message":"Credential id is invalid"}]}""",
+    400,
+    400
+  )
