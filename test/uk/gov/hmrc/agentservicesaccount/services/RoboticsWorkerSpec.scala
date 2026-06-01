@@ -70,7 +70,7 @@ with MockLegacySubscriptionAuditService:
   private def buildWorkItem(
     regime: LegacyRegime,
     request: SubscriptionRequest,
-    requestId: String = "req-123",
+    requestId: String,
     failureCount: Int = 0,
     entityType: String = AgentEntityType.SoleTrader
   ): WorkItem[SubscriptionWorkItem] = WorkItem(
@@ -163,38 +163,62 @@ with MockLegacySubscriptionAuditService:
         verifyNoInteractions(connector)
       }
 
-      "invoke robotics with stub-compatible payload and replay auth/session headers in stubs mode" in {
+      "invoke robotics with HIP payload shape and replay auth/session headers in stubs mode" in {
         val workItem = buildWorkItem(
           regime,
           ukRequest,
           requestId = "stub-req-123"
         )
 
-        val roboticsArgumentValueForStubs = RoboticsArgumentValueForStubs(
+        val roboticsArgumentValue = RoboticsArgumentValue(
           requestId = "stub-req-123",
           targetSystem = targetSystem.toString,
+          operationRequired = Operation.CREATE.toString,
+          entityType = AgentEntityType.SoleTrader,
+          agentName = ukRequest.agentName,
+          tradingAs = ukRequest.agentName,
+          isAbroad = false,
+          addressLine1 = ukRequest.address.line1,
+          addressLine2 = ukRequest.address.line2,
+          addressLine3 = ukRequest.address.line3,
+          addressLine4 = ukRequest.address.line4,
           postcode = Some("AA1 1AA"),
-          operationRequired = Operation.CREATE.toString
+          phone = ukRequest.phoneNumber,
+          email = ukRequest.emailAddress,
+          ARN = workItem.item.arn.value
         )
 
-        val roboticsArgumentForStubs = RoboticsArgumentForStubs(
+        val roboticsArgument = RoboticsArgument(
           argumentType = "string",
-          argumentValue = roboticsArgumentValueForStubs
+          argumentValue = roboticsArgumentValue
         )
 
-        val roboticsWorkflowDataForStubs = RoboticsWorkflowDataForStubs(
-          arguments = List(roboticsArgumentForStubs)
+        val roboticsWorkflowData = RoboticsWorkflowData(
+          arguments = List(roboticsArgument)
         )
 
-        val roboticsRequestDataForStubs = RoboticsRequestDataForStubs(
-          workflowData = roboticsWorkflowDataForStubs
+        val roboticsWorkflowMetaData = RoboticsWorkflowMetaData(
+          solution = appConfig.roboticsWorkflowMetaDataSolution,
+          workflowId = appConfig.roboticsWorkflowMetaDataWorkflowID
         )
 
-        val roboticsRequestForStubs = RoboticsRequestForStubs(
-          requestData = List(roboticsRequestDataForStubs)
+        val roboticsRequestData = RoboticsRequestData(
+          workflowMetaData = roboticsWorkflowMetaData,
+          workflowData = roboticsWorkflowData
         )
 
-        val expectedPayload: JsObject = Json.toJson(roboticsRequestForStubs).as[JsObject]
+        val roboticsRequestMetaData = RoboticsRequestMetaData(
+          initiatorType = "THIRD_PARTY_APP",
+          initiatorId = "ASA",
+          externalInvokerReqId = "stub-req-123"
+        )
+
+        val roboticsRequest = RoboticsRequest(
+          requestMetaData = roboticsRequestMetaData,
+          requestData = List(roboticsRequestData)
+        )
+
+        val expectedPayload: JsObject = Json.toJson(roboticsRequest).as[JsObject]
         val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
 
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
