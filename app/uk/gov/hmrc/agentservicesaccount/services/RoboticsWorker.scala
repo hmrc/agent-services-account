@@ -66,39 +66,6 @@ extends Logging:
       }
   }
 
-  private def createRoboticsRequestBodyForStubs(
-    workItem: WorkItem[SubscriptionWorkItem],
-    targetSystem: TargetSystem,
-    request: SubscriptionRequest
-  ) = {
-
-    val roboticsArgumentValueForStubs = RoboticsArgumentValueForStubs(
-      requestId = workItem.item.requestId,
-      targetSystem = targetSystem.toString,
-      postcode = request.address.postCode,
-      operationRequired = Operation.CREATE.toString
-    )
-
-    val roboticsArgumentForStubs = RoboticsArgumentForStubs(
-      argumentType = "string",
-      argumentValue = roboticsArgumentValueForStubs
-    )
-
-    val roboticsWorkflowDataForStubs = RoboticsWorkflowDataForStubs(
-      arguments = List(roboticsArgumentForStubs)
-    )
-
-    val roboticsRequestDataForStubs = RoboticsRequestDataForStubs(
-      workflowData = roboticsWorkflowDataForStubs
-    )
-
-    val roboticsRequestForStubs = RoboticsRequestForStubs(
-      requestData = List(roboticsRequestDataForStubs)
-    )
-
-    Json.toJson(roboticsRequestForStubs).as[JsObject]
-  }
-
   private def createRoboticsRequestBodyForAllEnvironments(
     workItem: WorkItem[SubscriptionWorkItem],
     targetSystem: TargetSystem,
@@ -168,24 +135,12 @@ extends Logging:
         case LegacyRegime.CT => TargetSystem.COTAX
       }
 
-    val operationData: JsObject = {
-
-      if appConfig.stubsCompatibilityMode then
-        // TODO update stubs to accept the same contract as QA/Prod, then remove this branch. Abroad currently not supported by the stub
-        createRoboticsRequestBodyForStubs(
-          workItem,
-          targetSystem,
-          request
-        )
-      else
-        createRoboticsRequestBodyForAllEnvironments(
-          workItem,
-          targetSystem,
-          request
-        )
-      end if
-
-    }
+    val operationData: JsObject =
+      createRoboticsRequestBodyForAllEnvironments(
+        workItem,
+        targetSystem,
+        request
+      )
 
     val payload = operationData
 
