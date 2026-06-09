@@ -31,6 +31,7 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAuditService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
@@ -51,6 +52,7 @@ extends UnitSpec
 with IntegrationPatience
 with CleanMongoCollectionSupport
 with MockAuditService
+with MockLegacySubscriptionEmailService
 with BeforeAndAfterEach {
 
   given Encrypter & Decrypter = SymmetricCryptoFactory.aesCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
@@ -71,6 +73,7 @@ with BeforeAndAfterEach {
     new OrphanedWorkItemCleanupService(
       repository,
       auditService,
+      mockLegacySubscriptionEmailService,
       appConfig
     )
 
@@ -97,7 +100,7 @@ with BeforeAndAfterEach {
     repository.coll.drop().toFuture().futureValue
     repository.ensureIndexes().futureValue
 
-    reset(mockAuditService)
+    reset(mockAuditService, mockLegacySubscriptionEmailService)
 
     mockAuditLegacySubscription()
 
@@ -108,7 +111,7 @@ with BeforeAndAfterEach {
   "cleanup" should {
 
     "mark eligible work items permanently failed" in {
-
+      mockSendFailureEmailIgnoreErrors()
       val workItem =
         repository.pushNew(
           SubscriptionWorkItem(
@@ -138,6 +141,7 @@ with BeforeAndAfterEach {
 
     "audit each permanently failed work item" in {
 
+      mockSendFailureEmailIgnoreErrors()
       val workItem =
         repository.pushNew(
           SubscriptionWorkItem(
@@ -150,7 +154,6 @@ with BeforeAndAfterEach {
             adminCredId = CredId("cred-1")
           )
         ).futureValue
-
       repository.coll.updateOne(
         mongoEq("_id", workItem.id),
         combine(
@@ -182,6 +185,7 @@ with BeforeAndAfterEach {
           case None => false
         }
       )(using any[RequestHeader])
+      verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])
     }
 
     "skip already permanently failed work items" in {
