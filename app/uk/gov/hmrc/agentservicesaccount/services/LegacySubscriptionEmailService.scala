@@ -43,7 +43,7 @@ extends Logging {
     workItem: SubscriptionWorkItem
   ): Future[Unit] = sendFailureEmail(workItem)
     .map { _ =>
-      // TODO APB-11507 for debugging purpose, remove it once verified on staging
+      // TODO APB-11507 for debugging purpose, remove it once testing is done QA
       logger.info(s"[LegacySubscriptionEmailService] Failure email sent for request ${workItem.requestId}")
     }
     .recover { case NonFatal(error) =>
