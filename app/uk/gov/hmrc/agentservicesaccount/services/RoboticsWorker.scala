@@ -42,6 +42,7 @@ class RoboticsWorker @Inject() (
   workItemService: RoboticsWorkItemService,
   roboticsInvocationConnector: RoboticsInvocationConnector,
   legacySubscriptionAuditService: LegacySubscriptionAuditService,
+  legacySubscriptionEmailService: LegacySubscriptionEmailService,
   appConfig: AppConfig
 )(using
   ec: ExecutionContext
@@ -166,14 +167,16 @@ extends Logging:
   }
 
   def handleFailure(workItem: WorkItem[SubscriptionWorkItem])(using jobConfig: WorkItemJobConfig): Future[Done] =
-    if workItem.failureCount + 1 >= jobConfig.maxAttempts then
-      legacySubscriptionAuditService
-        .auditFailure(
+    if workItem.failureCount + 1 >= jobConfig.maxAttempts then {
+      for {
+        _ <- legacySubscriptionAuditService.auditFailure(
           arn = workItem.item.arn,
           regime = workItem.item.regime,
           failureReason = "Max retry attempts reached in RoboticsWorker"
-        )
-        .recover { case _ => () }
-        .flatMap(_ => workItemService.markPermanentlyFailed(workItem))
+        ).recover { case _ => () }
+        _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
+        result <- workItemService.markPermanentlyFailed(workItem)
+      } yield result
+    }
     else
       workItemService.markFailed(workItem)

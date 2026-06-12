@@ -32,7 +32,7 @@ import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentMappingConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
+import uk.gov.hmrc.agentservicesaccount.mocks.{MockLegacySubscriptionAuditService, MockLegacySubscriptionEmailService}
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.Enrolment
@@ -59,6 +59,7 @@ extends UnitSpec
 with IntegrationPatience
 with CleanMongoCollectionSupport
 with MockLegacySubscriptionAuditService
+with MockLegacySubscriptionEmailService
 with BeforeAndAfterEach {
 
   private val testArn = Arn("AARN0000001")
@@ -146,6 +147,7 @@ with BeforeAndAfterEach {
       espConnector,
       agentMappingConnector,
       mockLegacySubscriptionAuditService,
+      mockLegacySubscriptionEmailService,
       appConfig,
       agentEntityTypeService
     )
@@ -157,6 +159,7 @@ with BeforeAndAfterEach {
       espConnector,
       agentMappingConnector,
       mockLegacySubscriptionAuditService,
+      mockLegacySubscriptionEmailService,
       appConfig,
       agentEntityTypeService
     )
@@ -564,6 +567,7 @@ with BeforeAndAfterEach {
       repository.markAs(workItem.id, InProgress).futureValue
 
       mockLegacySubscriptionAuditFailure()
+      mockSendFailureEmailIgnoreErrors()
 
       val callbackResult =
         service.handleRoboticsCallback(
@@ -584,6 +588,7 @@ with BeforeAndAfterEach {
         regime = workItem.item.regime,
         failureReason = "Robotics callback failure: boom"
       )
+      verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
     }
   }
 

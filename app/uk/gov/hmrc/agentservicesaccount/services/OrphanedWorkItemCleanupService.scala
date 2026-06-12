@@ -33,6 +33,7 @@ import scala.concurrent.Future
 class OrphanedWorkItemCleanupService @Inject() (
   repository: SubscriptionWorkItemRepository,
   legacySubscriptionAuditService: LegacySubscriptionAuditService,
+  legacySubscriptionEmailService: LegacySubscriptionEmailService,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends Logging {
@@ -67,19 +68,16 @@ extends Logging {
 
     repository.markPermanentlyFailed(workItem.id).flatMap {
       case true =>
-        legacySubscriptionAuditService
-          .auditFailure(
+        for {
+          _ <- legacySubscriptionAuditService.auditFailure(
             arn = item.arn,
             regime = item.regime,
             failureReason = reason
           )
-          .map(_ => Done)
-
+          _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(item)
+        } yield Done
       case false =>
-        logger.warn(
-          s"[OrphanedWorkItemCleanupService] Failed to mark work item permanently failed: ${workItem.id}"
-        )
-
+        logger.warn(s"[OrphanedWorkItemCleanupService] Failed to mark work item permanently failed: ${workItem.id}")
         Future.successful(Done)
     }
   }

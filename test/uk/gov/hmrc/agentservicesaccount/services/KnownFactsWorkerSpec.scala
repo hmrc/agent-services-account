@@ -25,11 +25,9 @@ import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
-import uk.gov.hmrc.agentservicesaccount.connectors.EmailConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.UsersGroupsSearchConnector
 import uk.gov.hmrc.agentservicesaccount.models.CredId
-import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.models.Es20Enrolment
 import uk.gov.hmrc.agentservicesaccount.models.Es20Response
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
@@ -40,6 +38,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.UpstreamErrorResponse
@@ -56,7 +55,8 @@ class KnownFactsWorkerSpec
 extends UnitSpec
 with BeforeAndAfterEach
 with MockAppConfig
-with MockLegacySubscriptionAuditService:
+with MockLegacySubscriptionAuditService
+with MockLegacySubscriptionEmailService:
 
   given HeaderCarrier = HeaderCarrier()
 
@@ -71,7 +71,6 @@ with MockLegacySubscriptionAuditService:
   private val workItemService = mock[KnownFactsWorkItemService]
   private val connector = mock[EnrolmentStoreProxyConnector]
   private val usersGroupsSearchConnector = mock[UsersGroupsSearchConnector]
-  private val emailConnector = mock[EmailConnector]
 
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
@@ -149,8 +148,8 @@ with MockLegacySubscriptionAuditService:
       workItemService,
       connector,
       usersGroupsSearchConnector,
-      emailConnector,
-      mockLegacySubscriptionAuditService
+      mockLegacySubscriptionAuditService,
+      mockLegacySubscriptionEmailService
     )
 
   private val worker =
@@ -158,8 +157,8 @@ with MockLegacySubscriptionAuditService:
       workItemService = workItemService,
       enrolmentStoreProxyConnector = connector,
       usersGroupsSearchConnector = usersGroupsSearchConnector,
-      emailConnector = emailConnector,
-      legacySubscriptionAuditService = mockLegacySubscriptionAuditService
+      legacySubscriptionAuditService = mockLegacySubscriptionAuditService,
+      legacySubscriptionEmailService = mockLegacySubscriptionEmailService
     )
 
   testData.foreach { case (regime, subscriptionRequest) =>
@@ -207,6 +206,7 @@ with MockLegacySubscriptionAuditService:
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
         mockLegacySubscriptionAuditSuccess()
+        mockSendCompletionEmailIgnoreErrors()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
@@ -251,6 +251,7 @@ with MockLegacySubscriptionAuditService:
         val replacementAdminCredId = CredId("REPLACEMENT-ADMIN")
 
         mockLegacySubscriptionAuditSuccess()
+        mockSendCompletionEmailIgnoreErrors()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
@@ -383,6 +384,7 @@ with MockLegacySubscriptionAuditService:
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
         mockLegacySubscriptionAuditSuccess()
+        mockSendCompletionEmailIgnoreErrors()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
@@ -402,24 +404,11 @@ with MockLegacySubscriptionAuditService:
         )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(()))
 
-        when(emailConnector.sendEmail(any[EmailInformation])(using any[play.api.mvc.RequestHeader]))
-          .thenReturn(Future.successful(()))
-
         when(workItemService.complete(workItem)).thenReturn(Future.successful(Done))
 
         worker.runOnce(using jobConfig, regime).futureValue
 
-        verify(emailConnector).sendEmail(eqTo(EmailInformation(
-          to = Seq("agent@example.com"),
-          templateId = "agent_services_subscription_complete",
-          parameters = Map(
-            "agencyName" -> "Agent Name",
-            "arn" -> "TARN0000001",
-            "serviceName" -> expectedServiceName(regime),
-            "serviceSectionName" -> expectedServiceSectionName(regime),
-            "agentCode" -> "A12345"
-          )
-        )))(using any[play.api.mvc.RequestHeader])
+        verify(mockLegacySubscriptionEmailService).sendCompletionEmailIgnoreErrors(workItem.item)
         verify(workItemService).complete(workItem)
       }
 
@@ -438,6 +427,7 @@ with MockLegacySubscriptionAuditService:
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
         mockLegacySubscriptionAuditSuccess()
+        mockSendCompletionEmailIgnoreErrors()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
@@ -457,14 +447,11 @@ with MockLegacySubscriptionAuditService:
         )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(()))
 
-        when(emailConnector.sendEmail(any[EmailInformation])(using any[play.api.mvc.RequestHeader]))
-          .thenReturn(Future.failed(new RuntimeException("email service unavailable")))
-
         when(workItemService.complete(workItem)).thenReturn(Future.successful(Done))
 
         worker.runOnce(using jobConfig, regime).futureValue
 
-        verify(emailConnector).sendEmail(any[EmailInformation])(using any[play.api.mvc.RequestHeader])
+        verify(mockLegacySubscriptionEmailService).sendCompletionEmailIgnoreErrors(workItem.item)
         verify(workItemService).complete(workItem)
         verify(workItemService, never()).markFailed(workItem)
       }
@@ -477,6 +464,7 @@ with MockLegacySubscriptionAuditService:
         )
 
         mockLegacySubscriptionAuditFailure()
+        mockSendFailureEmailIgnoreErrors()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
@@ -501,6 +489,7 @@ with MockLegacySubscriptionAuditService:
           regime = regime,
           failureReason = "Max retry attempts reached in KnownFactsWorker"
         )
+        verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
       }
     }
   }

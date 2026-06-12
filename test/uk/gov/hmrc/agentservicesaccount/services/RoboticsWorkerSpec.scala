@@ -36,6 +36,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
@@ -49,7 +50,8 @@ import scala.concurrent.duration.*
 class RoboticsWorkerSpec
 extends UnitSpec
 with BeforeAndAfterEach
-with MockLegacySubscriptionAuditService:
+with MockLegacySubscriptionAuditService
+with MockLegacySubscriptionEmailService:
 
   private val workItemService = mock[RoboticsWorkItemService]
   private val connector = mock[RoboticsInvocationConnector]
@@ -61,6 +63,7 @@ with MockLegacySubscriptionAuditService:
       workItemService,
       connector,
       mockLegacySubscriptionAuditService,
+      mockLegacySubscriptionEmailService,
       appConfig
     )
 
@@ -344,7 +347,7 @@ with MockLegacySubscriptionAuditService:
           .thenReturn(Future.failed(new RuntimeException("boom")))
         when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
         mockLegacySubscriptionAuditFailure()
-
+        mockSendFailureEmailIgnoreErrors()
         worker.runOnce(using jobConfig, regime).futureValue
 
         verify(workItemService).markPermanentlyFailed(workItem)
@@ -353,6 +356,7 @@ with MockLegacySubscriptionAuditService:
           regime = regime,
           failureReason = "Max retry attempts reached in RoboticsWorker"
         )
+        verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
       }
     }
   }
