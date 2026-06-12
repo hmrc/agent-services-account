@@ -44,7 +44,7 @@ extends Logging {
   ): Future[Unit] = sendFailureEmail(workItem)
     .map { _ =>
       // TODO APB-11507 for debugging purpose, remove it once verified on staging
-      logger.info(s"[LegacySubscriptionEmailService] Failure email sent for request ${workItem.requestId}, arn=${workItem.arn}")
+      logger.info(s"[LegacySubscriptionEmailService] Failure email sent for request ${workItem.requestId}")
     }
     .recover { case NonFatal(error) =>
       logger.warn(
