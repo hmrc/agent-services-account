@@ -42,10 +42,6 @@ extends Logging {
   def sendFailureEmailIgnoreErrors(
     workItem: SubscriptionWorkItem
   ): Future[Unit] = sendFailureEmail(workItem)
-    .map { _ =>
-      // TODO APB-11507 for debugging purpose, remove it once testing is done QA
-      logger.info(s"[LegacySubscriptionEmailService] Failure email sent for request ${workItem.requestId}")
-    }
     .recover { case NonFatal(error) =>
       logger.warn(
         s"[LegacySubscriptionEmailService] Failed to send failure email for request ${workItem.requestId}",
