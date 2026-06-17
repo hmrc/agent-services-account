@@ -25,15 +25,9 @@ import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
-import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails
+import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, AmlsDetails, BusinessAddress, HipAgentSubscriptionResponse, HipAmendPayload, HipAmendResponse, UpdateStatus}
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
-import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
-import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
-import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
-import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import play.api.libs.ws.writeableOf_JsValue
@@ -96,22 +90,58 @@ with Logging {
     )
   }
 
+  private def formUpdatedAgentRecord(response: AgentDetailsDesResponse, payload: HipAmendPayload): HipAmendPayload = {
+    //    TODO: 11584 Build up and test this function
+//    ADDRESS (if address update, only replace address model (without using current placeholder logic)
+    val addr1: Option[String] = None
+    val addr2: Option[String] = None
+    val addr3: Option[String] = None
+    val addr4: Option[String] = None
+    val postcode: Option[String] = None
+    val country: Option[String] = None
+//    OTHER CONTACT (if multiple contact details updates combined, only update the non optional ones)
+    val name: Option[String] = None
+    val phone: Option[String] = None
+    val email: Option[String] = None
+//    AMLS FIELDS (if AMLS, only change the 3 AMLS fields)
+    val supervisoryBody: Option[String] = None
+    val membershipNumber: Option[String] = None
+    val evidenceObjectReference: Option[String] = None
+//    MMTAR FIELDS (The 5 new MMTAR related flags are mandatory but won't exist for old records, default them to "ACCEPTED" when not present)
+    val updateDetailsStatus: Option[UpdateStatus] = None
+    val amlSupervisionUpdateStatus: Option[UpdateStatus] = None
+    val directorPartnerUpdateStatus: Option[UpdateStatus] = None
+    val acceptNewTermsStatus: Option[UpdateStatus] = None
+    val reriskStatus: Option[UpdateStatus] = None
+    payload
+  }
+
   def putAgentRecord(
     arn: Arn,
-    payload: HipAmendPayload
-  )(using request: RequestHeader): Future[HipAmendResponse] =
+    hipAmendPayload: HipAmendPayload
+  )(using request: RequestHeader): Future[HipAmendResponse] = {
     val url = url"$baseUrl/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"
-    retryFor[HipAmendResponse](s"HIP put $url")(retryCondition) {
-      httpV2
-        .put(url)
-        .withBody(Json.toJson(payload))
-        .setHeader(hipHeaders*)
-        .executeAndDeserialise[HipAmendResponse]
-    }.flatMap { response =>
-      agentCacheProvider.agentDetailsCache.delete(arn.value)
-        .recover { case e => logger.warn(s"Failed to invalidate agent details cache: ${e.getMessage}") }
-        .map(_ => response)
+    val payloadAsFuture: Future[HipAmendPayload] = if (appConfig.updatedHipPutAgentRecord) {
+      val currentAgentRecord: Future[AgentDetailsDesResponse] = getAgentRecord(arn)
+      currentAgentRecord.map(agentRecord => formUpdatedAgentRecord(agentRecord, hipAmendPayload))
+    } else {
+      Future.successful(hipAmendPayload)
     }
+    val result: Future[HipAmendResponse] = payloadAsFuture.flatMap(payload => {
+      retryFor[HipAmendResponse](s"HIP put $url")(retryCondition) {
+        httpV2
+          .put(url)
+          .withBody(Json.toJson(payload))
+          .setHeader(hipHeaders *)
+          .executeAndDeserialise[HipAmendResponse]
+      }.flatMap { response =>
+        agentCacheProvider.agentDetailsCache.delete(arn.value)
+          .recover { case e => logger.warn(s"Failed to invalidate agent details cache: ${e.getMessage}") }
+          .map(_ => response)
+      }
+    })
+    result
+  }
 
   private def mapHipToDesModel(
     hipResponse: HipAgentSubscriptionResponse
