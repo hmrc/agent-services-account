@@ -18,11 +18,9 @@ package uk.gov.hmrc.agentservicesaccount.repositories
 
 import com.typesafe.config.Config
 import org.mongodb.scala.MongoCollection
-import org.mongodb.scala.bson.Document
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
-import org.mongodb.scala.result.UpdateResult
 import play.api.Logging
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
@@ -32,8 +30,6 @@ import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemReposit
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.lock.MongoLockRepository
-import uk.gov.hmrc.mongo.lock.TimePeriodLockService
 import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.ObservableFuture
 import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.SingleObservableFuture
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
@@ -49,13 +45,11 @@ import javax.inject.Named
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
 
 @Singleton
 class SubscriptionWorkItemRepository @Inject() (
   config: Config,
-  mongoComponent: MongoComponent,
-  lockRepository: MongoLockRepository
+  mongoComponent: MongoComponent
 )(implicit
   ec: ExecutionContext,
   @Named("aes") crypto: Encrypter & Decrypter
@@ -86,23 +80,6 @@ with Logging:
 
   // Retry work items stuck in progress
   override def inProgressRetryAfter: Duration = config.getDuration("work-item-repository.subscriptions.retry-in-progress-after")
-
-  if config.getBoolean("work-item-repository.set-available-fields") then setAvailableAtFieldsSafe()
-
-  // Use for 2nd deployment to update any documents created after the first
-  def setAvailableAtFieldsSafe(): Future[Option[UpdateResult]] = {
-    val lockService = TimePeriodLockService(
-      lockRepository,
-      lockId = "fixing-timestamps-safe",
-      ttl = 20.minutes
-    )
-    lockService.withRenewedLock(
-      coll.updateMany(
-        Filters.exists("availableAt", false),
-        Seq(Document("""{$set: {"availableAt": "$receivedAt"}}"""))
-      ).toFuture()
-    )
-  }
 
   def findByArnAndRegime(
     arn: Arn,

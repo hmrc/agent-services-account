@@ -60,14 +60,12 @@ with BeforeAndAfterEach:
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private val repoConfig = ConfigFactory.parseString(
-    """work-item-repository.subscriptions.retry-in-progress-after = 1s,
-      |work-item-repository.set-available-fields = false""".stripMargin
+    """work-item-repository.subscriptions.retry-in-progress-after = 1s"""
   )
   private val repository =
     new SubscriptionWorkItemRepository(
       repoConfig,
-      mongoComponent,
-      new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
+      mongoComponent
     )
 
   private val testGroupId = GroupId("test-group-id")
@@ -91,39 +89,6 @@ with BeforeAndAfterEach:
   override protected def beforeEach(): Unit =
     super.beforeEach()
     repository.coll.drop().toFuture().futureValue
-
-  "setAvailableAtFieldsSafe" should {
-    "copy previous receivedAt field to a new availableAt field" in {
-      val workItem =
-        repository
-          .pushNew(
-            SubscriptionWorkItem(
-              arn = testArn,
-              subscriptionRequest = request,
-              regime = LegacyRegime.SA,
-              agentReference = None,
-              groupId = testGroupId,
-              adminCredId = testAdminCredId
-            )
-          )
-          .futureValue
-
-      repository.coll.updateOne(Filters.empty(), Updates.unset("availableAt")).toFuture().futureValue
-      val workItemBeforeRaw = repository.coll.find[Document]().toFuture().futureValue.head
-
-      repository.setAvailableAtFieldsSafe().futureValue
-
-      eventually {
-        val workItemAfterRaw: Document = repository.coll.find[Document]().toFuture().futureValue.head
-
-        val fieldsBefore: Map[String, Any] = workItemBeforeRaw.toMap
-        val fieldsAfter: Map[String, Any] = workItemAfterRaw.toMap
-        fieldsBefore.contains("availableAt") shouldBe false
-        fieldsBefore("receivedAt") shouldBe fieldsAfter("receivedAt")
-        fieldsAfter("availableAt") shouldBe fieldsAfter("receivedAt")
-      }
-    }
-  }
 
   "pullOutstandingRobotics" should {
     "re-pull a stale InProgress item when it has not yet been invoked (crash recovery)" in {

@@ -124,14 +124,12 @@ with BeforeAndAfterEach {
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private val repoConfig = ConfigFactory.parseString(
-    """work-item-repository.subscriptions.retry-in-progress-after = 1s,
-      |work-item-repository.set-available-fields = false""".stripMargin
+    """work-item-repository.subscriptions.retry-in-progress-after = 1s""".stripMargin
   )
   private val repository =
     new SubscriptionWorkItemRepository(
       repoConfig,
-      mongoComponent,
-      new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
+      mongoComponent
     )
 
   // Force a race-like condition deterministically by making `findByArnAndRegime` lie, while still relying on the
@@ -139,8 +137,7 @@ with BeforeAndAfterEach {
   class RaceSubscriptionWorkItemRepository
   extends SubscriptionWorkItemRepository(
     repoConfig,
-    mongoComponent,
-    new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
+    mongoComponent
   ):
     override def findByArnAndRegime(
       arn: Arn,

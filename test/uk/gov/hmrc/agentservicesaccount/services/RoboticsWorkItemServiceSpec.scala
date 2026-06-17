@@ -49,15 +49,13 @@ with BeforeAndAfterEach {
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private val repoConfig = ConfigFactory.parseString(
-    """work-item-repository.subscriptions.retry-in-progress-after = 1s,
-      |work-item-repository.set-available-fields = false""".stripMargin
+    """work-item-repository.subscriptions.retry-in-progress-after = 1s""".stripMargin
   )
 
   private val repository =
     new SubscriptionWorkItemRepository(
       repoConfig,
-      mongoComponent,
-      new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
+      mongoComponent
     )
 
   private val appConfig = mock[AppConfig]
