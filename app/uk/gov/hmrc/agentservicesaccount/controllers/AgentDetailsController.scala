@@ -92,6 +92,7 @@ with Logging {
         case Some(JsSuccess(updateRequest, _)) =>
           for
             oldRecord <- agentEntityService.getAgentDetailsWithChecks(arn)
+//            TODO: 11584 THIS IS AN IMPORTANT LINE - DO WE ALREADY GET THE AGENT RECORD??!!
             hipPayload = updateRequest.toHipAmendPayload(oldRecord.agentRecord)(logger)
             response <- hipConnector.putAgentRecord(arn, hipPayload)
           yield Ok(Json.obj("processingDate" -> response.success.processingDate))

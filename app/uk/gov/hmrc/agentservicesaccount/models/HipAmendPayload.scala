@@ -44,8 +44,9 @@ object HipAmendPayload:
   given Writes[HipAmendPayload] = Json.writes[HipAmendPayload]
 
   extension (request: AgentRecordUpdateRequest)
+    //            TODO: 11584 THIS IS AN IMPORTANT LINE - DO WE ALREADY GET THE AGENT RECORD??!! See AgentDetailsController
     def toHipAmendPayload(oldRecord: AgentDetailsDesResponse)(logger: Logger): HipAmendPayload =
-      // TODO replace this with the new PUT API solution when it is implemented on ETMP.
+      // TODO 11584 replace this with the new PUT API solution when it is implemented on ETMP.
       def addressLineWithFallback(
         newLine: Option[String],
         oldLine: Option[String],
