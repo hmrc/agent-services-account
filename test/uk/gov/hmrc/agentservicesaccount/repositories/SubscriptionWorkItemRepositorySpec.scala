@@ -92,52 +92,6 @@ with BeforeAndAfterEach:
     super.beforeEach()
     repository.coll.drop().toFuture().futureValue
 
-  "setAvailableAtFields" should {
-    "reset receivedAt field and copy previous receivedAt field to a new availableAt field" in {
-      val workItem =
-        repository
-          .pushNew(
-            SubscriptionWorkItem(
-              arn = testArn,
-              subscriptionRequest = request,
-              regime = LegacyRegime.SA,
-              agentReference = None,
-              groupId = testGroupId,
-              adminCredId = testAdminCredId
-            )
-          )
-          .futureValue
-
-      val date =
-        LocalDateTime.of(
-          2000,
-          1,
-          1,
-          1,
-          1,
-          1
-        ).atZone(ZoneId.of("Europe/London")).toInstant
-      repository.coll.updateOne(
-        Filters.empty(),
-        Updates.set(WorkItemFields.default.availableAt, date)
-      ).toFuture.futureValue
-
-      val workItemBefore = repository.findByRequestId(workItem.item.requestId).futureValue.value
-
-      repository.setAvailableAtFields().futureValue
-
-      eventually {
-        val workItemAfter = repository.findByRequestId(workItem.item.requestId).futureValue.value
-        val workItemAfterRaw: Document = repository.coll.find[Document]().toFuture().futureValue.head
-
-        workItemBefore.receivedAt shouldBe date
-        workItemAfter.receivedAt.getEpochSecond shouldBe workItem.receivedAt.getEpochSecond
-        val fields: Map[String, Any] = workItemAfterRaw.toMap
-        fields.contains("availableAt") shouldBe true
-      }
-    }
-  }
-
   "setAvailableAtFieldsSafe" should {
     "copy previous receivedAt field to a new availableAt field" in {
       val workItem =
@@ -154,6 +108,7 @@ with BeforeAndAfterEach:
           )
           .futureValue
 
+      repository.coll.updateOne(Filters.empty(), Updates.unset("availableAt")).toFuture().futureValue
       val workItemBeforeRaw = repository.coll.find[Document]().toFuture().futureValue.head
 
       repository.setAvailableAtFieldsSafe().futureValue

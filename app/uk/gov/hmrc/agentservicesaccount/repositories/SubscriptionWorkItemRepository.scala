@@ -64,7 +64,7 @@ extends WorkItemRepository[SubscriptionWorkItem](
   collectionName = "subscription-work-items",
   mongoComponent = mongoComponent,
   itemFormat = SubscriptionWorkItem.mongoFormat,
-  workItemFields = WorkItemFields.default,
+  workItemFields = customWorkItemFields,
   extraIndexes = Seq(
     IndexModel(
       Indexes.ascending("item.arn", "item.regime"),
@@ -87,31 +87,7 @@ with Logging:
   // Retry work items stuck in progress
   override def inProgressRetryAfter: Duration = config.getDuration("work-item-repository.subscriptions.retry-in-progress-after")
 
-  // Setting receivedAt back to its expected value and adding availableAt fields
-  def setAvailableAtFields(): Future[Option[Unit]] = {
-    val lockService = TimePeriodLockService(
-      lockRepository,
-      lockId = "fixing-timestamps",
-      ttl = 20.minutes
-    )
-    lockService.withRenewedLock(
-      Future.successful(coll.find(
-        Filters.empty()
-      ).subscribe(
-        doOnNext =
-          workItem =>
-            coll.updateOne(
-              Filters.equal("_id", workItem.id),
-              Updates.combine(
-                Updates.set("receivedAt", Instant.ofEpochSecond(workItem.id.getTimestamp)),
-                Updates.set("availableAt", workItem.availableAt)
-              )
-            ).toFuture()
-      ))
-    )
-  }
-
-  if config.getBoolean("work-item-repository.set-available-fields") then setAvailableAtFields()
+  if config.getBoolean("work-item-repository.set-available-fields") then setAvailableAtFieldsSafe()
 
   // Use for 2nd deployment to update any documents created after the first
   def setAvailableAtFieldsSafe(): Future[Option[UpdateResult]] = {
