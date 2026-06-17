@@ -18,11 +18,13 @@ package uk.gov.hmrc.agentservicesaccount.repositories
 
 import com.typesafe.config.ConfigFactory
 import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.bson.Document
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Updates
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
@@ -31,15 +33,22 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory
+import uk.gov.hmrc.mongo.CurrentTimestampSupport
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
+import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.ObservableFuture
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.InProgress
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import scala.concurrent.ExecutionContext
+import org.scalatest.concurrent.Eventually.eventually
+import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository.customWorkItemFields
+import uk.gov.hmrc.mongo.workitem.WorkItemFields
 
 class SubscriptionWorkItemRepositorySpec
 extends UnitSpec
@@ -51,9 +60,15 @@ with BeforeAndAfterEach:
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private val repoConfig = ConfigFactory.parseString(
-    """work-item-repository.subscriptions.retry-in-progress-after = 1s"""
+    """work-item-repository.subscriptions.retry-in-progress-after = 1s,
+      |work-item-repository.set-available-fields = false""".stripMargin
   )
-  private val repository = new SubscriptionWorkItemRepository(repoConfig, mongoComponent)
+  private val repository =
+    new SubscriptionWorkItemRepository(
+      repoConfig,
+      mongoComponent,
+      new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
+    )
 
   private val testGroupId = GroupId("test-group-id")
   private val testAdminCredId = CredId("test-cred-id")
@@ -76,6 +91,84 @@ with BeforeAndAfterEach:
   override protected def beforeEach(): Unit =
     super.beforeEach()
     repository.coll.drop().toFuture().futureValue
+
+  "setAvailableAtFields" should {
+    "reset receivedAt field and copy previous receivedAt field to a new availableAt field" in {
+      val workItem =
+        repository
+          .pushNew(
+            SubscriptionWorkItem(
+              arn = testArn,
+              subscriptionRequest = request,
+              regime = LegacyRegime.SA,
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
+            )
+          )
+          .futureValue
+
+      val date =
+        LocalDateTime.of(
+          2000,
+          1,
+          1,
+          1,
+          1,
+          1
+        ).atZone(ZoneId.of("Europe/London")).toInstant
+      repository.coll.updateOne(
+        Filters.empty(),
+        Updates.set(WorkItemFields.default.availableAt, date)
+      ).toFuture.futureValue
+
+      val workItemBefore = repository.findByRequestId(workItem.item.requestId).futureValue.value
+
+      repository.setAvailableAtFields().futureValue
+
+      eventually {
+        val workItemAfter = repository.findByRequestId(workItem.item.requestId).futureValue.value
+        val workItemAfterRaw: Document = repository.coll.find[Document]().toFuture().futureValue.head
+
+        workItemBefore.receivedAt shouldBe date
+        workItemAfter.receivedAt.getEpochSecond shouldBe workItem.receivedAt.getEpochSecond
+        val fields: Map[String, Any] = workItemAfterRaw.toMap
+        fields.contains("availableAt") shouldBe true
+      }
+    }
+  }
+
+  "setAvailableAtFieldsSafe" should {
+    "copy previous receivedAt field to a new availableAt field" in {
+      val workItem =
+        repository
+          .pushNew(
+            SubscriptionWorkItem(
+              arn = testArn,
+              subscriptionRequest = request,
+              regime = LegacyRegime.SA,
+              agentReference = None,
+              groupId = testGroupId,
+              adminCredId = testAdminCredId
+            )
+          )
+          .futureValue
+
+      val workItemBeforeRaw = repository.coll.find[Document]().toFuture().futureValue.head
+
+      repository.setAvailableAtFieldsSafe().futureValue
+
+      eventually {
+        val workItemAfterRaw: Document = repository.coll.find[Document]().toFuture().futureValue.head
+
+        val fieldsBefore: Map[String, Any] = workItemBeforeRaw.toMap
+        val fieldsAfter: Map[String, Any] = workItemAfterRaw.toMap
+        fieldsBefore.contains("availableAt") shouldBe false
+        fieldsBefore("receivedAt") shouldBe fieldsAfter("receivedAt")
+        fieldsAfter("availableAt") shouldBe fieldsAfter("receivedAt")
+      }
+    }
+  }
 
   "pullOutstandingRobotics" should {
     "re-pull a stale InProgress item when it has not yet been invoked (crash recovery)" in {

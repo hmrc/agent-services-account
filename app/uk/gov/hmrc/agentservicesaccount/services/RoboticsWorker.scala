@@ -136,12 +136,11 @@ extends Logging:
         case LegacyRegime.CT => TargetSystem.COTAX
       }
 
-    val operationData: JsObject =
-      createRoboticsRequestBodyForAllEnvironments(
-        workItem,
-        targetSystem,
-        request
-      )
+    val operationData: JsObject = createRoboticsRequestBodyForAllEnvironments(
+      workItem,
+      targetSystem,
+      request
+    )
 
     val payload = operationData
 

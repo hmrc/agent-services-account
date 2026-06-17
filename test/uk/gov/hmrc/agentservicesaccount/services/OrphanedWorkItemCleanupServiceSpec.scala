@@ -40,6 +40,8 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory
+import uk.gov.hmrc.mongo.CurrentTimestampSupport
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 
@@ -60,10 +62,16 @@ with BeforeAndAfterEach {
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private val repoConfig = ConfigFactory.parseString(
-    """work-item-repository.subscriptions.retry-in-progress-after = "1s""""
+    """work-item-repository.subscriptions.retry-in-progress-after = 1s,
+      |work-item-repository.set-available-fields = false""".stripMargin
   )
 
-  private val repository = new SubscriptionWorkItemRepository(repoConfig, mongoComponent)
+  private val repository =
+    new SubscriptionWorkItemRepository(
+      repoConfig,
+      mongoComponent,
+      new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
+    )
 
   private val appConfig = mock[AppConfig]
 

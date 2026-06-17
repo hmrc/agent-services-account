@@ -32,7 +32,8 @@ import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentMappingConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.agentservicesaccount.mocks.{MockLegacySubscriptionAuditService, MockLegacySubscriptionEmailService}
+import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.Enrolment
@@ -45,6 +46,8 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory
+import uk.gov.hmrc.mongo.CurrentTimestampSupport
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.InProgress
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
@@ -121,14 +124,24 @@ with BeforeAndAfterEach {
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private val repoConfig = ConfigFactory.parseString(
-    """work-item-repository.subscriptions.retry-in-progress-after = "1s""""
+    """work-item-repository.subscriptions.retry-in-progress-after = 1s,
+      |work-item-repository.set-available-fields = false""".stripMargin
   )
-  private val repository = new SubscriptionWorkItemRepository(repoConfig, mongoComponent)
+  private val repository =
+    new SubscriptionWorkItemRepository(
+      repoConfig,
+      mongoComponent,
+      new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
+    )
 
   // Force a race-like condition deterministically by making `findByArnAndRegime` lie, while still relying on the
   // unique (arn, regime) index in Mongo to reject the insert.
   class RaceSubscriptionWorkItemRepository
-  extends SubscriptionWorkItemRepository(repoConfig, mongoComponent):
+  extends SubscriptionWorkItemRepository(
+    repoConfig,
+    mongoComponent,
+    new MongoLockRepository(mongoComponent, new CurrentTimestampSupport)
+  ):
     override def findByArnAndRegime(
       arn: Arn,
       regime: LegacyRegime

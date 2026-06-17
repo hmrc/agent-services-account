@@ -18,17 +18,22 @@ package uk.gov.hmrc.agentservicesaccount.repositories
 
 import com.typesafe.config.Config
 import org.mongodb.scala.MongoCollection
+import org.mongodb.scala.bson.Document
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
+import org.mongodb.scala.result.UpdateResult
 import play.api.Logging
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
+import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository.customWorkItemFields
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
+import uk.gov.hmrc.mongo.lock.TimePeriodLockService
 import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.ObservableFuture
 import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.SingleObservableFuture
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
@@ -39,18 +44,18 @@ import uk.gov.hmrc.mongo.workitem.WorkItemRepository
 
 import java.time.Duration
 import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
 @Singleton
 class SubscriptionWorkItemRepository @Inject() (
   config: Config,
-  mongoComponent: MongoComponent
+  mongoComponent: MongoComponent,
+  lockRepository: MongoLockRepository
 )(implicit
   ec: ExecutionContext,
   @Named("aes") crypto: Encrypter & Decrypter
@@ -81,6 +86,47 @@ with Logging:
 
   // Retry work items stuck in progress
   override def inProgressRetryAfter: Duration = config.getDuration("work-item-repository.subscriptions.retry-in-progress-after")
+
+  // Setting receivedAt back to its expected value and adding availableAt fields
+  def setAvailableAtFields(): Future[Option[Unit]] = {
+    val lockService = TimePeriodLockService(
+      lockRepository,
+      lockId = "fixing-timestamps",
+      ttl = 20.minutes
+    )
+    lockService.withRenewedLock(
+      Future.successful(coll.find(
+        Filters.empty()
+      ).subscribe(
+        doOnNext =
+          workItem =>
+            coll.updateOne(
+              Filters.equal("_id", workItem.id),
+              Updates.combine(
+                Updates.set("receivedAt", Instant.ofEpochSecond(workItem.id.getTimestamp)),
+                Updates.set("availableAt", workItem.availableAt)
+              )
+            ).toFuture()
+      ))
+    )
+  }
+
+  if config.getBoolean("work-item-repository.set-available-fields") then setAvailableAtFields()
+
+  // Use for 2nd deployment to update any documents created after the first
+  def setAvailableAtFieldsSafe(): Future[Option[UpdateResult]] = {
+    val lockService = TimePeriodLockService(
+      lockRepository,
+      lockId = "fixing-timestamps-safe",
+      ttl = 20.minutes
+    )
+    lockService.withRenewedLock(
+      coll.updateMany(
+        Filters.exists("availableAt", false),
+        Seq(Document("""{$set: {"availableAt": "$receivedAt"}}"""))
+      ).toFuture()
+    )
+  }
 
   def findByArnAndRegime(
     arn: Arn,
@@ -236,7 +282,7 @@ with Logging:
         Updates.set("item.agentReference", agentReference.value),
         Updates.set(workItemFields.status, ProcessingStatus.ToDo),
         Updates.set(workItemFields.updatedAt, now()),
-        Updates.set(workItemFields.availableAt, availableAt),
+        Updates.set(customWorkItemFields.availableAt, availableAt),
         Updates.set(workItemFields.failureCount, 0)
       )
     ).toFuture()
@@ -315,9 +361,14 @@ with Logging:
   }
 
 object SubscriptionWorkItemRepository:
+
   enum FailureCallbackHandling:
 
     case MarkedPermanentlyFailed(workItem: WorkItem[SubscriptionWorkItem])
     case AlreadyPermanentlyFailed
     case IgnoredAlreadySucceeded
     case NotFound
+
+  val customWorkItemFields: WorkItemFields = WorkItemFields.default.copy(
+    availableAt = "availableAt"
+  )
