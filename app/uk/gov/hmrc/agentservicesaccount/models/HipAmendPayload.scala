@@ -39,13 +39,38 @@ case class HipAmendPayload(
   reriskStatus: Option[UpdateStatus] = None
 )
 
+//private def formUpdatedAgentRecord(response: AgentDetailsDesResponse, payload: HipAmendPayload): HipAmendPayload = {
+//  //    TODO: 11584 Build up and test this function
+//  //    ADDRESS (if address update, only replace address model (without using current placeholder logic)
+//  val addr1: Option[String] = None
+//  val addr2: Option[String] = None
+//  val addr3: Option[String] = None
+//  val addr4: Option[String] = None
+//  val postcode: Option[String] = None
+//  val country: Option[String] = None
+//  //    OTHER CONTACT (if multiple contact details updates combined, only update the non optional ones)
+//  val name: Option[String] = None
+//  val phone: Option[String] = None
+//  val email: Option[String] = None
+//  //    AMLS FIELDS (if AMLS, only change the 3 AMLS fields)
+//  val supervisoryBody: Option[String] = None
+//  val membershipNumber: Option[String] = None
+//  val evidenceObjectReference: Option[String] = None
+//  //    MMTAR FIELDS (The 5 new MMTAR related flags are mandatory but won't exist for old records, default them to "ACCEPTED" when not present)
+//  val updateDetailsStatus: Option[UpdateStatus] = None
+//  val amlSupervisionUpdateStatus: Option[UpdateStatus] = None
+//  val directorPartnerUpdateStatus: Option[UpdateStatus] = None
+//  val acceptNewTermsStatus: Option[UpdateStatus] = None
+//  val reriskStatus: Option[UpdateStatus] = None
+//  payload
+//}
+
 object HipAmendPayload:
 
   given Writes[HipAmendPayload] = Json.writes[HipAmendPayload]
 
   extension (request: AgentRecordUpdateRequest)
-    //            TODO: 11584 THIS IS AN IMPORTANT LINE - DO WE ALREADY GET THE AGENT RECORD??!! See AgentDetailsController
-    def toHipAmendPayload(oldRecord: AgentDetailsDesResponse)(logger: Logger): HipAmendPayload =
+    def toHipAmendPayload(oldRecord: AgentDetailsDesResponse, useUpdatedHipPutAgentRecord: Boolean = false)(logger: Logger): HipAmendPayload =
       // TODO 11584 replace this with the new PUT API solution when it is implemented on ETMP.
       def addressLineWithFallback(
         newLine: Option[String],
