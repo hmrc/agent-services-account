@@ -62,9 +62,34 @@ private def toInitHipAmendPayload(oldRecord: AgentDetailsDesResponse): HipAmendP
   )
 }
 
-private def addAgencyDetailsUpdateToInitHipAmendPayload(details: AgencyDetails, payload: HipAmendPayload): HipAmendPayload = {
+private def addAgencyDetailsUpdateToInitHipAmendPayload(details: AgencyDetails, initPayload: HipAmendPayload): HipAmendPayload = {
 //  TODO: 11584 Implement
-  ???
+  val newNameRequired = details.agencyName.isDefined
+  val newEmailRequired = details.agencyEmail.isDefined
+  val newPhoneRequired = details.agencyTelephone.isDefined
+  val newAddressRequired = details.agencyAddress.isDefined
+  val nameToSend = initPayload.name
+  val emailToSend = initPayload.email
+  val phoneToSend = initPayload.phone
+  val addressToSend = BusinessAddress(
+    "Address Line 1",
+    Some("Address Line 2"),
+    Some("Address Line 3"),
+    Some("Address Line 4"),
+    Some("Post Code"),
+    "Country Code"
+  )
+  initPayload.copy(
+    name = nameToSend,
+    email = emailToSend,
+    phone = phoneToSend,
+    addr1 = Some(addressToSend.addressLine1),
+    addr2 = addressToSend.addressLine2,
+    addr3 = addressToSend.addressLine3,
+    addr4 = addressToSend.addressLine4,
+    postcode = addressToSend.postalCode,
+    country = Some(addressToSend.countryCode)
+  )
 }
 
 object HipAmendPayload:
