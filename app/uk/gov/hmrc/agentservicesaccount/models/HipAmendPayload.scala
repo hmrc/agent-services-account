@@ -39,31 +39,54 @@ case class HipAmendPayload(
   reriskStatus: Option[UpdateStatus] = None
 )
 
-//private def formUpdatedAgentRecord(response: AgentDetailsDesResponse, payload: HipAmendPayload): HipAmendPayload = {
-//  //    TODO: 11584 Build up and test this function
-//  //    ADDRESS (if address update, only replace address model (without using current placeholder logic)
-//  val addr1: Option[String] = None
-//  val addr2: Option[String] = None
-//  val addr3: Option[String] = None
-//  val addr4: Option[String] = None
-//  val postcode: Option[String] = None
-//  val country: Option[String] = None
-//  //    OTHER CONTACT (if multiple contact details updates combined, only update the non optional ones)
-//  val name: Option[String] = None
-//  val phone: Option[String] = None
-//  val email: Option[String] = None
-//  //    AMLS FIELDS (if AMLS, only change the 3 AMLS fields)
-//  val supervisoryBody: Option[String] = None
-//  val membershipNumber: Option[String] = None
-//  val evidenceObjectReference: Option[String] = None
-//  //    MMTAR FIELDS (The 5 new MMTAR related flags are mandatory but won't exist for old records, default them to "ACCEPTED" when not present)
-//  val updateDetailsStatus: Option[UpdateStatus] = None
-//  val amlSupervisionUpdateStatus: Option[UpdateStatus] = None
-//  val directorPartnerUpdateStatus: Option[UpdateStatus] = None
-//  val acceptNewTermsStatus: Option[UpdateStatus] = None
-//  val reriskStatus: Option[UpdateStatus] = None
-//  payload
-//}
+private def toInitHipAmendPayload(oldRecord: AgentDetailsDesResponse): HipAmendPayload = {
+  //    TODO: 11584 Build up and test this function
+  //    ADDRESS (if address update, only replace address model (without using current placeholder logic)
+  val addr1: Option[String] = None
+  val addr2: Option[String] = None
+  val addr3: Option[String] = None
+  val addr4: Option[String] = None
+  val postcode: Option[String] = None
+  val country: Option[String] = None
+  //    OTHER CONTACT (if multiple contact details updates combined, only update the non optional ones)
+  val name: Option[String] = None
+  val phone: Option[String] = None
+  val email: Option[String] = None
+  //    AMLS FIELDS (if AMLS, only change the 3 AMLS fields)
+  val supervisoryBody: Option[String] = None
+  val membershipNumber: Option[String] = None
+  val evidenceObjectReference: Option[String] = None
+  //    MMTAR FIELDS (The 5 new MMTAR related flags are mandatory but won't exist for old records, default them to "ACCEPTED" when not present)
+  val updateDetailsStatus: Option[UpdateStatus] = None
+  val amlSupervisionUpdateStatus: Option[UpdateStatus] = None
+  val directorPartnerUpdateStatus: Option[UpdateStatus] = None
+  val acceptNewTermsStatus: Option[UpdateStatus] = None
+  val reriskStatus: Option[UpdateStatus] = None
+  HipAmendPayload(
+    name = None,
+    addr1 = None,
+    addr2 = None,
+    addr3 = None,
+    addr4 = None,
+    postcode = None,
+    country = None,
+    phone = None,
+    email = None,
+    supervisoryBody = None,
+    membershipNumber = None,
+    evidenceObjectReference = None,
+    updateDetailsStatus = None,
+    amlSupervisionUpdateStatus = None,
+    directorPartnerUpdateStatus = None,
+    acceptNewTermsStatus = None,
+    reriskStatus = None
+  )
+}
+
+private def addAgencyDetailsUpdateToInitHipAmendPayload(details: AgencyDetails, payload: HipAmendPayload): HipAmendPayload = {
+//  TODO: 11584 Implement
+  ???
+}
 
 object HipAmendPayload:
 
@@ -71,7 +94,6 @@ object HipAmendPayload:
 
   extension (request: AgentRecordUpdateRequest)
     def toHipAmendPayload(oldRecord: AgentDetailsDesResponse, useUpdatedHipPutAgentRecord: Boolean = false)(logger: Logger): HipAmendPayload =
-      // TODO 11584 replace this with the new PUT API solution when it is implemented on ETMP.
       def addressLineWithFallback(
         newLine: Option[String],
         oldLine: Option[String],
@@ -84,14 +106,24 @@ object HipAmendPayload:
         else None
       }
 
-      request match
-        case AmlsUpdateRequest(update) =>
+      (request, useUpdatedHipPutAgentRecord) match
+        case (AmlsUpdateRequest(update), true) =>
+          val initHipAmendPayload = toInitHipAmendPayload(oldRecord)
+          initHipAmendPayload.copy(
+            supervisoryBody = Some(update.supervisoryBody.value),
+            membershipNumber = Some(update.membershipNumber.value),
+            evidenceObjectReference = update.evidenceObjectReference.map(_.value)
+          )
+        case (AgencyDetailsUpdateRequest(update), true) =>
+          val initHipAmendPayload = toInitHipAmendPayload(oldRecord)
+          addAgencyDetailsUpdateToInitHipAmendPayload(update, initHipAmendPayload)
+        case (AmlsUpdateRequest(update), false) =>
           HipAmendPayload(
             supervisoryBody = Some(update.supervisoryBody.value),
             membershipNumber = Some(update.membershipNumber.value),
             evidenceObjectReference = update.evidenceObjectReference.map(_.value)
           )
-        case AgencyDetailsUpdateRequest(update) =>
+        case (AgencyDetailsUpdateRequest(update), false) =>
           HipAmendPayload(
             name = update.agencyName,
             addr1 = update.agencyAddress.map(_.addressLine1),
