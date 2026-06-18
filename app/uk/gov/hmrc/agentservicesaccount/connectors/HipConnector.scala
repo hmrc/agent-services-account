@@ -93,7 +93,7 @@ with Logging {
   def putAgentRecord(
     arn: Arn,
     payload: HipAmendPayload
-  )(using request: RequestHeader): Future[HipAmendResponse] = {
+  )(using request: RequestHeader): Future[HipAmendResponse] =
     val url = url"$baseUrl/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"
     retryFor[HipAmendResponse](s"HIP put $url")(retryCondition) {
       httpV2
@@ -106,7 +106,6 @@ with Logging {
         .recover { case e => logger.warn(s"Failed to invalidate agent details cache: ${e.getMessage}") }
         .map(_ => response)
     }
-  }
 
   private def mapHipToDesModel(
     hipResponse: HipAgentSubscriptionResponse
