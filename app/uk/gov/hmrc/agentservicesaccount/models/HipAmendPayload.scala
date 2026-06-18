@@ -18,6 +18,7 @@ package uk.gov.hmrc.agentservicesaccount.models
 
 import play.api.Logger
 import play.api.libs.json.*
+import uk.gov.hmrc.agentservicesaccount.models.UpdateStatus.ACCEPTED
 
 case class HipAmendPayload(
   name: Option[String] = None,
@@ -40,46 +41,24 @@ case class HipAmendPayload(
 )
 
 private def toInitHipAmendPayload(oldRecord: AgentDetailsDesResponse): HipAmendPayload = {
-  //    TODO: 11584 Build up and test this function
-  //    ADDRESS (if address update, only replace address model (without using current placeholder logic)
-  val addr1: Option[String] = None
-  val addr2: Option[String] = None
-  val addr3: Option[String] = None
-  val addr4: Option[String] = None
-  val postcode: Option[String] = None
-  val country: Option[String] = None
-  //    OTHER CONTACT (if multiple contact details updates combined, only update the non optional ones)
-  val name: Option[String] = None
-  val phone: Option[String] = None
-  val email: Option[String] = None
-  //    AMLS FIELDS (if AMLS, only change the 3 AMLS fields)
-  val supervisoryBody: Option[String] = None
-  val membershipNumber: Option[String] = None
-  val evidenceObjectReference: Option[String] = None
-  //    MMTAR FIELDS (The 5 new MMTAR related flags are mandatory but won't exist for old records, default them to "ACCEPTED" when not present)
-  val updateDetailsStatus: Option[UpdateStatus] = None
-  val amlSupervisionUpdateStatus: Option[UpdateStatus] = None
-  val directorPartnerUpdateStatus: Option[UpdateStatus] = None
-  val acceptNewTermsStatus: Option[UpdateStatus] = None
-  val reriskStatus: Option[UpdateStatus] = None
   HipAmendPayload(
-    name = None,
-    addr1 = None,
-    addr2 = None,
-    addr3 = None,
-    addr4 = None,
-    postcode = None,
-    country = None,
-    phone = None,
-    email = None,
-    supervisoryBody = None,
-    membershipNumber = None,
-    evidenceObjectReference = None,
-    updateDetailsStatus = None,
-    amlSupervisionUpdateStatus = None,
-    directorPartnerUpdateStatus = None,
-    acceptNewTermsStatus = None,
-    reriskStatus = None
+    name = oldRecord.agencyDetails.flatMap(_.agencyName),
+    addr1 = oldRecord.agencyDetails.flatMap(_.agencyAddress).map(_.addressLine1),
+    addr2 = oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine2),
+    addr3 = oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine3),
+    addr4 = oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine4),
+    postcode = oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.postalCode),
+    country = oldRecord.agencyDetails.flatMap(_.agencyAddress).map(_.countryCode),
+    phone = oldRecord.agencyDetails.flatMap(_.agencyTelephone),
+    email = oldRecord.agencyDetails.flatMap(_.agencyEmail),
+    supervisoryBody = oldRecord.amlsDetails.map(_.supervisoryBody),
+    membershipNumber = oldRecord.amlsDetails.map(_.membershipNumber),
+    evidenceObjectReference = oldRecord.amlsDetails.flatMap(_.evidenceObjectReference),
+    updateDetailsStatus = Some(ACCEPTED),
+    amlSupervisionUpdateStatus = Some(ACCEPTED),
+    directorPartnerUpdateStatus = Some(ACCEPTED),
+    acceptNewTermsStatus = Some(ACCEPTED),
+    reriskStatus = Some(ACCEPTED)
   )
 }
 
