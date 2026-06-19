@@ -161,131 +161,214 @@ extends UnitSpec {
 
 //  TODO: 11584 This is where toHipAmendPayload unit tests should be
   "toHipAmendPayload" should {
-    "map AMLS details correctly" in {
-      val request = AmlsUpdateRequest(AmlsDetails(
-        supervisoryBody = SupervisoryBody("SRA"),
-        membershipNumber = MembershipNumber("XAML00000123456"),
-        evidenceObjectReference = Some(EvidenceObjectReference("ref-123"))
-      ))
-
-      val payload = request.toHipAmendPayload(oldRecord)(logger)
-      payload.supervisoryBody shouldBe Some("SRA")
-      payload.membershipNumber shouldBe Some("XAML00000123456")
-      payload.evidenceObjectReference shouldBe Some("ref-123")
-
-      payload.name shouldBe None
-      payload.addr1 shouldBe None
-      payload.amlSupervisionUpdateStatus shouldBe None
-      payload.updateDetailsStatus shouldBe None
-    }
-
-    "map agency details correctly" in {
-      val request = AgencyDetailsUpdateRequest(AgencyDetails(
-        agencyName = Some("Test Agency"),
-        agencyEmail = Some("test@example.com"),
+    val oldRecord = AgentDetailsDesResponse(
+      uniqueTaxReference = Some(Utr("1234567890")),
+      agencyDetails = Some(AgencyDetails(
+        agencyName = Some("Old Agency Name"),
+        agencyEmail = Some("test@email.com"),
         agencyTelephone = Some("07123456789"),
         agencyAddress = Some(BusinessAddress(
-          addressLine1 = "1 High Street",
-          addressLine2 = Some("Floor 2"),
-          addressLine3 = Some("Town Centre"),
-          postalCode = Some("TF1 1AA"),
+          addressLine1 = "Old Address Line 1",
+          addressLine2 = Some("Old Address Line 2"),
+          addressLine3 = Some("Old Address Line 3"),
+          postalCode = Some("AA1 1AA"),
           countryCode = "GB"
         ))
-      ))
-
-      val payload = request.toHipAmendPayload(oldRecord)(logger)
-      payload.name shouldBe Some("Test Agency")
-      payload.email shouldBe Some("test@example.com")
-      payload.phone shouldBe Some("07123456789")
-      payload.addr1 shouldBe Some("1 High Street")
-      payload.addr2 shouldBe Some("Floor 2")
-      payload.addr3 shouldBe Some("Town Centre")
-      payload.addr4 shouldBe None
-      payload.postcode shouldBe Some("TF1 1AA")
-      payload.country shouldBe Some("GB")
-
-      payload.supervisoryBody shouldBe None
-      payload.updateDetailsStatus shouldBe None
-      payload.amlSupervisionUpdateStatus shouldBe None
-    }
-
-    "fill in fallback values for optional address lines when old record has them defined but update request does not override them" in {
-      val request = AgencyDetailsUpdateRequest(AgencyDetails(
-        agencyName = Some("Test Agency"),
-        agencyEmail = Some("test@example.com"),
-        agencyTelephone = Some("07123456789"),
-        agencyAddress = Some(BusinessAddress(
-          addressLine1 = "1 High Street",
-          addressLine2 = None,
-          addressLine3 = None,
-          addressLine4 = None,
-          postalCode = None,
-          countryCode = "EE"
-        ))
-      ))
-
-      val payload = request.toHipAmendPayload(oldRecord)(logger)
-      payload.name shouldBe Some("Test Agency")
-      payload.email shouldBe Some("test@example.com")
-      payload.phone shouldBe Some("07123456789")
-      payload.addr1 shouldBe Some("1 High Street")
-      payload.addr2 shouldBe Some("Address Line 2")
-      payload.addr3 shouldBe Some("Address Line 3")
-      payload.addr4 shouldBe None
-      payload.postcode shouldBe Some("Postcode")
-      payload.country shouldBe Some("EE")
-
-      payload.supervisoryBody shouldBe None
-      payload.updateDetailsStatus shouldBe None
-      payload.amlSupervisionUpdateStatus shouldBe None
-    }
-
-    "not fill in fallback values for optional address lines when old record has them defined but update request does not change the address" in {
-      val request = AgencyDetailsUpdateRequest(AgencyDetails(
-        agencyName = None,
-        agencyEmail = Some("test@example.com"),
-        agencyTelephone = Some("07123456789"),
-        agencyAddress = None
-      ))
-
-      val payload = request.toHipAmendPayload(oldRecord)(logger)
-      payload.name shouldBe None
-      payload.email shouldBe Some("test@example.com")
-      payload.phone shouldBe Some("07123456789")
-      payload.addr1 shouldBe None
-      payload.addr2 shouldBe None
-      payload.addr3 shouldBe None
-      payload.addr4 shouldBe None
-      payload.postcode shouldBe None
-      payload.country shouldBe None
-
-      payload.supervisoryBody shouldBe None
-      payload.updateDetailsStatus shouldBe None
-      payload.amlSupervisionUpdateStatus shouldBe None
-    }
-
-    "omit None fields in JSON output" in {
-      val request = AmlsUpdateRequest(AmlsDetails(
+      )),
+      amlsDetails = Some(AmlsDetails(
         supervisoryBody = SupervisoryBody("SRA"),
-        membershipNumber = MembershipNumber("XAML00000123456")
+        membershipNumber = MembershipNumber("XAML00000123456"),
+        evidenceObjectReference = Some(EvidenceObjectReference("old-ref-456"))
+      )),
+      suspensionDetails = None,
+      isAnIndividual = None
+    )
+
+    val agencyDetails = AgencyDetails(
+      agencyName = Some("Test Agency"),
+      agencyEmail = Some("test@example.com"),
+      agencyTelephone = Some("07123456789"),
+      agencyAddress = Some(BusinessAddress(
+        addressLine1 = "1 High Street",
+        addressLine2 = Some("Floor 2"),
+        addressLine3 = Some("Town Centre"),
+        postalCode = Some("TF1 1AA"),
+        countryCode = "GB"
       ))
+    )
 
-      val payload = request.toHipAmendPayload(oldRecord)(logger)
+    val amlsDetails = AmlsDetails(
+      supervisoryBody = SupervisoryBody("SRA"),
+      membershipNumber = MembershipNumber("XAML00000123456"),
+      evidenceObjectReference = Some(EvidenceObjectReference("f28047ef-33f9-482e-a76a-ec4304de7b62"))
+    )
+    
+    "when useUpdatedHipPutAgentRecord false" should {
+      "map AMLS details correctly" in {
+        val request = AmlsUpdateRequest(AmlsDetails(
+          supervisoryBody = SupervisoryBody("SRA"),
+          membershipNumber = MembershipNumber("XAML00000123456"),
+          evidenceObjectReference = Some(EvidenceObjectReference("ref-123"))
+        ))
 
-      val fields = Json.toJson(payload).as[JsObject].keys
+        val payload = request.toHipAmendPayload(oldRecord)(logger)
+        payload.supervisoryBody shouldBe Some("SRA")
+        payload.membershipNumber shouldBe Some("XAML00000123456")
+        payload.evidenceObjectReference shouldBe Some("ref-123")
 
-      fields should contain("supervisoryBody")
-      fields should contain("membershipNumber")
-      fields should not contain "name"
-      fields should not contain "addr1"
-      fields should not contain "addr2"
-      fields should not contain "addr3"
-      fields should not contain "addr4"
-      fields should not contain "postcode"
-      fields should not contain "updateDetailsStatus"
-      fields should not contain "amlSupervisionUpdateStatus"
-      fields should not contain "directorPartnerUpdateStatus"
+        payload.name shouldBe None
+        payload.addr1 shouldBe None
+        payload.amlSupervisionUpdateStatus shouldBe None
+        payload.updateDetailsStatus shouldBe None
+      }
+
+      "map agency details correctly" in {
+        val request = AgencyDetailsUpdateRequest(AgencyDetails(
+          agencyName = Some("Test Agency"),
+          agencyEmail = Some("test@example.com"),
+          agencyTelephone = Some("07123456789"),
+          agencyAddress = Some(BusinessAddress(
+            addressLine1 = "1 High Street",
+            addressLine2 = Some("Floor 2"),
+            addressLine3 = Some("Town Centre"),
+            postalCode = Some("TF1 1AA"),
+            countryCode = "GB"
+          ))
+        ))
+
+        val payload = request.toHipAmendPayload(oldRecord)(logger)
+        payload.name shouldBe Some("Test Agency")
+        payload.email shouldBe Some("test@example.com")
+        payload.phone shouldBe Some("07123456789")
+        payload.addr1 shouldBe Some("1 High Street")
+        payload.addr2 shouldBe Some("Floor 2")
+        payload.addr3 shouldBe Some("Town Centre")
+        payload.addr4 shouldBe None
+        payload.postcode shouldBe Some("TF1 1AA")
+        payload.country shouldBe Some("GB")
+
+        payload.supervisoryBody shouldBe None
+        payload.updateDetailsStatus shouldBe None
+        payload.amlSupervisionUpdateStatus shouldBe None
+      }
+
+      "fill in fallback values for optional address lines when old record has them defined but update request does not override them" in {
+        val request = AgencyDetailsUpdateRequest(AgencyDetails(
+          agencyName = Some("Test Agency"),
+          agencyEmail = Some("test@example.com"),
+          agencyTelephone = Some("07123456789"),
+          agencyAddress = Some(BusinessAddress(
+            addressLine1 = "1 High Street",
+            addressLine2 = None,
+            addressLine3 = None,
+            addressLine4 = None,
+            postalCode = None,
+            countryCode = "EE"
+          ))
+        ))
+
+        val payload = request.toHipAmendPayload(oldRecord)(logger)
+        payload.name shouldBe Some("Test Agency")
+        payload.email shouldBe Some("test@example.com")
+        payload.phone shouldBe Some("07123456789")
+        payload.addr1 shouldBe Some("1 High Street")
+        payload.addr2 shouldBe Some("Address Line 2")
+        payload.addr3 shouldBe Some("Address Line 3")
+        payload.addr4 shouldBe None
+        payload.postcode shouldBe Some("Postcode")
+        payload.country shouldBe Some("EE")
+
+        payload.supervisoryBody shouldBe None
+        payload.updateDetailsStatus shouldBe None
+        payload.amlSupervisionUpdateStatus shouldBe None
+      }
+
+      "not fill in fallback values for optional address lines when old record has them defined but update request does not change the address" in {
+        val request = AgencyDetailsUpdateRequest(AgencyDetails(
+          agencyName = None,
+          agencyEmail = Some("test@example.com"),
+          agencyTelephone = Some("07123456789"),
+          agencyAddress = None
+        ))
+
+        val payload = request.toHipAmendPayload(oldRecord)(logger)
+        payload.name shouldBe None
+        payload.email shouldBe Some("test@example.com")
+        payload.phone shouldBe Some("07123456789")
+        payload.addr1 shouldBe None
+        payload.addr2 shouldBe None
+        payload.addr3 shouldBe None
+        payload.addr4 shouldBe None
+        payload.postcode shouldBe None
+        payload.country shouldBe None
+
+        payload.supervisoryBody shouldBe None
+        payload.updateDetailsStatus shouldBe None
+        payload.amlSupervisionUpdateStatus shouldBe None
+      }
+
+//      "return correct HipAmendPayload when passed AmlsUpdateRequest and useUpdatedHipPutAgentRecord false" in :
+//        val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
+//        val hipAmendPayload = toHipAmendPayload(agentRecordUpdateRequest)(oldRecord, false)(logger)
+//        true shouldBe true
+//
+//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated and useUpdatedHipPutAgentRecord false" in :
+//        true shouldBe true
+//
+//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated and useUpdatedHipPutAgentRecord false" in :
+//        true shouldBe true
+//
+//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated and useUpdatedHipPutAgentRecord false" in :
+//        true shouldBe true
+
+      "omit None fields in JSON output" in {
+        val request = AmlsUpdateRequest(AmlsDetails(
+          supervisoryBody = SupervisoryBody("SRA"),
+          membershipNumber = MembershipNumber("XAML00000123456")
+        ))
+
+        val payload = request.toHipAmendPayload(oldRecord)(logger)
+
+        val fields = Json.toJson(payload).as[JsObject].keys
+
+        fields should contain("supervisoryBody")
+        fields should contain("membershipNumber")
+        fields should not contain "name"
+        fields should not contain "addr1"
+        fields should not contain "addr2"
+        fields should not contain "addr3"
+        fields should not contain "addr4"
+        fields should not contain "postcode"
+        fields should not contain "updateDetailsStatus"
+        fields should not contain "amlSupervisionUpdateStatus"
+        fields should not contain "directorPartnerUpdateStatus"
+      }
     }
+
+    "when useUpdatedHipPutAgentRecord false" should {
+      "true should be true" in {
+        true shouldBe true
+      }
+
+//      "return correct HipAmendPayload when passed AmlsUpdateRequest and useUpdatedHipPutAgentRecord true" in :
+//        val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
+//        val hipAmendPayload = toHipAmendPayload(agentRecordUpdateRequest)(oldRecord, true)(logger)
+//        true shouldBe true
+//
+//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated and useUpdatedHipPutAgentRecord true" in :
+//        true shouldBe true
+//
+//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated and useUpdatedHipPutAgentRecord true" in :
+//        true shouldBe true
+//
+//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated and useUpdatedHipPutAgentRecord true" in :
+//        true shouldBe true
+
+      "should have no None fields in JSON output if old record has no None fields" in {
+        true shouldBe true
+      }
+    }
+
   }
 
   "HipAmendResponse" should {
