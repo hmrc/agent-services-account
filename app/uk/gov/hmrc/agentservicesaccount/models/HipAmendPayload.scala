@@ -51,9 +51,9 @@ private def toInitHipAmendPayload(oldRecord: AgentDetailsDesResponse): HipAmendP
     country = oldRecord.agencyDetails.flatMap(_.agencyAddress).map(_.countryCode),
     phone = oldRecord.agencyDetails.flatMap(_.agencyTelephone),
     email = oldRecord.agencyDetails.flatMap(_.agencyEmail),
-    supervisoryBody = oldRecord.amlsDetails.map(_.supervisoryBody),
-    membershipNumber = oldRecord.amlsDetails.map(_.membershipNumber),
-    evidenceObjectReference = oldRecord.amlsDetails.flatMap(_.evidenceObjectReference),
+    supervisoryBody = oldRecord.amlsDetails.map(_.supervisoryBody.toString),
+    membershipNumber = oldRecord.amlsDetails.map(_.membershipNumber.toString),
+    evidenceObjectReference = oldRecord.amlsDetails.flatMap(_.evidenceObjectReference).map(_.toString),
     updateDetailsStatus = Some(ACCEPTED),
     amlSupervisionUpdateStatus = Some(ACCEPTED),
     directorPartnerUpdateStatus = Some(ACCEPTED),
@@ -63,33 +63,28 @@ private def toInitHipAmendPayload(oldRecord: AgentDetailsDesResponse): HipAmendP
 }
 
 private def addAgencyDetailsUpdateToInitHipAmendPayload(details: AgencyDetails, initPayload: HipAmendPayload): HipAmendPayload = {
-//  TODO: 11584 Implement
-  val newNameRequired = details.agencyName.isDefined
-  val newEmailRequired = details.agencyEmail.isDefined
-  val newPhoneRequired = details.agencyTelephone.isDefined
-  val newAddressRequired = details.agencyAddress.isDefined
-  val nameToSend = initPayload.name
-  val emailToSend = initPayload.email
-  val phoneToSend = initPayload.phone
-  val addressToSend = BusinessAddress(
-    "Address Line 1",
-    Some("Address Line 2"),
-    Some("Address Line 3"),
-    Some("Address Line 4"),
-    Some("Post Code"),
-    "Country Code"
-  )
-  initPayload.copy(
+//  TODO: 11584: Clean up this function
+  val nameToSend = if (details.agencyName.isDefined) details.agencyName else initPayload.name
+  val emailToSend = if (details.agencyEmail.isDefined) details.agencyEmail else initPayload.email
+  val phoneToSend = if (details.agencyTelephone.isDefined) details.agencyTelephone else initPayload.phone
+  val payloadWithNameEmailPhone = initPayload.copy(
     name = nameToSend,
     email = emailToSend,
-    phone = phoneToSend,
-    addr1 = Some(addressToSend.addressLine1),
-    addr2 = addressToSend.addressLine2,
-    addr3 = addressToSend.addressLine3,
-    addr4 = addressToSend.addressLine4,
-    postcode = addressToSend.postalCode,
-    country = Some(addressToSend.countryCode)
+    phone = phoneToSend
   )
+  if (details.agencyAddress.isDefined) {
+    val agencyAddress = details.agencyAddress.get
+    payloadWithNameEmailPhone.copy(
+      addr1 = Some(agencyAddress.addressLine1),
+      addr2 = agencyAddress.addressLine2,
+      addr3 = agencyAddress.addressLine3,
+      addr4 = agencyAddress.addressLine4,
+      postcode = agencyAddress.postalCode,
+      country = Some(agencyAddress.countryCode)
+    )
+  } else {
+    payloadWithNameEmailPhone
+  }
 }
 
 object HipAmendPayload:
