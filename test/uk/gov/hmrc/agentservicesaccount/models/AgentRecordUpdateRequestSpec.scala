@@ -159,6 +159,7 @@ extends UnitSpec {
     }
   }
 
+//  TODO: 11584 This is where toHipAmendPayload unit tests should be
   "toHipAmendPayload" should {
     "map AMLS details correctly" in {
       val request = AmlsUpdateRequest(AmlsDetails(
