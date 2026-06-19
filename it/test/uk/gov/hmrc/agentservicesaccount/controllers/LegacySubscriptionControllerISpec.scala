@@ -84,7 +84,8 @@ with AgentAuthStubs:
     contactName = testContactName,
     phoneNumber = Some(testPhoneNumber),
     emailAddress = Some(testEmail),
-    address = testAddress
+    address = testAddress,
+    isWelsh = false
   )
   val testSaSubscriptionRequest: SubscriptionRequest = SaSubscriptionRequest(
     agentName = testAgentName,
@@ -92,7 +93,8 @@ with AgentAuthStubs:
     phoneNumber = Some(testPhoneNumber),
     emailAddress = Some(testEmail),
     address = testAddress,
-    isAbroad = false
+    isAbroad = false,
+    isWelsh = false
   )
   val testCtSubscriptionRequest: SubscriptionRequest = CtSubscriptionRequest(
     agentName = testAgentName,
@@ -100,7 +102,8 @@ with AgentAuthStubs:
     phoneNumber = Some(testPhoneNumber),
     emailAddress = Some(testEmail),
     address = testAddress,
-    isAbroad = false
+    isAbroad = false,
+    isWelsh = false
   )
   "POST /legacy-subscription-request/:regime" should:
     "return 200 after successfully calling OPRA and creating a new work item for PAYE regime" in:

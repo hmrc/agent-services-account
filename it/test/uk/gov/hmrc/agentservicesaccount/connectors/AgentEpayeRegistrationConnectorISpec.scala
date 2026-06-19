@@ -46,7 +46,8 @@ with AgentEpayeRegistrationStubs {
       line3 = Some("Line 3"),
       line4 = Some("Line 4"),
       postCode = Some("A11 11A")
-    )
+    ),
+    isWelsh = false
   )
   val testAgentReference = AgentReference("AB1234")
 

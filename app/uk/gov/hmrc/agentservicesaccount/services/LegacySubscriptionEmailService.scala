@@ -35,10 +35,7 @@ class LegacySubscriptionEmailService @Inject() (
   emailConnector: EmailConnector
 )(using ec: ExecutionContext)
 extends Logging {
-
-  private val subscriptionCompleteTemplate = "agent_services_subscription_complete"
-  private val subscriptionFailureTemplate = "agent_services_subscription_fail"
-
+  
   def sendFailureEmailIgnoreErrors(
     workItem: SubscriptionWorkItem
   ): Future[Unit] = sendFailureEmail(workItem)
@@ -66,7 +63,10 @@ extends Logging {
         emailConnector.sendEmail(
           EmailInformation(
             to = Seq(email),
-            templateId = subscriptionFailureTemplate,
+            templateId = templateId(
+              "agent_services_subscription_fail",
+              workItem.subscriptionRequest.isWelsh
+            ),
             parameters = Map(
               "agencyName" -> workItem.subscriptionRequest.agentName,
               "serviceName" -> serviceName(workItem.regime)
@@ -85,7 +85,10 @@ extends Logging {
         emailConnector.sendEmail(
           EmailInformation(
             to = Seq(email),
-            templateId = subscriptionCompleteTemplate,
+            templateId = templateId(
+              "agent_services_subscription_complete",
+              workItem.subscriptionRequest.isWelsh
+            ),
             parameters = Map(
               "agencyName" -> workItem.subscriptionRequest.agentName,
               "arn" -> workItem.arn.value,
@@ -96,6 +99,15 @@ extends Logging {
           )
         )
       case _ => Future.unit
+
+  private def templateId(
+    base: String,
+    isWelsh: Boolean
+  ): String =
+    s"$base${if (isWelsh)
+        "_cy"
+      else
+        ""}"
 
   private def serviceName(regime: LegacyRegime): String =
     regime match {

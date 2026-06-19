@@ -118,7 +118,8 @@ with MockLegacySubscriptionEmailService:
         line4 = Some("Country"),
         postCode = Some("AA1 1AA")
       ),
-      isAbroad = false
+      isAbroad = false,
+      isWelsh = false
     ),
     CT -> CtSubscriptionRequest(
       agentName = "Agent Name",
@@ -132,7 +133,8 @@ with MockLegacySubscriptionEmailService:
         line4 = None,
         postCode = Some("AA1 1AA")
       ),
-      isAbroad = false
+      isAbroad = false,
+      isWelsh = false
     )
   )
 

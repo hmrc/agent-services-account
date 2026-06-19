@@ -83,7 +83,8 @@ with BeforeAndAfterEach:
       line4 = Some("Line 4"),
       postCode = Some("A11 11A")
     ),
-    isAbroad = false
+    isAbroad = false,
+    isWelsh = false
   )
 
   override protected def beforeEach(): Unit =
