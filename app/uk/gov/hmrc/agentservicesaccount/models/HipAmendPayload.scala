@@ -92,7 +92,7 @@ object HipAmendPayload:
   given Writes[HipAmendPayload] = Json.writes[HipAmendPayload]
 
   extension (request: AgentRecordUpdateRequest)
-    def toHipAmendPayload(oldRecord: AgentDetailsDesResponse, useUpdatedHipPutAgentRecord: Boolean)(logger: Logger): HipAmendPayload =
+    def toHipAmendPayload(oldRecord: AgentDetailsDesResponse, useUpdatedHipPutAgentRecord: Boolean = false)(logger: Logger): HipAmendPayload =
       def addressLineWithFallback(
         newLine: Option[String],
         oldLine: Option[String],
