@@ -35,15 +35,7 @@ class LegacySubscriptionEmailService @Inject() (
   emailConnector: EmailConnector
 )(using ec: ExecutionContext)
 extends Logging {
-
-  private val subscriptionCompleteTemplateEn = "agent_services_subscription_complete"
-
-  private val subscriptionCompleteTemplateCy = "agent_services_subscription_complete_cy"
-
-  private val subscriptionFailureTemplateEn = "agent_services_subscription_fail"
-
-  private val subscriptionFailureTemplateCy = "agent_services_subscription_fail_cy"
-
+  
   def sendFailureEmailIgnoreErrors(
     workItem: SubscriptionWorkItem
   ): Future[Unit] = sendFailureEmail(workItem)
@@ -71,7 +63,10 @@ extends Logging {
         emailConnector.sendEmail(
           EmailInformation(
             to = Seq(email),
-            templateId = failureTemplate(workItem),
+            templateId = templateId(
+              "agent_services_subscription_fail",
+              workItem.subscriptionRequest.isWelsh
+            ),
             parameters = Map(
               "agencyName" -> workItem.subscriptionRequest.agentName,
               "serviceName" -> serviceName(workItem.regime)
@@ -90,7 +85,10 @@ extends Logging {
         emailConnector.sendEmail(
           EmailInformation(
             to = Seq(email),
-            templateId = completionTemplate(workItem),
+            templateId = templateId(
+              "agent_services_subscription_complete",
+              workItem.subscriptionRequest.isWelsh
+            ),
             parameters = Map(
               "agencyName" -> workItem.subscriptionRequest.agentName,
               "arn" -> workItem.arn.value,
@@ -102,17 +100,14 @@ extends Logging {
         )
       case _ => Future.unit
 
-  private def completionTemplate(workItem: SubscriptionWorkItem): String =
-    if (workItem.subscriptionRequest.isWelsh)
-      subscriptionCompleteTemplateCy
-    else
-      subscriptionCompleteTemplateEn
-
-  private def failureTemplate(workItem: SubscriptionWorkItem): String =
-    if (workItem.subscriptionRequest.isWelsh)
-      subscriptionFailureTemplateCy
-    else
-      subscriptionFailureTemplateEn
+  private def templateId(
+    base: String,
+    isWelsh: Boolean
+  ): String =
+    s"$base${if (isWelsh)
+        "_cy"
+      else
+        ""}"
 
   private def serviceName(regime: LegacyRegime): String =
     regime match {
