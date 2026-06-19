@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.subscription
 
+import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
 
@@ -28,6 +29,7 @@ sealed trait SubscriptionRequest:
   val emailAddress: Option[String]
   val address: SubscriptionAddress
   val isAbroad: Boolean
+  val isWelsh: Boolean
 
 object SubscriptionRequest:
 
@@ -59,12 +61,24 @@ case class PayeSubscriptionRequest(
   contactName: String,
   phoneNumber: Option[String],
   emailAddress: Option[String],
-  address: SubscriptionAddress
+  address: SubscriptionAddress,
+  isWelsh: Boolean
 )
 extends SubscriptionRequest:
   val isAbroad: Boolean = false // Unused value for PAYE as postcode is always required
 
 object PayeSubscriptionRequest:
+
+  given Reads[PayeSubscriptionRequest] =
+    (
+      (__ \ "agentName").read[String] and
+        (__ \ "contactName").read[String] and
+        (__ \ "phoneNumber").readNullable[String] and
+        (__ \ "emailAddress").readNullable[String] and
+        (__ \ "address").read[SubscriptionAddress] and
+        (__ \ "isWelsh").readNullable[Boolean].map(_.getOrElse(false))
+    )(PayeSubscriptionRequest.apply)
+
   val registerWrites: Writes[PayeSubscriptionRequest] =
     given Writes[SubscriptionAddress] = SubscriptionAddress.payeRegistrationWrites
     Writes { request =>
@@ -83,9 +97,22 @@ case class SaSubscriptionRequest(
   phoneNumber: Option[String],
   emailAddress: Option[String],
   address: SubscriptionAddress,
-  isAbroad: Boolean
+  isAbroad: Boolean,
+  isWelsh: Boolean
 )
 extends SubscriptionRequest
+
+object SaSubscriptionRequest:
+  given Reads[SaSubscriptionRequest] =
+    (
+      (__ \ "agentName").read[String] and
+        (__ \ "contactName").read[String] and
+        (__ \ "phoneNumber").readNullable[String] and
+        (__ \ "emailAddress").readNullable[String] and
+        (__ \ "address").read[SubscriptionAddress] and
+        (__ \ "isAbroad").read[Boolean] and
+        (__ \ "isWelsh").readNullable[Boolean].map(_.getOrElse(false))
+    )(SaSubscriptionRequest.apply)
 
 case class CtSubscriptionRequest(
   agentName: String,
@@ -93,6 +120,19 @@ case class CtSubscriptionRequest(
   phoneNumber: Option[String],
   emailAddress: Option[String],
   address: SubscriptionAddress,
-  isAbroad: Boolean
+  isAbroad: Boolean,
+  isWelsh: Boolean
 )
 extends SubscriptionRequest
+
+object CtSubscriptionRequest:
+  given Reads[CtSubscriptionRequest] =
+    (
+      (__ \ "agentName").read[String] and
+        (__ \ "contactName").read[String] and
+        (__ \ "phoneNumber").readNullable[String] and
+        (__ \ "emailAddress").readNullable[String] and
+        (__ \ "address").read[SubscriptionAddress] and
+        (__ \ "isAbroad").read[Boolean] and
+        (__ \ "isWelsh").readNullable[Boolean].map(_.getOrElse(false))
+    )(CtSubscriptionRequest.apply)

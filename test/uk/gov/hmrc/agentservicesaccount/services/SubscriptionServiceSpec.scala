@@ -46,8 +46,6 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory
-import uk.gov.hmrc.mongo.CurrentTimestampSupport
-import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.InProgress
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
@@ -80,7 +78,8 @@ with BeforeAndAfterEach {
       line3 = Some("Line 3"),
       line4 = Some("Line 4"),
       postCode = Some("A11 11A")
-    )
+    ),
+    isWelsh = false
   )
 
   private val saSubscriptionRequest = SaSubscriptionRequest(
@@ -95,7 +94,8 @@ with BeforeAndAfterEach {
       line4 = Some("Line 4"),
       postCode = Some("A11 11A")
     ),
-    isAbroad = false
+    isAbroad = false,
+    isWelsh = false
   )
 
   private val ctSubscriptionRequest = CtSubscriptionRequest(
@@ -110,7 +110,8 @@ with BeforeAndAfterEach {
       line4 = Some("Line 4"),
       postCode = Some("A11 11A")
     ),
-    isAbroad = false
+    isAbroad = false,
+    isWelsh = false
   )
 
   private val testRequest: RequestHeader = FakeRequest()

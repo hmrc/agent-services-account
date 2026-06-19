@@ -36,8 +36,13 @@ class LegacySubscriptionEmailService @Inject() (
 )(using ec: ExecutionContext)
 extends Logging {
 
-  private val subscriptionCompleteTemplate = "agent_services_subscription_complete"
-  private val subscriptionFailureTemplate = "agent_services_subscription_fail"
+  private val subscriptionCompleteTemplateEn = "agent_services_subscription_complete"
+
+  private val subscriptionCompleteTemplateCy = "agent_services_subscription_complete_cy"
+
+  private val subscriptionFailureTemplateEn = "agent_services_subscription_fail"
+
+  private val subscriptionFailureTemplateCy = "agent_services_subscription_fail_cy"
 
   def sendFailureEmailIgnoreErrors(
     workItem: SubscriptionWorkItem
@@ -66,7 +71,7 @@ extends Logging {
         emailConnector.sendEmail(
           EmailInformation(
             to = Seq(email),
-            templateId = subscriptionFailureTemplate,
+            templateId = failureTemplate(workItem),
             parameters = Map(
               "agencyName" -> workItem.subscriptionRequest.agentName,
               "serviceName" -> serviceName(workItem.regime)
@@ -85,7 +90,7 @@ extends Logging {
         emailConnector.sendEmail(
           EmailInformation(
             to = Seq(email),
-            templateId = subscriptionCompleteTemplate,
+            templateId = completionTemplate(workItem),
             parameters = Map(
               "agencyName" -> workItem.subscriptionRequest.agentName,
               "arn" -> workItem.arn.value,
@@ -96,6 +101,18 @@ extends Logging {
           )
         )
       case _ => Future.unit
+
+  private def completionTemplate(workItem: SubscriptionWorkItem): String =
+    if (workItem.subscriptionRequest.isWelsh)
+      subscriptionCompleteTemplateCy
+    else
+      subscriptionCompleteTemplateEn
+
+  private def failureTemplate(workItem: SubscriptionWorkItem): String =
+    if (workItem.subscriptionRequest.isWelsh)
+      subscriptionFailureTemplateCy
+    else
+      subscriptionFailureTemplateEn
 
   private def serviceName(regime: LegacyRegime): String =
     regime match {

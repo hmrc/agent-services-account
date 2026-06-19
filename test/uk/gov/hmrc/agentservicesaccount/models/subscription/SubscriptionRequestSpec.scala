@@ -51,7 +51,8 @@ extends UnitSpec:
     contactName = testContactName,
     phoneNumber = Some(testPhoneNumber),
     emailAddress = Some(testEmail),
-    address = testUkAddress
+    address = testUkAddress,
+    isWelsh = false
   )
   val testSaSubscriptionRequest = SaSubscriptionRequest(
     agentName = testAgentName,
@@ -59,7 +60,8 @@ extends UnitSpec:
     phoneNumber = Some(testPhoneNumber),
     emailAddress = Some(testEmail),
     address = testUkAddress,
-    isAbroad = false
+    isAbroad = false,
+    isWelsh = false
   )
   val testCtSubscriptionRequest = CtSubscriptionRequest(
     agentName = testAgentName,
@@ -67,7 +69,8 @@ extends UnitSpec:
     phoneNumber = Some(testPhoneNumber),
     emailAddress = Some(testEmail),
     address = testAbroadAddress,
-    isAbroad = true
+    isAbroad = true,
+    isWelsh = false
   )
   val testPayeJson: JsObject = Json.obj(
     "agentName" -> testAgentName,
@@ -80,7 +83,8 @@ extends UnitSpec:
       "line3" -> "Line 3",
       "line4" -> "Line 4",
       "postCode" -> testPostCode
-    )
+    ),
+    "isWelsh" -> false
   )
   val testSaJson: JsObject = Json.obj(
     "agentName" -> testAgentName,
@@ -94,7 +98,8 @@ extends UnitSpec:
       "line4" -> "Line 4",
       "postCode" -> testPostCode
     ),
-    "isAbroad" -> false
+    "isAbroad" -> false,
+    "isWelsh" -> false
   )
   val testCtJson: JsObject = Json.obj(
     "agentName" -> testAgentName,
@@ -107,7 +112,8 @@ extends UnitSpec:
       "line3" -> "Line 3",
       "line4" -> "Line 4"
     ),
-    "isAbroad" -> true
+    "isAbroad" -> true,
+    "isWelsh" -> false
   )
 
   "SubscriptionRequest" should:
@@ -153,7 +159,8 @@ extends UnitSpec:
           "line3" -> "Line 3",
           "line4" -> "Line 4"
         ),
-        "isAbroad" -> false
+        "isAbroad" -> false,
+        "isWelsh" -> false
       )
 
       val result = Json.fromJson[SubscriptionRequest](invalidSaJson)(using SubscriptionRequest.reads(SA))

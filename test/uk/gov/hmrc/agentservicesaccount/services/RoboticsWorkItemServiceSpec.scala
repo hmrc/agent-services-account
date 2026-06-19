@@ -76,7 +76,8 @@ with BeforeAndAfterEach {
       line4 = None,
       postCode = Some("AA1 1AA")
     ),
-    isAbroad = false
+    isAbroad = false,
+    isWelsh = false
   )
 
   override protected def beforeEach(): Unit = {

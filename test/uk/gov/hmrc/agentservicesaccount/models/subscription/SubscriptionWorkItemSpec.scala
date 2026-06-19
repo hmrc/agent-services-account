@@ -52,7 +52,8 @@ extends UnitSpec:
     contactName = testContactName,
     phoneNumber = Some(testPhoneNumber),
     emailAddress = Some(testEmail),
-    address = testUkAddress
+    address = testUkAddress,
+    isWelsh = false
   )
   val testModel = SubscriptionWorkItem(
     arn = testArn,
@@ -68,7 +69,7 @@ extends UnitSpec:
   val testJson: JsObject = Json.obj(
     "arn" -> "AARN0000001",
     "regime" -> "PAYE",
-    "subscriptionRequest" -> "ibsRj/PwmBC+hnfD9XV14cpuk54MycnM5XHDSM+le0djqElGr3QtFK55VTegWQwOJXPlMHboVOm1zH0d0ZwaXUruPggPZCd7D6PcoLEYZf49TBIder8kSx7zasPZYcCOwHcdZX3k77tdEInV/Iyx/6LYP3IRvGI7DVm8MpvgKujabKcRTQSWh6beCsXGzzutoFGI2FUtHQS1GWhJbj17IfgXRwnDCgY+r5NsnxEIJpTQB/awiVs3UeLKXLWuHBPeK3SbTSDL5P7/JQSU6ZKLua2ZfyhkG7Z74Fn2RN984DI=",
+    "subscriptionRequest" -> "ibsRj/PwmBC+hnfD9XV14cpuk54MycnM5XHDSM+le0djqElGr3QtFK55VTegWQwOJXPlMHboVOm1zH0d0ZwaXUruPggPZCd7D6PcoLEYZf49TBIder8kSx7zasPZYcCOwHcdZX3k77tdEInV/Iyx/6LYP3IRvGI7DVm8MpvgKujabKcRTQSWh6beCsXGzzutoFGI2FUtHQS1GWhJbj17IfgXRwnDCgY+r5NsnxEIJpTQB/awiVs3UeLKXLWuHBPeK3SbTSDL5P7/JQSU6ZKLufbpvXTXxEiGTBYDPeIUUg1kc0kpblUDbgOpLujthfvg",
     "agentReference" -> "AB1234",
     "groupId" -> "test-group-id",
     "adminCredId" -> "test-cred-id",

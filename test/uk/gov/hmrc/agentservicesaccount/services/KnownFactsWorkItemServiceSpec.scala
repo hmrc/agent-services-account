@@ -55,7 +55,8 @@ with BeforeAndAfterEach:
       line3 = None,
       line4 = None,
       postCode = Some("AA1 1AA")
-    )
+    ),
+    isWelsh = false
   )
 
   private val workItem = WorkItem(

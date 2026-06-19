@@ -68,7 +68,8 @@ with BeforeAndAfterEach {
               None,
               None,
               Some("AA1 1AA")
-            )
+            ),
+            isWelsh = false
           )
 
         case SA =>
@@ -84,7 +85,8 @@ with BeforeAndAfterEach {
               None,
               Some("AA1 1AA")
             ),
-            isAbroad = false
+            isAbroad = false,
+            isWelsh = false
           )
 
         case CT =>
@@ -100,7 +102,8 @@ with BeforeAndAfterEach {
               None,
               Some("AA1 1AA")
             ),
-            isAbroad = false
+            isAbroad = false,
+            isWelsh = false
           )
       },
     regime = regime,
