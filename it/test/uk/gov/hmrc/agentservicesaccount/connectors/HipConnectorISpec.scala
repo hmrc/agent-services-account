@@ -60,7 +60,8 @@ with HipStubs {
     "http-verbs.retries.intervals" -> List("1ms"),
     "agent.entity.cache.enabled" -> true,
     "agent.entity.cache.expires" -> "1 second",
-    "auditing.enabled" -> false
+    "auditing.enabled" -> false,
+    "features.updated-hip-put-agent-record" -> false
   )
 
   private implicit lazy val configuration: Config = app.injector.instanceOf[Config]
