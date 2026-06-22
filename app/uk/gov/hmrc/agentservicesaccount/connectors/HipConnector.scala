@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, AmlsDetails, BusinessAddress, HipAgentSubscriptionResponse, HipAmendPayload, HipAmendResponse, UpdateStatus}
+import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, AmlsDetails, BusinessAddress, HipAgentSubscriptionResponse, HipAmendPayload, HipAmendResponse, UpdateStatus, UpdatedHipAmendPayload}
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
@@ -92,13 +92,14 @@ with Logging {
 
   def putAgentRecord(
     arn: Arn,
-    payload: HipAmendPayload
+    hipAmendPayload: HipAmendPayload
   )(using request: RequestHeader): Future[HipAmendResponse] =
     val url = url"$baseUrl/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"
+    val payload = if (appConfig.updatedHipPutAgentRecord) Json.toJson(UpdatedHipAmendPayload(hipAmendPayload)) else Json.toJson(hipAmendPayload)
     retryFor[HipAmendResponse](s"HIP put $url")(retryCondition) {
       httpV2
         .put(url)
-        .withBody(Json.toJson(payload))
+        .withBody(payload)
         .setHeader(hipHeaders*)
         .executeAndDeserialise[HipAmendResponse]
     }.flatMap { response =>
