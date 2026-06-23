@@ -432,7 +432,9 @@ extends UnitSpec {
         val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
         val hipAmendPayload = agentRecordUpdateRequest.toHipAmendPayload(oldRecord, true)(logger)
         
+//        TODO: 11584 Implement assertions here
 //        assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+
         assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertMMTARFieldsSetAsAcceptedInPayload(hipAmendPayload)
@@ -442,8 +444,10 @@ extends UnitSpec {
         val agencyDetailsUpdateRequestNoAddress: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsNoAddress)
         val hipAmendPayload = agencyDetailsUpdateRequestNoAddress.toHipAmendPayload(oldRecord, true)(logger)
 
+        //        TODO: 11584 Implement assertions here
+        //        assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+
         assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
-//        assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertMMTARFieldsSetAsAcceptedInPayload(hipAmendPayload)
 
@@ -452,18 +456,22 @@ extends UnitSpec {
         val agencyDetailsUpdateRequestAddressOnly: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsAddressOnly)
         val hipAmendPayload = agencyDetailsUpdateRequestAddressOnly.toHipAmendPayload(oldRecord, true)(logger)
 
+        //        TODO: 11584 Implement assertions here
+        //        assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+
         assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
-//        assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertMMTARFieldsSetAsAcceptedInPayload(hipAmendPayload)
 
       "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated" in :
         val agencyDetailsUpdateRequest: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetails)
         val hipAmendPayload = agencyDetailsUpdateRequest.toHipAmendPayload(oldRecord, true)(logger)
 
-//        assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
-//        assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
-//        assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+        //        TODO: 11584 Implement assertions here
+        //        assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+        //        assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+        //        assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+
         assertMMTARFieldsSetAsAcceptedInPayload(hipAmendPayload)
 
       "should only have None fields in JSON output where old record has None fields" in {
