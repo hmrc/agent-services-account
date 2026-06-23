@@ -159,30 +159,7 @@ extends UnitSpec {
     }
   }
 
-//  TODO: 11584 This is where toHipAmendPayload unit tests should be
   "toHipAmendPayload" should {
-    val oldRecord = AgentDetailsDesResponse(
-      uniqueTaxReference = Some(Utr("1234567890")),
-      agencyDetails = Some(AgencyDetails(
-        agencyName = Some("Old Agency Name"),
-        agencyEmail = Some("test@email.com"),
-        agencyTelephone = Some("07123456789"),
-        agencyAddress = Some(BusinessAddress(
-          addressLine1 = "Old Address Line 1",
-          addressLine2 = Some("Old Address Line 2"),
-          addressLine3 = Some("Old Address Line 3"),
-          postalCode = Some("AA1 1AA"),
-          countryCode = "GB"
-        ))
-      )),
-      amlsDetails = Some(AmlsDetails(
-        supervisoryBody = SupervisoryBody("SRA"),
-        membershipNumber = MembershipNumber("XAML00000123456"),
-        evidenceObjectReference = Some(EvidenceObjectReference("old-ref-456"))
-      )),
-      suspensionDetails = None,
-      isAnIndividual = None
-    )
 
     val agencyDetails = AgencyDetails(
       agencyName = Some("Test Agency"),
@@ -191,7 +168,6 @@ extends UnitSpec {
       agencyAddress = Some(BusinessAddress(
         addressLine1 = "1 High Street",
         addressLine2 = Some("Floor 2"),
-        addressLine3 = Some("Town Centre"),
         postalCode = Some("TF1 1AA"),
         countryCode = "GB"
       ))
@@ -307,19 +283,27 @@ extends UnitSpec {
         payload.amlSupervisionUpdateStatus shouldBe None
       }
 
-//      "return correct HipAmendPayload when passed AmlsUpdateRequest and useUpdatedHipPutAgentRecord false" in :
-//        val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
-//        val hipAmendPayload = toHipAmendPayload(agentRecordUpdateRequest)(oldRecord, false)(logger)
-//        true shouldBe true
-//
-//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated and useUpdatedHipPutAgentRecord false" in :
-//        true shouldBe true
-//
-//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated and useUpdatedHipPutAgentRecord false" in :
-//        true shouldBe true
-//
-//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated and useUpdatedHipPutAgentRecord false" in :
-//        true shouldBe true
+      "return correct HipAmendPayload when passed AmlsUpdateRequest and useUpdatedHipPutAgentRecord false" in :
+        val amlsUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
+        val hipAmendPayload = toHipAmendPayload(amlsUpdateRequest)(oldRecord, false)(logger)
+        true shouldBe false
+
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated and useUpdatedHipPutAgentRecord false" in :
+        val agencyDetailsNoAddress = agencyDetails.copy(agencyAddress = None)
+        val agencyDetailsUpdateRequestNoAddress: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsNoAddress)
+        val hipAmendPayload = toHipAmendPayload(agencyDetailsUpdateRequestNoAddress)(oldRecord, false)(logger)
+        true shouldBe false
+
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated and useUpdatedHipPutAgentRecord false" in :
+        val agencyDetailsAddressOnly = AgencyDetails(None, None, None, agencyDetails.agencyAddress)
+        val agencyDetailsUpdateRequestAddressOnly: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsAddressOnly)
+        val hipAmendPayload = toHipAmendPayload(agencyDetailsUpdateRequestAddressOnly)(oldRecord, false)(logger)
+        true shouldBe false
+
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated and useUpdatedHipPutAgentRecord false" in :
+        val agencyDetailsUpdateRequest: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetails)
+        val hipAmendPayload = toHipAmendPayload(agencyDetailsUpdateRequest)(oldRecord, false)(logger)
+        true shouldBe false
 
       "omit None fields in JSON output" in {
         val request = AmlsUpdateRequest(AmlsDetails(
@@ -350,22 +334,49 @@ extends UnitSpec {
         true shouldBe true
       }
 
-//      "return correct HipAmendPayload when passed AmlsUpdateRequest and useUpdatedHipPutAgentRecord true" in :
-//        val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
-//        val hipAmendPayload = toHipAmendPayload(agentRecordUpdateRequest)(oldRecord, true)(logger)
-//        true shouldBe true
-//
-//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated and useUpdatedHipPutAgentRecord true" in :
-//        true shouldBe true
-//
-//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated and useUpdatedHipPutAgentRecord true" in :
-//        true shouldBe true
-//
-//      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated and useUpdatedHipPutAgentRecord true" in :
-//        true shouldBe true
+      "return correct HipAmendPayload when passed AmlsUpdateRequest and useUpdatedHipPutAgentRecord true" in :
+        val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
+        val hipAmendPayload = toHipAmendPayload(agentRecordUpdateRequest)(oldRecord, true)(logger)
+        true shouldBe false
 
-      "should have no None fields in JSON output if old record has no None fields" in {
-        true shouldBe true
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated and useUpdatedHipPutAgentRecord true" in :
+        val agencyDetailsNoAddress = agencyDetails.copy(agencyAddress = None)
+        val agencyDetailsUpdateRequestNoAddress: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsNoAddress)
+        val hipAmendPayload = toHipAmendPayload(agencyDetailsUpdateRequestNoAddress)(oldRecord, true)(logger)
+        true shouldBe false
+
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated and useUpdatedHipPutAgentRecord true" in :
+        val agencyDetailsAddressOnly = AgencyDetails(None, None, None, agencyDetails.agencyAddress)
+        val agencyDetailsUpdateRequestAddressOnly: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsAddressOnly)
+        val hipAmendPayload = toHipAmendPayload(agencyDetailsUpdateRequestAddressOnly)(oldRecord, true)(logger)
+        true shouldBe false
+
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated and useUpdatedHipPutAgentRecord true" in :
+        val agencyDetailsUpdateRequest: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetails)
+        val hipAmendPayload = toHipAmendPayload(agencyDetailsUpdateRequest)(oldRecord, true)(logger)
+        true shouldBe false
+
+      "should only have None fields in JSON output where old record has None fields" in {
+        val request = AmlsUpdateRequest(AmlsDetails(
+          supervisoryBody = SupervisoryBody("SRA"),
+          membershipNumber = MembershipNumber("XAML00000123456")
+        ))
+
+        val payload = request.toHipAmendPayload(oldRecord, true)(logger)
+
+        val fields = Json.toJson(payload).as[JsObject].keys
+
+        fields should contain("supervisoryBody")
+        fields should contain("membershipNumber")
+        fields should contain("name")
+        fields should contain("addr1")
+        fields should contain("addr2")
+        fields should contain("addr3")
+        fields should not contain "addr4"
+        fields should contain("postcode")
+        fields should contain("updateDetailsStatus")
+        fields should contain("amlSupervisionUpdateStatus")
+        fields should contain("directorPartnerUpdateStatus")
       }
     }
 
