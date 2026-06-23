@@ -35,7 +35,7 @@ class LegacySubscriptionEmailService @Inject() (
   emailConnector: EmailConnector
 )(using ec: ExecutionContext)
 extends Logging {
-  
+
   def sendFailureEmailIgnoreErrors(
     workItem: SubscriptionWorkItem
   ): Future[Unit] = sendFailureEmail(workItem)
