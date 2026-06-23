@@ -21,6 +21,7 @@ import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.toHipAmendPayload
+import uk.gov.hmrc.agentservicesaccount.models.UpdateStatus.ACCEPTED
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 class AgentRecordUpdateRequestSpec
@@ -283,27 +284,94 @@ extends UnitSpec {
         payload.amlSupervisionUpdateStatus shouldBe None
       }
 
+      def assertAmlsDetailsNoneInPayload(hipAmendPayload: HipAmendPayload): Unit = {
+        hipAmendPayload.supervisoryBody shouldBe None
+        hipAmendPayload.membershipNumber shouldBe None
+        hipAmendPayload.evidenceObjectReference shouldBe None
+      }
+
+      def assertAgencyNameTelephoneEmailNoneInPayload(hipAmendPayload: HipAmendPayload): Unit = {
+        hipAmendPayload.name shouldBe None
+        hipAmendPayload.phone shouldBe None
+        hipAmendPayload.email shouldBe None
+      }
+
+      def assertAgencyAddressNoneInPayload(hipAmendPayload: HipAmendPayload): Unit = {
+        hipAmendPayload.addr1 shouldBe None
+        hipAmendPayload.addr2 shouldBe None
+        hipAmendPayload.addr3 shouldBe None
+        hipAmendPayload.addr4 shouldBe None
+        hipAmendPayload.postcode shouldBe None
+        hipAmendPayload.country shouldBe None
+      }
+
+      def assertMMTARFieldsNoneInPayload(hipAmendPayload: HipAmendPayload): Unit = {
+        hipAmendPayload.updateDetailsStatus shouldBe None
+        hipAmendPayload.amlSupervisionUpdateStatus shouldBe None
+        hipAmendPayload.directorPartnerUpdateStatus shouldBe None
+        hipAmendPayload.acceptNewTermsStatus shouldBe None
+        hipAmendPayload.reriskStatus shouldBe None
+      }
+
       "return correct HipAmendPayload when passed AmlsUpdateRequest" in :
         val amlsUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
         val hipAmendPayload = amlsUpdateRequest.toHipAmendPayload(oldRecord, false)(logger)
-        true shouldBe false
+
+        hipAmendPayload.supervisoryBody shouldBe Some(amlsDetails.supervisoryBody.toString)
+        hipAmendPayload.membershipNumber shouldBe Some(amlsDetails.membershipNumber.toString)
+        hipAmendPayload.evidenceObjectReference shouldBe amlsDetails.evidenceObjectReference
+
+        assertAgencyNameTelephoneEmailNoneInPayload(hipAmendPayload)
+        assertAgencyAddressNoneInPayload(hipAmendPayload)
+        assertMMTARFieldsNoneInPayload(hipAmendPayload)
 
       "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated" in :
         val agencyDetailsNoAddress = agencyDetails.copy(agencyAddress = None)
         val agencyDetailsUpdateRequestNoAddress: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsNoAddress)
         val hipAmendPayload = agencyDetailsUpdateRequestNoAddress.toHipAmendPayload(oldRecord, false)(logger)
-        true shouldBe false
+
+        hipAmendPayload.name shouldBe agencyDetails.agencyName
+        hipAmendPayload.email shouldBe agencyDetails.agencyEmail
+        hipAmendPayload.phone shouldBe agencyDetails.agencyTelephone
+
+        assertAmlsDetailsNoneInPayload(hipAmendPayload)
+        assertAgencyAddressNoneInPayload(hipAmendPayload)
+        assertMMTARFieldsNoneInPayload(hipAmendPayload)
 
       "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated" in :
         val agencyDetailsAddressOnly = AgencyDetails(None, None, None, agencyDetails.agencyAddress)
         val agencyDetailsUpdateRequestAddressOnly: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsAddressOnly)
         val hipAmendPayload = agencyDetailsUpdateRequestAddressOnly.toHipAmendPayload(oldRecord, false)(logger)
-        true shouldBe false
+
+        //        TODO: 11584 Test fallback correctly
+        hipAmendPayload.addr1 shouldBe agencyDetails.agencyAddress.map(_.addressLine1)
+        hipAmendPayload.addr2 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine2)
+        hipAmendPayload.addr3 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine3)
+        hipAmendPayload.addr4 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine4)
+        hipAmendPayload.postcode shouldBe agencyDetails.agencyAddress.flatMap(_.postalCode)
+        hipAmendPayload.country shouldBe agencyDetails.agencyAddress.map(_.countryCode)
+
+        assertAmlsDetailsNoneInPayload(hipAmendPayload)
+        assertAgencyNameTelephoneEmailNoneInPayload(hipAmendPayload)
+        assertMMTARFieldsNoneInPayload(hipAmendPayload)
 
       "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated" in :
         val agencyDetailsUpdateRequest: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetails)
         val hipAmendPayload = agencyDetailsUpdateRequest.toHipAmendPayload(oldRecord, false)(logger)
-        true shouldBe false
+
+        hipAmendPayload.name shouldBe agencyDetails.agencyName
+        hipAmendPayload.email shouldBe agencyDetails.agencyEmail
+        hipAmendPayload.phone shouldBe agencyDetails.agencyTelephone
+//        TODO: 11584 Test fallback correctly
+        hipAmendPayload.addr1 shouldBe agencyDetails.agencyAddress.map(_.addressLine1)
+        hipAmendPayload.addr2 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine2)
+        hipAmendPayload.addr3 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine3)
+        hipAmendPayload.addr4 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine4)
+        hipAmendPayload.postcode shouldBe agencyDetails.agencyAddress.flatMap(_.postalCode)
+        hipAmendPayload.country shouldBe agencyDetails.agencyAddress.map(_.countryCode)
+
+        assertAmlsDetailsNoneInPayload(hipAmendPayload)
+        assertMMTARFieldsNoneInPayload(hipAmendPayload)
 
       "omit None fields in JSON output" in {
         val request = AmlsUpdateRequest(AmlsDetails(
@@ -330,6 +398,35 @@ extends UnitSpec {
     }
 
     "when useUpdatedHipPutAgentRecord true" should {
+
+      def assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload: HipAmendPayload, oldRecord: AgentDetailsDesResponse): Unit = {
+        hipAmendPayload.supervisoryBody shouldBe oldRecord.amlsDetails.map(_.supervisoryBody)
+        hipAmendPayload.membershipNumber shouldBe oldRecord.amlsDetails.map(_.membershipNumber)
+        hipAmendPayload.evidenceObjectReference shouldBe oldRecord.amlsDetails.flatMap(_.evidenceObjectReference)
+      }
+
+      def assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload: HipAmendPayload, oldRecord: AgentDetailsDesResponse): Unit = {
+        hipAmendPayload.name shouldBe oldRecord.agencyDetails.flatMap(_.agencyName)
+        hipAmendPayload.phone shouldBe oldRecord.agencyDetails.flatMap(_.agencyTelephone)
+        hipAmendPayload.email shouldBe oldRecord.agencyDetails.flatMap(_.agencyEmail)
+      }
+
+      def assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload: HipAmendPayload, oldRecord: AgentDetailsDesResponse): Unit = {
+        hipAmendPayload.addr1 shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).map(_.addressLine1)
+        hipAmendPayload.addr2 shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine2)
+        hipAmendPayload.addr3 shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine3)
+        hipAmendPayload.addr4 shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine4)
+        hipAmendPayload.postcode shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.postalCode)
+        hipAmendPayload.country shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).map(_.countryCode)
+      }
+
+      def assertMMTARFieldsSetAsAcceptedInPayload(hipAmendPayload: HipAmendPayload): Unit = {
+        hipAmendPayload.updateDetailsStatus shouldBe Some(ACCEPTED)
+        hipAmendPayload.amlSupervisionUpdateStatus shouldBe Some(ACCEPTED)
+        hipAmendPayload.directorPartnerUpdateStatus shouldBe Some(ACCEPTED)
+        hipAmendPayload.acceptNewTermsStatus shouldBe Some(ACCEPTED)
+        hipAmendPayload.reriskStatus shouldBe Some(ACCEPTED)
+      }
 
       "return correct HipAmendPayload when passed AmlsUpdateRequest" in :
         val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
