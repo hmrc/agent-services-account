@@ -147,6 +147,54 @@ extends UnitSpec:
 
       result shouldBe JsSuccess(testCtSubscriptionRequest)
 
+    "deserialize old PAYE JSON without isWelsh field" in {
+      val oldJson = testPayeJson - "isWelsh"
+
+      val result = Json.fromJson[SubscriptionRequest](oldJson)(using SubscriptionRequest.reads(PAYE))
+
+      result shouldBe JsSuccess(testPayeSubscriptionRequest)
+    }
+
+    "deserialize old SA JSON without isWelsh field" in {
+      val oldJson = testSaJson - "isWelsh"
+
+      val result = Json.fromJson[SubscriptionRequest](oldJson)(using SubscriptionRequest.reads(SA))
+
+      result shouldBe JsSuccess(testSaSubscriptionRequest)
+    }
+
+    "deserialize old CT JSON without isWelsh field" in {
+      val oldJson = testCtJson - "isWelsh"
+
+      val result = Json.fromJson[SubscriptionRequest](oldJson)(using SubscriptionRequest.reads(CT))
+
+      result shouldBe JsSuccess(testCtSubscriptionRequest)
+    }
+
+    "treat missing isWelsh as false for PAYE" in {
+      val json = testPayeJson - "isWelsh"
+
+      val result = Json.fromJson[PayeSubscriptionRequest](json)
+
+      result shouldBe JsSuccess(testPayeSubscriptionRequest)
+    }
+
+    "treat missing isWelsh as false for SA" in {
+      val json = testSaJson - "isWelsh"
+
+      val result = Json.fromJson[SaSubscriptionRequest](json)
+
+      result shouldBe JsSuccess(testSaSubscriptionRequest)
+    }
+
+    "treat missing isWelsh as false for CT" in {
+      val json = testCtJson - "isWelsh"
+
+      val result = Json.fromJson[CtSubscriptionRequest](json)
+
+      result shouldBe JsSuccess(testCtSubscriptionRequest)
+    }
+
     "fail deserialization when postcode is missing for legacy UK subscription" in:
       val invalidSaJson = Json.obj(
         "agentName" -> testAgentName,
