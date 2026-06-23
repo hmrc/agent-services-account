@@ -58,7 +58,8 @@ with EmailStub {
     "agent.entity-check.lock.expires" -> "1 seconds",
     "agent.automap.lock.expires" -> "1 seconds",
     "agent.entity-check.email.lock.expires" -> "1 seconds",
-    "features.get-agent-record-via-hip" -> false
+    "features.get-agent-record-via-hip" -> true,
+    "features.updated-hip-put-agent-record" -> true
   )
 
   val testArn = Arn("AARN0000002")
@@ -322,7 +323,6 @@ with EmailStub {
     }
   }
 
-//  TODO: 11584 Add ITs here
   "POST /agent-record-update" should {
     val url = "/agent-record-update"
     "return OK status when the update was successful" in {
