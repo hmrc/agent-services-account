@@ -95,7 +95,8 @@ with Logging {
     hipAmendPayload: HipAmendPayload
   )(using request: RequestHeader): Future[HipAmendResponse] =
     val url = url"$baseUrl/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"
-    val payload = if (appConfig.updatedHipPutAgentRecord) Json.toJson(UpdatedHipAmendPayload(hipAmendPayload)) else Json.toJson(hipAmendPayload)
+//    val payload = if (appConfig.updatedHipPutAgentRecord) Json.toJson(UpdatedHipAmendPayload(hipAmendPayload)) else Json.toJson(hipAmendPayload)
+    val payload = Json.toJson(hipAmendPayload)
     retryFor[HipAmendResponse](s"HIP put $url")(retryCondition) {
       httpV2
         .put(url)
