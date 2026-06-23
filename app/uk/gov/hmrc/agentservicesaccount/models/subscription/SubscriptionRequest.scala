@@ -35,9 +35,9 @@ object SubscriptionRequest:
 
   def reads(regime: LegacyRegime): Reads[SubscriptionRequest] = Reads { json =>
     regime match {
-      case PAYE => Json.fromJson(json)(using Json.reads[PayeSubscriptionRequest])
-      case SA => Json.fromJson(json)(using Json.reads[SaSubscriptionRequest])
-      case CT => Json.fromJson(json)(using Json.reads[CtSubscriptionRequest])
+      case PAYE => json.validate[PayeSubscriptionRequest]
+      case SA   => json.validate[SaSubscriptionRequest]
+      case CT   => json.validate[CtSubscriptionRequest]
     } match {
       case JsSuccess(request: SubscriptionRequest, _) if !request.isAbroad && request.address.postCode.isEmpty =>
         JsError("Postcode is required for legacy subscriptions in UK")
@@ -50,10 +50,10 @@ object SubscriptionRequest:
       request.isAbroad || request.address.postCode.forall(_.trim.nonEmpty)
     }
 
-  implicit val writes: Writes[SubscriptionRequest] = Writes {
-    case payeRequest: PayeSubscriptionRequest => Json.writes[PayeSubscriptionRequest].writes(payeRequest)
-    case saRequest: SaSubscriptionRequest => Json.writes[SaSubscriptionRequest].writes(saRequest)
-    case ctRequest: CtSubscriptionRequest => Json.writes[CtSubscriptionRequest].writes(ctRequest)
+  given Writes[SubscriptionRequest] = Writes {
+    case payeRequest: PayeSubscriptionRequest => Json.toJson(payeRequest)
+    case saRequest: SaSubscriptionRequest => Json.toJson(saRequest)
+    case ctRequest: CtSubscriptionRequest => Json.toJson(ctRequest)
   }
 
 case class PayeSubscriptionRequest(
@@ -78,6 +78,8 @@ object PayeSubscriptionRequest:
         (__ \ "address").read[SubscriptionAddress] and
         (__ \ "isWelsh").readNullable[Boolean].map(_.getOrElse(false))
     )(PayeSubscriptionRequest.apply)
+
+  given OWrites[PayeSubscriptionRequest] = Json.writes[PayeSubscriptionRequest]
 
   val registerWrites: Writes[PayeSubscriptionRequest] =
     given Writes[SubscriptionAddress] = SubscriptionAddress.payeRegistrationWrites
@@ -114,6 +116,8 @@ object SaSubscriptionRequest:
         (__ \ "isWelsh").readNullable[Boolean].map(_.getOrElse(false))
     )(SaSubscriptionRequest.apply)
 
+  given OWrites[SaSubscriptionRequest] = Json.writes[SaSubscriptionRequest]
+
 case class CtSubscriptionRequest(
   agentName: String,
   contactName: String,
@@ -136,3 +140,5 @@ object CtSubscriptionRequest:
         (__ \ "isAbroad").read[Boolean] and
         (__ \ "isWelsh").readNullable[Boolean].map(_.getOrElse(false))
     )(CtSubscriptionRequest.apply)
+
+  given OWrites[CtSubscriptionRequest] = Json.writes[CtSubscriptionRequest]
