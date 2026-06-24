@@ -135,12 +135,9 @@ with BeforeAndAfterEach {
 
   private def expectedWelshServiceSectionName(regime: LegacyRegime): String =
     regime match
-      case PAYE =>
-        "Talu wrth ennill (TWE)/Cynllun y Diwydiant Adeiladu (CIS)"
-      case SA =>
-        "Hunanasesiad"
-      case CT =>
-        "Treth Gorfforaeth"
+      case PAYE => "Talu wrth ennill (TWE)/Cynllun y Diwydiant Adeiladu (CIS)"
+      case SA => "Hunanasesiad"
+      case CT => "Treth Gorfforaeth"
 
   List(PAYE, SA, CT).foreach { regime =>
 
@@ -197,7 +194,7 @@ with BeforeAndAfterEach {
           )
         )(using any[RequestHeader])
       }
-      
+
       "do nothing when email address is missing" in {
         val workItem = buildWorkItem(regime, email = None)
 
@@ -278,7 +275,7 @@ with BeforeAndAfterEach {
           )
         )(using any[RequestHeader])
       }
-      
+
       "do nothing when email address is missing" in {
         val workItem = buildWorkItem(regime, email = None)
 

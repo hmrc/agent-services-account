@@ -112,9 +112,21 @@ extends Logging {
   private def serviceName(workItem: SubscriptionWorkItem): String =
     val isWelsh = workItem.subscriptionRequest.isWelsh
     workItem.regime match
-      case LegacyRegime.PAYE => if (isWelsh) "TWE/CIS" else "PAYE/CIS"
-      case LegacyRegime.SA => if (isWelsh) "Hunanasesiad" else "Self Assessment"
-      case LegacyRegime.CT => if (isWelsh) "Treth Gorfforaeth" else "Corporation Tax"
+      case LegacyRegime.PAYE =>
+        if (isWelsh)
+          "TWE/CIS"
+        else
+          "PAYE/CIS"
+      case LegacyRegime.SA =>
+        if (isWelsh)
+          "Hunanasesiad"
+        else
+          "Self Assessment"
+      case LegacyRegime.CT =>
+        if (isWelsh)
+          "Treth Gorfforaeth"
+        else
+          "Corporation Tax"
 
   private def serviceSectionName(workItem: SubscriptionWorkItem): String =
     val isWelsh = workItem.subscriptionRequest.isWelsh
@@ -124,7 +136,15 @@ extends Logging {
           "Talu wrth ennill (TWE)/Cynllun y Diwydiant Adeiladu (CIS)"
         else
           "Pay as you earn (PAYE)/Construction Industry Scheme (CIS)"
-      case LegacyRegime.SA => if (isWelsh) "Hunanasesiad" else "Self Assessment"
-      case LegacyRegime.CT => if (isWelsh) "Treth Gorfforaeth" else "Corporation Tax"
+      case LegacyRegime.SA =>
+        if (isWelsh)
+          "Hunanasesiad"
+        else
+          "Self Assessment"
+      case LegacyRegime.CT =>
+        if (isWelsh)
+          "Treth Gorfforaeth"
+        else
+          "Corporation Tax"
 
 }
