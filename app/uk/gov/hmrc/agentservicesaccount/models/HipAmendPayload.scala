@@ -39,11 +39,10 @@ case class HipAmendPayload(
   reriskStatus: Option[UpdateStatus] = None
 ) {
   private def withAgencyDetailsUpdate(agencyDetails: AgencyDetails): HipAmendPayload = {
-    //  TODO: 11584: Clean up this function
     val payloadWithNameEmailPhone = this.copy(
-      name = if (agencyDetails.agencyName.isDefined) agencyDetails.agencyName else name,
-      email = if (agencyDetails.agencyEmail.isDefined) agencyDetails.agencyEmail else email,
-      phone = if (agencyDetails.agencyTelephone.isDefined) agencyDetails.agencyTelephone else phone
+      name = agencyDetails.agencyName.orElse(name),
+      email = agencyDetails.agencyEmail.orElse(email),
+      phone = agencyDetails.agencyTelephone.orElse(phone)
     )
     agencyDetails.agencyAddress.map(agencyAddress => {
       payloadWithNameEmailPhone.copy(
