@@ -99,13 +99,13 @@ with Logging {
 
   def putAgentRecord(
     arn: Arn,
-    hipAmendPayload: HipAmendPayload
+    payload: HipAmendPayload
   )(using request: RequestHeader): Future[HipAmendResponse] =
     val url = url"$baseUrl/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"
     retryFor[HipAmendResponse](s"HIP put $url")(retryCondition) {
       httpV2
         .put(url)
-        .withBody(Json.toJson(hipAmendPayload))
+        .withBody(Json.toJson(payload))
         .setHeader(hipHeaders*)
         .executeAndDeserialise[HipAmendResponse]
     }.flatMap { response =>
