@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentservicesaccount.models
 
 import play.api.Logger
 import play.api.libs.json.*
-import uk.gov.hmrc.agentservicesaccount.models.UpdateStatus.ACCEPTED
 
 case class HipAmendPayload(
   name: Option[String] = None,
@@ -45,28 +44,12 @@ private def addAgencyDetailsUpdateToInitHipAmendPayload(
   initPayload: HipAmendPayload
 ): HipAmendPayload = {
 //  TODO: 11584: Clean up this function
-  val nameToSend =
-    if (details.agencyName.isDefined)
-      details.agencyName
-    else
-      initPayload.name
-  val emailToSend =
-    if (details.agencyEmail.isDefined)
-      details.agencyEmail
-    else
-      initPayload.email
-  val phoneToSend =
-    if (details.agencyTelephone.isDefined)
-      details.agencyTelephone
-    else
-      initPayload.phone
   val payloadWithNameEmailPhone = initPayload.copy(
-    name = nameToSend,
-    email = emailToSend,
-    phone = phoneToSend
+    name = if (details.agencyName.isDefined) details.agencyName else initPayload.name,
+    email = if (details.agencyEmail.isDefined) details.agencyEmail else initPayload.email,
+    phone = if (details.agencyTelephone.isDefined) details.agencyTelephone else initPayload.phone
   )
-  if (details.agencyAddress.isDefined) {
-    val agencyAddress = details.agencyAddress.get
+  details.agencyAddress.map(agencyAddress => {
     payloadWithNameEmailPhone.copy(
       addr1 = Some(agencyAddress.addressLine1),
       addr2 = agencyAddress.addressLine2,
@@ -75,10 +58,7 @@ private def addAgencyDetailsUpdateToInitHipAmendPayload(
       postcode = agencyAddress.postalCode,
       country = Some(agencyAddress.countryCode)
     )
-  }
-  else {
-    payloadWithNameEmailPhone
-  }
+  }).getOrElse(payloadWithNameEmailPhone)
 }
 
 object HipAmendPayload:
@@ -104,15 +84,13 @@ object HipAmendPayload:
 
       (request, useUpdatedHipPutAgentRecord) match
         case (AmlsUpdateRequest(update), true) =>
-          val initHipAmendPayload = oldRecord.toInitHipAmendPayload
-          initHipAmendPayload.copy(
+          oldRecord.toInitHipAmendPayload.copy(
             supervisoryBody = Some(update.supervisoryBody.value),
             membershipNumber = Some(update.membershipNumber.value),
             evidenceObjectReference = update.evidenceObjectReference.map(_.value)
           )
         case (AgencyDetailsUpdateRequest(update), true) =>
-          val initHipAmendPayload = oldRecord.toInitHipAmendPayload
-          addAgencyDetailsUpdateToInitHipAmendPayload(update, initHipAmendPayload)
+          addAgencyDetailsUpdateToInitHipAmendPayload(update, oldRecord.toInitHipAmendPayload)
         case (AmlsUpdateRequest(update), false) =>
           HipAmendPayload(
             supervisoryBody = Some(update.supervisoryBody.value),
