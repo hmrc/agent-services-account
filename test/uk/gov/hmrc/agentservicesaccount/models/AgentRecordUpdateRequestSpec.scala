@@ -343,11 +343,10 @@ extends UnitSpec {
         val agencyDetailsUpdateRequestAddressOnly: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsAddressOnly)
         val hipAmendPayload = agencyDetailsUpdateRequestAddressOnly.toHipAmendPayload(oldRecord, false)(logger)
 
-        //        TODO: 11584 Test fallback correctly
         hipAmendPayload.addr1 shouldBe agencyDetails.agencyAddress.map(_.addressLine1)
         hipAmendPayload.addr2 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine2)
-        hipAmendPayload.addr3 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine3)
-        hipAmendPayload.addr4 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine4)
+        hipAmendPayload.addr3 shouldBe Some("Address Line 3")
+        hipAmendPayload.addr4 shouldBe None
         hipAmendPayload.postcode shouldBe agencyDetails.agencyAddress.flatMap(_.postalCode)
         hipAmendPayload.country shouldBe agencyDetails.agencyAddress.map(_.countryCode)
 
@@ -362,11 +361,10 @@ extends UnitSpec {
         hipAmendPayload.name shouldBe agencyDetails.agencyName
         hipAmendPayload.email shouldBe agencyDetails.agencyEmail
         hipAmendPayload.phone shouldBe agencyDetails.agencyTelephone
-//        TODO: 11584 Test fallback correctly
         hipAmendPayload.addr1 shouldBe agencyDetails.agencyAddress.map(_.addressLine1)
         hipAmendPayload.addr2 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine2)
-        hipAmendPayload.addr3 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine3)
-        hipAmendPayload.addr4 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine4)
+        hipAmendPayload.addr3 shouldBe Some("Address Line 3")
+        hipAmendPayload.addr4 shouldBe None
         hipAmendPayload.postcode shouldBe agencyDetails.agencyAddress.flatMap(_.postalCode)
         hipAmendPayload.country shouldBe agencyDetails.agencyAddress.map(_.countryCode)
 
