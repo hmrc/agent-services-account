@@ -37,28 +37,25 @@ case class HipAmendPayload(
   directorPartnerUpdateStatus: Option[UpdateStatus] = None,
   acceptNewTermsStatus: Option[UpdateStatus] = None,
   reriskStatus: Option[UpdateStatus] = None
-)
-
-private def addAgencyDetailsUpdateToInitHipAmendPayload(
-  details: AgencyDetails,
-  initPayload: HipAmendPayload
-): HipAmendPayload = {
-//  TODO: 11584: Clean up this function
-  val payloadWithNameEmailPhone = initPayload.copy(
-    name = if (details.agencyName.isDefined) details.agencyName else initPayload.name,
-    email = if (details.agencyEmail.isDefined) details.agencyEmail else initPayload.email,
-    phone = if (details.agencyTelephone.isDefined) details.agencyTelephone else initPayload.phone
-  )
-  details.agencyAddress.map(agencyAddress => {
-    payloadWithNameEmailPhone.copy(
-      addr1 = Some(agencyAddress.addressLine1),
-      addr2 = agencyAddress.addressLine2,
-      addr3 = agencyAddress.addressLine3,
-      addr4 = agencyAddress.addressLine4,
-      postcode = agencyAddress.postalCode,
-      country = Some(agencyAddress.countryCode)
+) {
+  private def withAgencyDetailsUpdate(agencyDetails: AgencyDetails): HipAmendPayload = {
+    //  TODO: 11584: Clean up this function
+    val payloadWithNameEmailPhone = this.copy(
+      name = if (agencyDetails.agencyName.isDefined) agencyDetails.agencyName else name,
+      email = if (agencyDetails.agencyEmail.isDefined) agencyDetails.agencyEmail else email,
+      phone = if (agencyDetails.agencyTelephone.isDefined) agencyDetails.agencyTelephone else phone
     )
-  }).getOrElse(payloadWithNameEmailPhone)
+    agencyDetails.agencyAddress.map(agencyAddress => {
+      payloadWithNameEmailPhone.copy(
+        addr1 = Some(agencyAddress.addressLine1),
+        addr2 = agencyAddress.addressLine2,
+        addr3 = agencyAddress.addressLine3,
+        addr4 = agencyAddress.addressLine4,
+        postcode = agencyAddress.postalCode,
+        country = Some(agencyAddress.countryCode)
+      )
+    }).getOrElse(payloadWithNameEmailPhone)
+  }
 }
 
 object HipAmendPayload:
@@ -90,7 +87,8 @@ object HipAmendPayload:
             evidenceObjectReference = update.evidenceObjectReference.map(_.value)
           )
         case (AgencyDetailsUpdateRequest(update), true) =>
-          addAgencyDetailsUpdateToInitHipAmendPayload(update, oldRecord.toInitHipAmendPayload)
+//          addAgencyDetailsUpdateToInitHipAmendPayload(update, oldRecord.toInitHipAmendPayload)
+          oldRecord.toInitHipAmendPayload.withAgencyDetailsUpdate(update)
         case (AmlsUpdateRequest(update), false) =>
           HipAmendPayload(
             supervisoryBody = Some(update.supervisoryBody.value),
