@@ -32,7 +32,6 @@ import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
 import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
-import uk.gov.hmrc.agentservicesaccount.models.UpdateStatus
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
