@@ -40,28 +40,6 @@ case class HipAmendPayload(
   reriskStatus: Option[UpdateStatus] = None
 )
 
-private def toInitHipAmendPayload(oldRecord: AgentDetailsDesResponse): HipAmendPayload = {
-  HipAmendPayload(
-    name = oldRecord.agencyDetails.flatMap(_.agencyName),
-    addr1 = oldRecord.agencyDetails.flatMap(_.agencyAddress).map(_.addressLine1),
-    addr2 = oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine2),
-    addr3 = oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine3),
-    addr4 = oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine4),
-    postcode = oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.postalCode),
-    country = oldRecord.agencyDetails.flatMap(_.agencyAddress).map(_.countryCode),
-    phone = oldRecord.agencyDetails.flatMap(_.agencyTelephone),
-    email = oldRecord.agencyDetails.flatMap(_.agencyEmail),
-    supervisoryBody = oldRecord.amlsDetails.map(_.supervisoryBody.toString),
-    membershipNumber = oldRecord.amlsDetails.map(_.membershipNumber.toString),
-    evidenceObjectReference = oldRecord.amlsDetails.flatMap(_.evidenceObjectReference).map(_.toString),
-    updateDetailsStatus = Some(ACCEPTED),
-    amlSupervisionUpdateStatus = Some(ACCEPTED),
-    directorPartnerUpdateStatus = Some(ACCEPTED),
-    acceptNewTermsStatus = Some(ACCEPTED),
-    reriskStatus = Some(ACCEPTED)
-  )
-}
-
 private def addAgencyDetailsUpdateToInitHipAmendPayload(
   details: AgencyDetails,
   initPayload: HipAmendPayload
@@ -126,14 +104,14 @@ object HipAmendPayload:
 
       (request, useUpdatedHipPutAgentRecord) match
         case (AmlsUpdateRequest(update), true) =>
-          val initHipAmendPayload = toInitHipAmendPayload(oldRecord)
+          val initHipAmendPayload = oldRecord.toInitHipAmendPayload
           initHipAmendPayload.copy(
             supervisoryBody = Some(update.supervisoryBody.value),
             membershipNumber = Some(update.membershipNumber.value),
             evidenceObjectReference = update.evidenceObjectReference.map(_.value)
           )
         case (AgencyDetailsUpdateRequest(update), true) =>
-          val initHipAmendPayload = toInitHipAmendPayload(oldRecord)
+          val initHipAmendPayload = oldRecord.toInitHipAmendPayload
           addAgencyDetailsUpdateToInitHipAmendPayload(update, initHipAmendPayload)
         case (AmlsUpdateRequest(update), false) =>
           HipAmendPayload(

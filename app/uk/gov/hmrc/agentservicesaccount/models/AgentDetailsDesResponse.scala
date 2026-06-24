@@ -20,6 +20,7 @@ import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
+import uk.gov.hmrc.agentservicesaccount.models.UpdateStatus.ACCEPTED
 import uk.gov.hmrc.crypto.json.JsonEncryption.stringEncrypterDecrypter
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
@@ -30,7 +31,29 @@ case class AgentDetailsDesResponse(
   suspensionDetails: Option[SuspensionDetails],
   isAnIndividual: Option[Boolean],
   amlsDetails: Option[AmlsDetails] = None
-)
+) {
+  private[models] def toInitHipAmendPayload: HipAmendPayload = {
+    HipAmendPayload(
+      name = agencyDetails.flatMap(_.agencyName),
+      addr1 = agencyDetails.flatMap(_.agencyAddress).map(_.addressLine1),
+      addr2 = agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine2),
+      addr3 = agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine3),
+      addr4 = agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine4),
+      postcode = agencyDetails.flatMap(_.agencyAddress).flatMap(_.postalCode),
+      country = agencyDetails.flatMap(_.agencyAddress).map(_.countryCode),
+      phone = agencyDetails.flatMap(_.agencyTelephone),
+      email = agencyDetails.flatMap(_.agencyEmail),
+      supervisoryBody = amlsDetails.map(_.supervisoryBody.toString),
+      membershipNumber = amlsDetails.map(_.membershipNumber.toString),
+      evidenceObjectReference = amlsDetails.flatMap(_.evidenceObjectReference).map(_.toString),
+      updateDetailsStatus = Some(ACCEPTED),
+      amlSupervisionUpdateStatus = Some(ACCEPTED),
+      directorPartnerUpdateStatus = Some(ACCEPTED),
+      acceptNewTermsStatus = Some(ACCEPTED),
+      reriskStatus = Some(ACCEPTED)
+    )
+  }
+}
 
 object AgentDetailsDesResponse {
 
