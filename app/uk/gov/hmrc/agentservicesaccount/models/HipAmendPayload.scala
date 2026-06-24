@@ -158,11 +158,3 @@ object HipAmendPayload:
             phone = update.agencyTelephone,
             email = update.agencyEmail
           )
-          
-case class UpdatedHipAmendPayload(
-  AgentSubscriptionAmend_Request: HipAmendPayload
-)
-
-object UpdatedHipAmendPayload:
-
-  given Writes[UpdatedHipAmendPayload] = Json.writes[UpdatedHipAmendPayload]
