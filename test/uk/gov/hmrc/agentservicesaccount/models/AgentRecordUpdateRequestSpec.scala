@@ -188,7 +188,7 @@ extends UnitSpec {
           evidenceObjectReference = Some(EvidenceObjectReference("ref-123"))
         ))
 
-        val payload = request.toHipAmendPayload(oldRecord)(logger)
+        val payload = request.toHipAmendPayload(oldRecord, false)(logger)
         payload.supervisoryBody shouldBe Some("SRA")
         payload.membershipNumber shouldBe Some("XAML00000123456")
         payload.evidenceObjectReference shouldBe Some("ref-123")
@@ -213,7 +213,7 @@ extends UnitSpec {
           ))
         ))
 
-        val payload = request.toHipAmendPayload(oldRecord)(logger)
+        val payload = request.toHipAmendPayload(oldRecord, false)(logger)
         payload.name shouldBe Some("Test Agency")
         payload.email shouldBe Some("test@example.com")
         payload.phone shouldBe Some("07123456789")
@@ -244,7 +244,7 @@ extends UnitSpec {
           ))
         ))
 
-        val payload = request.toHipAmendPayload(oldRecord)(logger)
+        val payload = request.toHipAmendPayload(oldRecord, false)(logger)
         payload.name shouldBe Some("Test Agency")
         payload.email shouldBe Some("test@example.com")
         payload.phone shouldBe Some("07123456789")
@@ -268,7 +268,7 @@ extends UnitSpec {
           agencyAddress = None
         ))
 
-        val payload = request.toHipAmendPayload(oldRecord)(logger)
+        val payload = request.toHipAmendPayload(oldRecord, false)(logger)
         payload.name shouldBe None
         payload.email shouldBe Some("test@example.com")
         payload.phone shouldBe Some("07123456789")
@@ -377,7 +377,7 @@ extends UnitSpec {
           membershipNumber = MembershipNumber("XAML00000123456")
         ))
 
-        val payload = request.toHipAmendPayload(oldRecord)(logger)
+        val payload = request.toHipAmendPayload(oldRecord, false)(logger)
 
         val fields = Json.toJson(payload).as[JsObject].keys
 
