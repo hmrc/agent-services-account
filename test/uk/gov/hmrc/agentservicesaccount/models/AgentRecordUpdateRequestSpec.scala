@@ -431,9 +431,10 @@ extends UnitSpec {
       "return correct HipAmendPayload when passed AmlsUpdateRequest" in :
         val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
         val hipAmendPayload = agentRecordUpdateRequest.toHipAmendPayload(oldRecord, true)(logger)
-        
-//        TODO: 11584 Implement assertions here
-//        assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+
+        hipAmendPayload.supervisoryBody shouldBe Some(amlsDetails.supervisoryBody.toString)
+        hipAmendPayload.membershipNumber shouldBe Some(amlsDetails.membershipNumber.toString)
+        hipAmendPayload.evidenceObjectReference shouldBe amlsDetails.evidenceObjectReference
 
         assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
@@ -444,8 +445,9 @@ extends UnitSpec {
         val agencyDetailsUpdateRequestNoAddress: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsNoAddress)
         val hipAmendPayload = agencyDetailsUpdateRequestNoAddress.toHipAmendPayload(oldRecord, true)(logger)
 
-        //        TODO: 11584 Implement assertions here
-        //        assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+        hipAmendPayload.name shouldBe agencyDetails.agencyName
+        hipAmendPayload.email shouldBe agencyDetails.agencyEmail
+        hipAmendPayload.phone shouldBe agencyDetails.agencyTelephone
 
         assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
@@ -456,8 +458,12 @@ extends UnitSpec {
         val agencyDetailsUpdateRequestAddressOnly: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsAddressOnly)
         val hipAmendPayload = agencyDetailsUpdateRequestAddressOnly.toHipAmendPayload(oldRecord, true)(logger)
 
-        //        TODO: 11584 Implement assertions here
-        //        assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+        hipAmendPayload.addr1 shouldBe agencyDetails.agencyAddress.map(_.addressLine1)
+        hipAmendPayload.addr2 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine2)
+        hipAmendPayload.addr3 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine3)
+        hipAmendPayload.addr4 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine4)
+        hipAmendPayload.postcode shouldBe agencyDetails.agencyAddress.flatMap(_.postalCode)
+        hipAmendPayload.country shouldBe agencyDetails.agencyAddress.map(_.countryCode)
 
         assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
@@ -467,11 +473,17 @@ extends UnitSpec {
         val agencyDetailsUpdateRequest: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetails)
         val hipAmendPayload = agencyDetailsUpdateRequest.toHipAmendPayload(oldRecord, true)(logger)
 
-        //        TODO: 11584 Implement assertions here
-        //        assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
-        //        assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
-        //        assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
+        hipAmendPayload.name shouldBe agencyDetails.agencyName
+        hipAmendPayload.email shouldBe agencyDetails.agencyEmail
+        hipAmendPayload.phone shouldBe agencyDetails.agencyTelephone
+        hipAmendPayload.addr1 shouldBe agencyDetails.agencyAddress.map(_.addressLine1)
+        hipAmendPayload.addr2 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine2)
+        hipAmendPayload.addr3 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine3)
+        hipAmendPayload.addr4 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine4)
+        hipAmendPayload.postcode shouldBe agencyDetails.agencyAddress.flatMap(_.postalCode)
+        hipAmendPayload.country shouldBe agencyDetails.agencyAddress.map(_.countryCode)
 
+        assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertMMTARFieldsSetAsAcceptedInPayload(hipAmendPayload)
 
       "should only have None fields in JSON output where old record has None fields" in {
