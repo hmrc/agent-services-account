@@ -69,7 +69,7 @@ extends Logging {
             ),
             parameters = Map(
               "agencyName" -> workItem.subscriptionRequest.agentName,
-              "serviceName" -> serviceName(workItem.regime)
+              "serviceName" -> serviceName(workItem)
             )
           )
         )
@@ -92,8 +92,8 @@ extends Logging {
             parameters = Map(
               "agencyName" -> workItem.subscriptionRequest.agentName,
               "arn" -> workItem.arn.value,
-              "serviceName" -> serviceName(workItem.regime),
-              "serviceSectionName" -> serviceSectionName(workItem.regime),
+              "serviceName" -> serviceName(workItem),
+              "serviceSectionName" -> serviceSectionName(workItem),
               "agentCode" -> agentReference.value
             )
           )
@@ -109,17 +109,22 @@ extends Logging {
       else
         ""}"
 
-  private def serviceName(regime: LegacyRegime): String =
-    regime match {
-      case LegacyRegime.PAYE => "PAYE/CIS"
-      case LegacyRegime.SA => "Self Assessment"
-      case LegacyRegime.CT => "Corporation Tax"
-    }
+  private def serviceName(workItem: SubscriptionWorkItem): String =
+    val isWelsh = workItem.subscriptionRequest.isWelsh
+    workItem.regime match
+      case LegacyRegime.PAYE => if (isWelsh) "TWE/CIS" else "PAYE/CIS"
+      case LegacyRegime.SA => if (isWelsh) "Hunanasesiad" else "Self Assessment"
+      case LegacyRegime.CT => if (isWelsh) "Treth Gorfforaeth" else "Corporation Tax"
 
-  private def serviceSectionName(regime: LegacyRegime): String =
-    regime match
-      case LegacyRegime.PAYE => "Pay as you earn (PAYE)/Construction Industry Scheme (CIS)"
-      case LegacyRegime.SA => "Self Assessment"
-      case LegacyRegime.CT => "Corporation Tax"
+  private def serviceSectionName(workItem: SubscriptionWorkItem): String =
+    val isWelsh = workItem.subscriptionRequest.isWelsh
+    workItem.regime match
+      case LegacyRegime.PAYE =>
+        if (isWelsh)
+          "Talu wrth ennill (TWE)/Cynllun y Diwydiant Adeiladu (CIS)"
+        else
+          "Pay as you earn (PAYE)/Construction Industry Scheme (CIS)"
+      case LegacyRegime.SA => if (isWelsh) "Hunanasesiad" else "Self Assessment"
+      case LegacyRegime.CT => if (isWelsh) "Treth Gorfforaeth" else "Corporation Tax"
 
 }

@@ -50,6 +50,7 @@ with BeforeAndAfterEach {
 
   private def buildWorkItem(
     regime: LegacyRegime,
+    isWelsh: Boolean = false,
     email: Option[String] = Some("agent@example.com"),
     agentReference: Option[AgentReference] = Some(AgentReference("A12345"))
   ): SubscriptionWorkItem = SubscriptionWorkItem(
@@ -69,7 +70,7 @@ with BeforeAndAfterEach {
               None,
               Some("AA1 1AA")
             ),
-            isWelsh = false
+            isWelsh = isWelsh
           )
 
         case SA =>
@@ -86,7 +87,7 @@ with BeforeAndAfterEach {
               Some("AA1 1AA")
             ),
             isAbroad = false,
-            isWelsh = false
+            isWelsh = isWelsh
           )
 
         case CT =>
@@ -103,7 +104,7 @@ with BeforeAndAfterEach {
               Some("AA1 1AA")
             ),
             isAbroad = false,
-            isWelsh = false
+            isWelsh = isWelsh
           )
       },
     regime = regime,
@@ -125,6 +126,21 @@ with BeforeAndAfterEach {
       case SA => "Self Assessment"
       case CT => "Corporation Tax"
     }
+
+  private def expectedWelshServiceName(regime: LegacyRegime): String =
+    regime match
+      case PAYE => "TWE/CIS"
+      case SA => "Hunanasesiad"
+      case CT => "Treth Gorfforaeth"
+
+  private def expectedWelshServiceSectionName(regime: LegacyRegime): String =
+    regime match
+      case PAYE =>
+        "Talu wrth ennill (TWE)/Cynllun y Diwydiant Adeiladu (CIS)"
+      case SA =>
+        "Hunanasesiad"
+      case CT =>
+        "Treth Gorfforaeth"
 
   List(PAYE, SA, CT).foreach { regime =>
 
@@ -156,6 +172,32 @@ with BeforeAndAfterEach {
         )(using any[RequestHeader])
       }
 
+      "send the correct Welsh completion email" in {
+        val workItem = buildWorkItem(regime, isWelsh = true)
+
+        when(
+          emailConnector.sendEmail(any[EmailInformation])(using any[RequestHeader])
+        ).thenReturn(Future.successful(()))
+
+        service.sendCompletionEmailIgnoreErrors(workItem).futureValue
+
+        verify(emailConnector).sendEmail(
+          eqTo(
+            EmailInformation(
+              to = Seq("agent@example.com"),
+              templateId = "agent_services_subscription_complete_cy",
+              parameters = Map(
+                "agencyName" -> "Agent Name",
+                "arn" -> "TARN0000001",
+                "serviceName" -> expectedWelshServiceName(regime),
+                "serviceSectionName" -> expectedWelshServiceSectionName(regime),
+                "agentCode" -> "A12345"
+              )
+            )
+          )
+        )(using any[RequestHeader])
+      }
+      
       "do nothing when email address is missing" in {
         val workItem = buildWorkItem(regime, email = None)
 
@@ -214,6 +256,29 @@ with BeforeAndAfterEach {
         )(using any[RequestHeader])
       }
 
+      "send the correct Welsh failure email" in {
+        val workItem = buildWorkItem(regime, isWelsh = true)
+
+        when(
+          emailConnector.sendEmail(any[EmailInformation])(using any[RequestHeader])
+        ).thenReturn(Future.successful(()))
+
+        service.sendFailureEmailIgnoreErrors(workItem).futureValue
+
+        verify(emailConnector).sendEmail(
+          eqTo(
+            EmailInformation(
+              to = Seq("agent@example.com"),
+              templateId = "agent_services_subscription_fail_cy",
+              parameters = Map(
+                "agencyName" -> "Agent Name",
+                "serviceName" -> expectedWelshServiceName(regime)
+              )
+            )
+          )
+        )(using any[RequestHeader])
+      }
+      
       "do nothing when email address is missing" in {
         val workItem = buildWorkItem(regime, email = None)
 
