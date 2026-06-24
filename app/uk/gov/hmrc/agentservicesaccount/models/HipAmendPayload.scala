@@ -62,11 +62,26 @@ private def toInitHipAmendPayload(oldRecord: AgentDetailsDesResponse): HipAmendP
   )
 }
 
-private def addAgencyDetailsUpdateToInitHipAmendPayload(details: AgencyDetails, initPayload: HipAmendPayload): HipAmendPayload = {
+private def addAgencyDetailsUpdateToInitHipAmendPayload(
+  details: AgencyDetails,
+  initPayload: HipAmendPayload
+): HipAmendPayload = {
 //  TODO: 11584: Clean up this function
-  val nameToSend = if (details.agencyName.isDefined) details.agencyName else initPayload.name
-  val emailToSend = if (details.agencyEmail.isDefined) details.agencyEmail else initPayload.email
-  val phoneToSend = if (details.agencyTelephone.isDefined) details.agencyTelephone else initPayload.phone
+  val nameToSend =
+    if (details.agencyName.isDefined)
+      details.agencyName
+    else
+      initPayload.name
+  val emailToSend =
+    if (details.agencyEmail.isDefined)
+      details.agencyEmail
+    else
+      initPayload.email
+  val phoneToSend =
+    if (details.agencyTelephone.isDefined)
+      details.agencyTelephone
+    else
+      initPayload.phone
   val payloadWithNameEmailPhone = initPayload.copy(
     name = nameToSend,
     email = emailToSend,
@@ -82,7 +97,8 @@ private def addAgencyDetailsUpdateToInitHipAmendPayload(details: AgencyDetails, 
       postcode = agencyAddress.postalCode,
       country = Some(agencyAddress.countryCode)
     )
-  } else {
+  }
+  else {
     payloadWithNameEmailPhone
   }
 }
@@ -92,7 +108,10 @@ object HipAmendPayload:
   given Writes[HipAmendPayload] = Json.writes[HipAmendPayload]
 
   extension (request: AgentRecordUpdateRequest)
-    def toHipAmendPayload(oldRecord: AgentDetailsDesResponse, useUpdatedHipPutAgentRecord: Boolean)(logger: Logger): HipAmendPayload =
+    def toHipAmendPayload(
+      oldRecord: AgentDetailsDesResponse,
+      useUpdatedHipPutAgentRecord: Boolean
+    )(logger: Logger): HipAmendPayload =
       def addressLineWithFallback(
         newLine: Option[String],
         oldLine: Option[String],
