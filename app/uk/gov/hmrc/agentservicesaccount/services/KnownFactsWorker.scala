@@ -24,6 +24,7 @@ import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.UsersGroupsSearchConnector
 import uk.gov.hmrc.agentservicesaccount.models.CredId
+import uk.gov.hmrc.agentservicesaccount.models.Enrolment
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
@@ -51,15 +52,21 @@ class KnownFactsWorker @Inject() (
 )(using ec: ExecutionContext)
 extends Logging:
 
+  private val alreadySubscribedFailureReason = "Agent already subscribed"
+
   def runOnce(using
     jobConfig: WorkItemJobConfig,
     regime: LegacyRegime
   ): Future[Done] = workItemService.pullOutstanding(regime, jobConfig.retryInterval).flatMap {
     case None => Future.successful(Done)
     case Some(workItem) =>
-      process(workItem).recoverWith { case NonFatal(error) =>
-        logger.warn(s"[KnownFactsWorker] $regime known facts failed for work item ${workItem.id}", error)
-        handleFailure(workItem)
+      process(workItem).recoverWith {
+        case error: UpstreamErrorResponse if error.message.startsWith(alreadySubscribedFailureReason) =>
+          logger.warn(s"[KnownFactsWorker] $regime agent already subscribed, permanently failing work item ${workItem.id}")
+          handleAlreadySubscribed(workItem, regime)
+        case NonFatal(error) =>
+          logger.warn(s"[KnownFactsWorker] $regime known facts failed for work item ${workItem.id}", error)
+          handleFailure(workItem)
       }
   }
 
@@ -122,6 +129,10 @@ extends Logging:
           logger.warn(s"[KnownFactsWorker] $regime no replacement admin cred id found for work item: ${workItem.id}")
           Future.failed(error)
       }
+    case error: UpstreamErrorResponse
+        if hasMultipleEnrolmentsConflict(error) =>
+      logger.warn(s"[KnownFactsWorker] $regime received MULTIPLE_ENROLMENTS_INVALID for work item ${workItem.id}")
+      handleMultipleEnrolmentsConflict(workItem, agentReference)
   }
 
   private def allocateAgentEnrolment(
@@ -148,6 +159,20 @@ extends Logging:
     error.message.contains(invalidCredentialId) ||
     (try hasInvalidCredentialId(Json.parse(error.message))
     catch case NonFatal(_) => false)
+
+  private def hasMultipleEnrolmentsConflict(error: UpstreamErrorResponse): Boolean =
+    val multipleEnrolmentsInvalid = "MULTIPLE_ENROLMENTS_INVALID"
+
+    def extractCode(json: JsValue): Boolean =
+      (json \ "code").asOpt[String].contains(multipleEnrolmentsInvalid) ||
+        (json \ "errors").asOpt[Seq[JsValue]]
+          .exists(_.exists(e => (e \ "code").asOpt[String].contains(multipleEnrolmentsInvalid)))
+
+    error.statusCode == 409 &&
+      (try extractCode(Json.parse(error.message))
+      catch case NonFatal(_) => false)
+
+  private def isActive(enrolment: Enrolment): Boolean = enrolment.state.equalsIgnoreCase("Activated")
 
   private def postcodeFor(workItem: SubscriptionWorkItem): Option[PayePostcode.Valid] =
     workItem.subscriptionRequest match {
@@ -187,3 +212,59 @@ extends Logging:
     }
     else
       workItemService.markFailed(workItem)
+
+  private def handleMultipleEnrolmentsConflict(
+    workItem: WorkItem[SubscriptionWorkItem],
+    agentReference: String
+  )(using
+    hc: HeaderCarrier,
+    regime: LegacyRegime
+  ): Future[Unit] = enrolmentStoreProxyConnector
+    .queryEnrolmentsAllocatedToGroupHC(workItem.item.groupId)
+    .flatMap { enrolments =>
+      enrolments.find(_.service == regime.enrolmentKey) match {
+        case Some(enrolment) if isActive(enrolment) =>
+          logger.warn(s"[KnownFactsWorker] $regime active enrolment already exists for group ${workItem.item.groupId.value}")
+          Future.failed(
+            UpstreamErrorResponse(
+              message = s"$alreadySubscribedFailureReason: $regime",
+              statusCode = 409,
+              reportAs = 409
+            )
+          )
+        case Some(_) =>
+          logger.warn(s"[KnownFactsWorker] $regime inactive enrolment found; deallocating and retrying ES8")
+          for {
+            _ <- enrolmentStoreProxyConnector.deallocateAgentEnrolment(
+              groupId = workItem.item.groupId,
+              regime = regime,
+              agentReference = agentReference
+            )
+            _ <- allocateAgentEnrolment(
+              workItem = workItem,
+              agentReference = agentReference,
+              adminCredId = workItem.item.adminCredId
+            )
+          } yield ()
+        case None =>
+          logger.warn(s"[KnownFactsWorker] $regime received MULTIPLE_ENROLMENTS_INVALID but ES3 found no matching enrolment")
+          Future.failed(
+            new RuntimeException(
+              s"MULTIPLE_ENROLMENTS_INVALID received but no ${regime.enrolmentKey} enrolment exists"
+            )
+          )
+      }
+    }
+
+  private def handleAlreadySubscribed(
+    workItem: WorkItem[SubscriptionWorkItem],
+    regime: LegacyRegime
+  ): Future[Done] =
+    for {
+      _ <- legacySubscriptionAuditService.auditFailure(
+        arn = workItem.item.arn,
+        regime = regime,
+        failureReason = s"Agent already subscribed to $regime"
+      )
+      result <- workItemService.markPermanentlyFailed(workItem)
+    } yield result

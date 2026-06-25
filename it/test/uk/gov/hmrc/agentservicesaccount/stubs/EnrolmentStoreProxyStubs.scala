@@ -19,7 +19,8 @@ package uk.gov.hmrc.agentservicesaccount.stubs
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
-import uk.gov.hmrc.agentservicesaccount.models.{Es20Response, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.Es20Response
+import uk.gov.hmrc.agentservicesaccount.models.GroupId
 
 trait EnrolmentStoreProxyStubs:
 
@@ -47,9 +48,16 @@ trait EnrolmentStoreProxyStubs:
       )
   )
 
-  def givenEs20CallSucceeds(expectedBody: String, response: Es20Response): Unit = stubFor(
+  def givenEs20CallSucceeds(
+    expectedBody: String,
+    response: Es20Response
+  ): Unit = stubFor(
     post(urlEqualTo("/enrolment-store-proxy/enrolment-store/enrolments"))
-      .withRequestBody(equalToJson(expectedBody, true, true))
+      .withRequestBody(equalToJson(
+        expectedBody,
+        true,
+        true
+      ))
       .willReturn(
         aResponse()
           .withStatus(200)
@@ -59,9 +67,43 @@ trait EnrolmentStoreProxyStubs:
 
   def givenEs20CallReturnsNoContent(expectedBody: String): Unit = stubFor(
     post(urlEqualTo("/enrolment-store-proxy/enrolment-store/enrolments"))
-      .withRequestBody(equalToJson(expectedBody, true, true))
+      .withRequestBody(equalToJson(
+        expectedBody,
+        true,
+        true
+      ))
       .willReturn(
         aResponse()
           .withStatus(204)
       )
   )
+
+  def givenEs9CallSucceeds(
+    groupId: GroupId,
+    regime: LegacyRegime,
+    agentReference: String
+  ): Unit = {
+    val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
+    stubFor(
+      delete(urlEqualTo(s"/tax-enrolments/groups/${groupId.value}/enrolments/$enrolmentKey"))
+        .willReturn(
+          aResponse()
+            .withStatus(204)
+        )
+    )
+  }
+
+  def givenEs9CallFails(
+    groupId: GroupId,
+    regime: LegacyRegime,
+    agentReference: String
+  ): Unit = {
+    val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
+    stubFor(
+      delete(urlEqualTo(s"/tax-enrolments/groups/${groupId.value}/enrolments/$enrolmentKey"))
+        .willReturn(
+          aResponse()
+            .withStatus(500)
+        )
+    )
+  }

@@ -23,14 +23,12 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as eqTo
 import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.UsersGroupsSearchConnector
-import uk.gov.hmrc.agentservicesaccount.models.CredId
-import uk.gov.hmrc.agentservicesaccount.models.Es20Enrolment
-import uk.gov.hmrc.agentservicesaccount.models.Es20Response
-import uk.gov.hmrc.agentservicesaccount.models.GroupId
+import uk.gov.hmrc.agentservicesaccount.models.{CredId, Enrolment, Es20Enrolment, Es20Response, GroupId}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
@@ -494,6 +492,114 @@ with MockLegacySubscriptionEmailService:
         )
         verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
       }
+
+      "recover from MULTIPLE_ENROLMENTS_INVALID by deallocating and retrying ES8" in {
+        val workItem = buildWorkItem(
+          regime,
+          failureCount = 0,
+          subscriptionRequest = subscriptionRequest
+        )
+
+        val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        mockLegacySubscriptionAuditSuccess()
+        mockSendCompletionEmailIgnoreErrors()
+
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
+
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(response)))
+
+        // ES8 first attempt fails with MULTIPLE_ENROLMENTS_INVALID
+        when(connector.allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier]))
+          .thenReturn(
+            Future.failed(multipleEnrolmentsInvalidError), // 1st call
+            Future.successful(()) // 2nd call
+          )
+
+        when(connector.queryEnrolmentsAllocatedToGroupHC(any[GroupId])(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(
+            Seq(Enrolment(service = regime.enrolmentKey, state = "Inactive"))
+          ))
+
+        when(connector.deallocateAgentEnrolment(
+          any[GroupId],
+          any[LegacyRegime],
+          any[String]
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(()))
+
+        when(workItemService.complete(workItem))
+          .thenReturn(Future.successful(Done))
+
+        worker.runOnce(using jobConfig, regime).futureValue
+
+        verify(connector).deallocateAgentEnrolment(
+          any[GroupId],
+          any[LegacyRegime],
+          any[String]
+        )(using any[HeaderCarrier])
+
+        verify(workItemService).complete(workItem)
+        verify(workItemService, never()).markFailed(workItem)
+      }
+
+      "fail permanently when MULTIPLE_ENROLMENTS_INVALID but enrolment is already ACTIVE" in {
+        val workItem = buildWorkItem(
+          regime,
+          failureCount = 0,
+          subscriptionRequest = subscriptionRequest
+        )
+
+        val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        mockLegacySubscriptionAuditFailure()
+        when(workItemService.markPermanentlyFailed(any[WorkItem[SubscriptionWorkItem]]))
+          .thenReturn(Future.successful(Done))
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
+
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(response)))
+
+        when(connector.allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.failed(multipleEnrolmentsInvalidError))
+
+        when(connector.queryEnrolmentsAllocatedToGroupHC(any[GroupId])(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(
+            Seq(Enrolment(service = regime.enrolmentKey, state = "Activated"))
+          ))
+
+        worker.runOnce(using jobConfig, regime).futureValue
+
+        verify(connector, never()).deallocateAgentEnrolment(
+          any[GroupId],
+          any[LegacyRegime],
+          any[String]
+        )(using any[HeaderCarrier])
+
+        verify(workItemService).markPermanentlyFailed(workItem)
+        verify(workItemService, never()).complete(workItem)
+      }
     }
   }
 
@@ -549,4 +655,10 @@ with MockLegacySubscriptionEmailService:
     """{"code":"MULTIPLE_ERRORS","message":"Multiple errors have occurred","errors":[{"code":"INVALID_CREDENTIAL_ID","message":"Credential id is invalid"}]}""",
     400,
     400
+  )
+
+  private def multipleEnrolmentsInvalidError: UpstreamErrorResponse = UpstreamErrorResponse(
+    """{"code":"MULTIPLE_ENROLMENTS_INVALID"}""",
+    409,
+    409
   )

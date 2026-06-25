@@ -43,7 +43,7 @@ with EnrolmentStoreProxyStubs {
     "return active principal enrolments on a successful 200 response" in {
       givenEs3CallSucceeds(testGroupId)(SA, CT, PAYE)
 
-      val result = connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue
+      val result = connector.queryEnrolmentsAllocatedToGroupHC(testGroupId).futureValue
 
       result shouldBe Seq(
         Enrolment(service = SA.enrolmentKey, state = "Activated"),
@@ -55,7 +55,7 @@ with EnrolmentStoreProxyStubs {
     "return nothing on a successful 404 response" in {
       givenEs3CallSucceeds(testGroupId)()
 
-      val result = connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue
+      val result = connector.queryEnrolmentsAllocatedToGroupHC(testGroupId).futureValue
 
       result shouldBe Nil
     }
@@ -63,7 +63,7 @@ with EnrolmentStoreProxyStubs {
     "throw error when EACD returns unexpected response" in {
       givenEs3CallFails(testGroupId)
 
-      intercept[TestFailedException](connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue)
+      intercept[TestFailedException](connector.queryEnrolmentsAllocatedToGroupHC(testGroupId).futureValue)
     }
   }
 
@@ -119,4 +119,17 @@ with EnrolmentStoreProxyStubs {
     }
   }
 
+  "ES9" should {
+    "deallocate enrolment successfully" in {
+      givenEs9CallSucceeds(testGroupId, SA, "A12345")
+
+      connector.deallocateAgentEnrolment(testGroupId, SA, "A12345").futureValue
+    }
+
+    "throw error when tax-enrolments returns an error" in {
+      givenEs9CallFails(testGroupId, SA, "A12345")
+
+      intercept[TestFailedException](connector.deallocateAgentEnrolment(testGroupId, SA, "A12345").futureValue)
+    }
+  }
 }
