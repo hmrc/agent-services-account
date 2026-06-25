@@ -169,8 +169,8 @@ extends Logging:
           .exists(_.exists(e => (e \ "code").asOpt[String].contains(multipleEnrolmentsInvalid)))
 
     error.statusCode == 409 &&
-      (try extractCode(Json.parse(error.message))
-      catch case NonFatal(_) => false)
+    (try extractCode(Json.parse(error.message))
+    catch case NonFatal(_) => false)
 
   private def isActive(enrolment: Enrolment): Boolean = enrolment.state.equalsIgnoreCase("Activated")
 
