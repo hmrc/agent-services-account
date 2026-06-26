@@ -33,7 +33,9 @@ trait EnrolmentStoreProxyStubs:
             "enrolments" -> Json.arr(regimes.map { regime =>
               Json.obj(
                 "service" -> regime.enrolmentKey,
-                "state" -> "Activated"
+                "state" -> "Activated",
+                "identifiers" -> Json
+                  .arr(Json.obj("key" -> "AgentReferenceNumber", "value" -> "TestAgentReferenceNumber"))
               )
             }*)
           ).toString)

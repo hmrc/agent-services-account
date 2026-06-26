@@ -533,7 +533,11 @@ with MockLegacySubscriptionEmailService:
 
         when(connector.queryEnrolmentsAllocatedToGroup(any[GroupId])(using any[RequestHeader]))
           .thenReturn(Future.successful(
-            Seq(Enrolment(service = regime.enrolmentKey, state = "Inactive", identifiers = Seq(Identifier("AgentReferenceNumber", "OLD-AGENT-REF"))))
+            Seq(Enrolment(
+              service = regime.enrolmentKey,
+              state = "Inactive",
+              identifiers = Seq(Identifier("AgentReferenceNumber", "OLD-AGENT-REF"))
+            ))
           ))
 
         when(connector.deallocateAgentEnrolment(
@@ -590,7 +594,11 @@ with MockLegacySubscriptionEmailService:
 
         when(connector.queryEnrolmentsAllocatedToGroup(any[GroupId])(using any[RequestHeader]))
           .thenReturn(Future.successful(
-            Seq(Enrolment(service = regime.enrolmentKey, state = "Activated", identifiers = Seq.empty))
+            Seq(Enrolment(
+              service = regime.enrolmentKey,
+              state = "Activated",
+              identifiers = Seq.empty
+            ))
           ))
 
         worker.runOnce(using jobConfig, regime).futureValue

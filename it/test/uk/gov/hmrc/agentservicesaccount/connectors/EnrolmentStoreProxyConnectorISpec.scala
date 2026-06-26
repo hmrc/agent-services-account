@@ -23,7 +23,7 @@ import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.{CT, PAYE, SA}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
-import uk.gov.hmrc.agentservicesaccount.models.{Enrolment, Es20Enrolment, Es20Response, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.{Enrolment, Es20Enrolment, Es20Response, GroupId, Identifier}
 import uk.gov.hmrc.agentservicesaccount.stubs.EnrolmentStoreProxyStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.http.HeaderCarrier
@@ -46,9 +46,9 @@ with EnrolmentStoreProxyStubs {
       val result = connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue
 
       result shouldBe Seq(
-        Enrolment(service = SA.enrolmentKey, state = "Activated", identifiers = Seq.empty),
-        Enrolment(service = CT.enrolmentKey, state = "Activated", identifiers = Seq.empty),
-        Enrolment(service = PAYE.enrolmentKey, state = "Activated", identifiers = Seq.empty)
+        Enrolment(service = SA.enrolmentKey, state = "Activated", identifiers = Seq(Identifier("AgentReferenceNumber", "TestAgentReferenceNumber"))),
+        Enrolment(service = CT.enrolmentKey, state = "Activated", identifiers = Seq(Identifier("AgentReferenceNumber", "TestAgentReferenceNumber"))),
+        Enrolment(service = PAYE.enrolmentKey, state = "Activated", identifiers = Seq(Identifier("AgentReferenceNumber", "TestAgentReferenceNumber")))
       )
     }
 

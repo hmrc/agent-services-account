@@ -78,6 +78,8 @@ case class Identifier(
 }
 
 object Identifier {
+
   implicit val format: Format[Identifier] = Json.format[Identifier]
   implicit val ordering: Ordering[Identifier] = Ordering.by(_.key)
+
 }
