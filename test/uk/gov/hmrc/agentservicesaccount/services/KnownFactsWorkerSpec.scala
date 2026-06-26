@@ -506,11 +506,10 @@ with MockLegacySubscriptionEmailService:
 
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
-        mockLegacySubscriptionAuditSuccess()
-        mockSendCompletionEmailIgnoreErrors()
-
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
+        mockLegacySubscriptionAuditSuccess()
+        mockSendCompletionEmailIgnoreErrors()
 
         when(connector.queryKnownFactsForAgent(
           eqTo(regime),
@@ -531,7 +530,7 @@ with MockLegacySubscriptionEmailService:
             Future.successful(()) // 2nd call
           )
 
-        when(connector.queryEnrolmentsAllocatedToGroupHC(any[GroupId])(using any[HeaderCarrier]))
+        when(connector.queryEnrolmentsAllocatedToGroup(any[GroupId])(using any[RequestHeader]))
           .thenReturn(Future.successful(
             Seq(Enrolment(service = regime.enrolmentKey, state = "Inactive"))
           ))
@@ -567,11 +566,11 @@ with MockLegacySubscriptionEmailService:
 
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
         mockLegacySubscriptionAuditFailure()
         when(workItemService.markPermanentlyFailed(any[WorkItem[SubscriptionWorkItem]]))
           .thenReturn(Future.successful(Done))
-        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
-          .thenReturn(Future.successful(Some(workItem)))
 
         when(connector.queryKnownFactsForAgent(
           eqTo(regime),
@@ -588,19 +587,18 @@ with MockLegacySubscriptionEmailService:
         )(using any[HeaderCarrier]))
           .thenReturn(Future.failed(multipleEnrolmentsInvalidError))
 
-        when(connector.queryEnrolmentsAllocatedToGroupHC(any[GroupId])(using any[HeaderCarrier]))
+        when(connector.queryEnrolmentsAllocatedToGroup(any[GroupId])(using any[RequestHeader]))
           .thenReturn(Future.successful(
             Seq(Enrolment(service = regime.enrolmentKey, state = "Activated"))
           ))
 
         worker.runOnce(using jobConfig, regime).futureValue
 
-        verify(connector, never()).deallocateAgentEnrolment(
-          any[GroupId],
-          any[LegacyRegime],
-          any[String]
-        )(using any[HeaderCarrier])
-
+        verify(mockLegacySubscriptionAuditService).auditFailure(
+          arn = workItem.item.arn,
+          regime = regime,
+          failureReason = s"Agent already subscribed to $regime"
+        )
         verify(workItemService).markPermanentlyFailed(workItem)
         verify(workItemService, never()).complete(workItem)
       }

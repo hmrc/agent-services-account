@@ -43,7 +43,7 @@ with EnrolmentStoreProxyStubs {
     "return active principal enrolments on a successful 200 response" in {
       givenEs3CallSucceeds(testGroupId)(SA, CT, PAYE)
 
-      val result = connector.queryEnrolmentsAllocatedToGroupHC(testGroupId).futureValue
+      val result = connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue
 
       result shouldBe Seq(
         Enrolment(service = SA.enrolmentKey, state = "Activated"),
@@ -55,7 +55,7 @@ with EnrolmentStoreProxyStubs {
     "return nothing on a successful 404 response" in {
       givenEs3CallSucceeds(testGroupId)()
 
-      val result = connector.queryEnrolmentsAllocatedToGroupHC(testGroupId).futureValue
+      val result = connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue
 
       result shouldBe Nil
     }
@@ -63,7 +63,7 @@ with EnrolmentStoreProxyStubs {
     "throw error when EACD returns unexpected response" in {
       givenEs3CallFails(testGroupId)
 
-      intercept[TestFailedException](connector.queryEnrolmentsAllocatedToGroupHC(testGroupId).futureValue)
+      intercept[TestFailedException](connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue)
     }
   }
 

@@ -58,9 +58,9 @@ class EnrolmentStoreProxyConnector @Inject() (
    * ES3: Query Enrolments allocated to a group
    * https://confluence.tools.tax.service.gov.uk/display/GGWRLS/ES3+-+Query+Enrolments+allocated+to+a+group
    */
-  def queryEnrolmentsAllocatedToGroupHC(
+  def queryEnrolmentsAllocatedToGroup(
     groupId: GroupId
-  )(using hc: HeaderCarrier): Future[List[Enrolment]] =
+  )(using request: RequestHeader): Future[List[Enrolment]] =
     val url = url"$baseUrl/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments?type=principal"
     http
       .get(url)
@@ -76,10 +76,6 @@ class EnrolmentStoreProxyConnector @Inject() (
               other
             )
       }
-
-  def queryEnrolmentsAllocatedToGroup(groupId: GroupId)(using request: RequestHeader): Future[List[Enrolment]] =
-    given HeaderCarrier = hc
-    queryEnrolmentsAllocatedToGroupHC(groupId)(using summon[HeaderCarrier])
 
   def queryKnownFactsForAgent(
     regime: LegacyRegime,
