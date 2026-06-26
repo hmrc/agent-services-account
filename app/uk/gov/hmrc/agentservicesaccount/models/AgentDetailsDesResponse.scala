@@ -30,7 +30,13 @@ case class AgentDetailsDesResponse(
   agencyDetails: Option[AgencyDetails],
   suspensionDetails: Option[SuspensionDetails],
   isAnIndividual: Option[Boolean],
-  amlsDetails: Option[AmlsDetails] = None
+  amlsDetails: Option[AmlsDetails] = None,
+// TODO: 11584 Makes this into Option[UpdateStatus]
+  updateDetailsStatus: Option[String] = None,
+  amlSupervisionUpdateStatus: Option[String] = None,
+  directorPartnerUpdateStatus: Option[String] = None,
+  acceptNewTermsStatus: Option[String] = None,
+  reriskStatus: Option[String] = None
 ) {
   private[models] def toInitHipAmendPayload: HipAmendPayload = {
     HipAmendPayload(
@@ -46,6 +52,7 @@ case class AgentDetailsDesResponse(
       supervisoryBody = amlsDetails.map(_.supervisoryBody.toString),
       membershipNumber = amlsDetails.map(_.membershipNumber.toString),
       evidenceObjectReference = amlsDetails.flatMap(_.evidenceObjectReference).map(_.toString),
+//      TODO: 11584 Only set them to Accepted when the api returns none
       updateDetailsStatus = Some(ACCEPTED),
       amlSupervisionUpdateStatus = Some(ACCEPTED),
       directorPartnerUpdateStatus = Some(ACCEPTED),
@@ -69,9 +76,14 @@ object AgentDetailsDesResponse {
       .and((__ \ "agencyDetails").formatNullable[AgencyDetails](using AgencyDetails.agencyDetailsDatabaseFormat))
       .and((__ \ "suspensionDetails").formatNullable[SuspensionDetails])
       .and((__ \ "isAnIndividual").formatNullable[Boolean])
-      .and((__ \ "amlsDetails").formatNullable[AmlsDetails](using AmlsDetails.amlsDetailsDatabaseFormat))(
+      .and((__ \ "amlsDetails").formatNullable[AmlsDetails](using AmlsDetails.amlsDetailsDatabaseFormat))
+      .and((__ \ "updateDetailsStatus").formatNullable[String])
+      .and((__ \ "amlSupervisionUpdateStatus").formatNullable[String])
+      .and((__ \ "directorPartnerUpdateStatus").formatNullable[String])
+      .and((__ \ "acceptNewTermsStatus").formatNullable[String])
+      .and((__ \ "reriskStatus").formatNullable[String])(
         AgentDetailsDesResponse.apply,
-        adr => (adr.uniqueTaxReference, adr.agencyDetails, adr.suspensionDetails, adr.isAnIndividual, adr.amlsDetails)
+        adr => (adr.uniqueTaxReference, adr.agencyDetails, adr.suspensionDetails, adr.isAnIndividual, adr.amlsDetails, adr.updateDetailsStatus, adr.amlSupervisionUpdateStatus, adr.directorPartnerUpdateStatus, adr.acceptNewTermsStatus, adr.reriskStatus)
       )
 
 }

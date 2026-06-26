@@ -39,7 +39,12 @@ case class HipAgentSubscriptionSuccess(
   regime: Option[Seq[String]],
   supervisoryBody: Option[String],
   membershipNumber: Option[String],
-  evidenceObjectReference: Option[String]
+  evidenceObjectReference: Option[String],
+  updateDetailsStatus: Option[String],
+  amlSupervisionUpdateStatus: Option[String],
+  directorPartnerUpdateStatus: Option[String],
+  acceptNewTermsStatus: Option[String],
+  reriskStatus: Option[String]
 )
 
 object HipAgentSubscriptionResponse {
@@ -79,7 +84,12 @@ object HipAgentSubscriptionResponse {
         regimeReads and
         readNullableString(__ \ "supervisoryBody") and
         readNullableString(__ \ "membershipNumber") and
-        readNullableString(__ \ "evidenceObjectReference")
+        readNullableString(__ \ "evidenceObjectReference") and
+        readNullableString(__ \ "updateDetailsStatus") and
+        readNullableString(__ \ "amlSupervisionUpdateStatus") and
+        readNullableString(__ \ "directorPartnerUpdateStatus") and
+        readNullableString(__ \ "acceptNewTermsStatus") and
+        readNullableString(__ \ "reriskStatus")
     )(HipAgentSubscriptionSuccess.apply)
 
   given Reads[HipAgentSubscriptionResponse] = (__ \ "success").read[HipAgentSubscriptionSuccess]

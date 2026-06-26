@@ -152,7 +152,12 @@ with Logging {
       ),
       suspensionDetails = Some(suspension),
       isAnIndividual = Some(true),
-      amlsDetails = amlsDetails
+      amlsDetails = amlsDetails,
+      updateDetailsStatus = s.updateDetailsStatus,
+      amlSupervisionUpdateStatus = s.amlSupervisionUpdateStatus,
+      directorPartnerUpdateStatus = s.directorPartnerUpdateStatus,
+      acceptNewTermsStatus = s.acceptNewTermsStatus,
+      reriskStatus = s.reriskStatus
     )
   }
 
