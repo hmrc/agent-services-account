@@ -31,7 +31,6 @@ case class AgentDetailsDesResponse(
   suspensionDetails: Option[SuspensionDetails],
   isAnIndividual: Option[Boolean],
   amlsDetails: Option[AmlsDetails] = None,
-// TODO: 11584 Makes this into Option[UpdateStatus]
   updateDetailsStatus: Option[String] = None,
   amlSupervisionUpdateStatus: Option[String] = None,
   directorPartnerUpdateStatus: Option[String] = None,
@@ -52,12 +51,11 @@ case class AgentDetailsDesResponse(
       supervisoryBody = amlsDetails.map(_.supervisoryBody.toString),
       membershipNumber = amlsDetails.map(_.membershipNumber.toString),
       evidenceObjectReference = amlsDetails.flatMap(_.evidenceObjectReference).map(_.toString),
-//      TODO: 11584 Only set them to Accepted when the api returns none
-      updateDetailsStatus = Some(ACCEPTED),
-      amlSupervisionUpdateStatus = Some(ACCEPTED),
-      directorPartnerUpdateStatus = Some(ACCEPTED),
-      acceptNewTermsStatus = Some(ACCEPTED),
-      reriskStatus = Some(ACCEPTED)
+      updateDetailsStatus = Some(updateDetailsStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
+      amlSupervisionUpdateStatus =  Some(amlSupervisionUpdateStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
+      directorPartnerUpdateStatus =  Some(directorPartnerUpdateStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
+      acceptNewTermsStatus =  Some(acceptNewTermsStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
+      reriskStatus = Some(reriskStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED))
     )
   }
 }
