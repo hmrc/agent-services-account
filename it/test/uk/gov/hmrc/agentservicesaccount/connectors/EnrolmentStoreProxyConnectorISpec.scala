@@ -46,9 +46,9 @@ with EnrolmentStoreProxyStubs {
       val result = connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue
 
       result shouldBe Seq(
-        Enrolment(service = SA.enrolmentKey, state = "Activated"),
-        Enrolment(service = CT.enrolmentKey, state = "Activated"),
-        Enrolment(service = PAYE.enrolmentKey, state = "Activated")
+        Enrolment(service = SA.enrolmentKey, state = "Activated", identifiers = Seq.empty),
+        Enrolment(service = CT.enrolmentKey, state = "Activated", identifiers = Seq.empty),
+        Enrolment(service = PAYE.enrolmentKey, state = "Activated", identifiers = Seq.empty)
       )
     }
 

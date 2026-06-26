@@ -33,6 +33,7 @@ import uk.gov.hmrc.agentservicesaccount.models.Enrolment
 import uk.gov.hmrc.agentservicesaccount.models.Es20Enrolment
 import uk.gov.hmrc.agentservicesaccount.models.Es20Response
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
+import uk.gov.hmrc.agentservicesaccount.models.Identifier
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
@@ -532,7 +533,7 @@ with MockLegacySubscriptionEmailService:
 
         when(connector.queryEnrolmentsAllocatedToGroup(any[GroupId])(using any[RequestHeader]))
           .thenReturn(Future.successful(
-            Seq(Enrolment(service = regime.enrolmentKey, state = "Inactive"))
+            Seq(Enrolment(service = regime.enrolmentKey, state = "Inactive", identifiers = Seq(Identifier("AgentReferenceNumber", "OLD-AGENT-REF"))))
           ))
 
         when(connector.deallocateAgentEnrolment(
@@ -589,7 +590,7 @@ with MockLegacySubscriptionEmailService:
 
         when(connector.queryEnrolmentsAllocatedToGroup(any[GroupId])(using any[RequestHeader]))
           .thenReturn(Future.successful(
-            Seq(Enrolment(service = regime.enrolmentKey, state = "Activated"))
+            Seq(Enrolment(service = regime.enrolmentKey, state = "Activated", identifiers = Seq.empty))
           ))
 
         worker.runOnce(using jobConfig, regime).futureValue

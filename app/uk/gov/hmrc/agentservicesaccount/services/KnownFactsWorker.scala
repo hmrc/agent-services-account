@@ -153,20 +153,24 @@ extends Logging:
       .flatMap { enrolments =>
         enrolments.find(_.service == regime.enrolmentKey) match {
           case Some(enrolment) if isActive(enrolment) => failAsAlreadySubscribed(workItem, regime)
-          case Some(_) =>
-            for {
-              _ <- enrolmentStoreProxyConnector.deallocateAgentEnrolment(
-                workItem.item.groupId,
-                regime,
-                agentReference
-              )
-              _ <- enrolmentStoreProxyConnector.allocateAgentEnrolment(
-                regime,
-                workItem.item.groupId,
-                agentReference,
-                workItem.item.adminCredId
-              )
-            } yield AllocationOutcome.RetriedAfterConflict
+          case Some(inactiveEnrolment) =>
+            inactiveEnrolment.identifiers.find(_.key == "AgentReferenceNumber").map(_.value) match {
+              case Some(existingAgentReference) =>
+                for {
+                  _ <- enrolmentStoreProxyConnector.deallocateAgentEnrolment(
+                    workItem.item.groupId,
+                    regime,
+                    existingAgentReference
+                  )
+                  _ <- enrolmentStoreProxyConnector.allocateAgentEnrolment(
+                    regime,
+                    workItem.item.groupId,
+                    agentReference,
+                    workItem.item.adminCredId
+                  )
+                } yield AllocationOutcome.RetriedAfterConflict
+              case None => Future.successful(AllocationOutcome.MissingAgentReference)
+            }
           case None => Future.successful(AllocationOutcome.MissingEnrolment)
         }
       }
@@ -227,4 +231,6 @@ object AllocationOutcome:
   case object AlreadySubscribed
   extends AllocationOutcome
   case object MissingEnrolment
+  extends AllocationOutcome
+  case object MissingAgentReference
   extends AllocationOutcome
