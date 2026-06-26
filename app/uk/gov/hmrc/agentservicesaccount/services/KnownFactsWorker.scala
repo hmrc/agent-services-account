@@ -126,8 +126,9 @@ extends Logging:
       case error: UpstreamErrorResponse if hasInvalidCredentialId(error) =>
         usersGroupsSearchConnector.getFirstAdminCredId(workItem.item.groupId).flatMap {
           case Some(adminCredId) =>
-            allocateAgentEnrolment(
-              workItem,
+            enrolmentStoreProxyConnector.allocateAgentEnrolment(
+              regime,
+              workItem.item.groupId,
               agentReference,
               adminCredId
             )
@@ -138,20 +139,6 @@ extends Logging:
 
       case error: UpstreamErrorResponse if hasMultipleEnrolmentsConflict(error) => handleMultipleEnrolmentsConflict(workItem, agentReference)
     }
-
-  private def allocateAgentEnrolment(
-    workItem: WorkItem[SubscriptionWorkItem],
-    agentReference: String,
-    adminCredId: CredId
-  )(using
-    hc: HeaderCarrier,
-    regime: LegacyRegime
-  ): Future[Unit] = enrolmentStoreProxyConnector.allocateAgentEnrolment(
-    regime,
-    workItem.item.groupId,
-    agentReference,
-    adminCredId
-  )
 
   private def handleMultipleEnrolmentsConflict(
     workItem: WorkItem[SubscriptionWorkItem],
@@ -165,7 +152,7 @@ extends Logging:
       .queryEnrolmentsAllocatedToGroup(workItem.item.groupId)
       .flatMap { enrolments =>
         enrolments.find(_.service == regime.enrolmentKey) match {
-          case Some(enrolment) if isActive(enrolment) => handleAlreadySubscribed(workItem, regime)
+          case Some(enrolment) if isActive(enrolment) => failAsAlreadySubscribed(workItem, regime)
           case Some(_) =>
             for {
               _ <- enrolmentStoreProxyConnector.deallocateAgentEnrolment(
@@ -173,22 +160,18 @@ extends Logging:
                 regime,
                 agentReference
               )
-              _ <- allocateAgentEnrolment(
-                workItem,
+              _ <- enrolmentStoreProxyConnector.allocateAgentEnrolment(
+                regime,
+                workItem.item.groupId,
                 agentReference,
                 workItem.item.adminCredId
               )
             } yield AllocationOutcome.RetriedAfterConflict
-          case None =>
-            Future.failed(
-              new RuntimeException(
-                s"MULTIPLE_ENROLMENTS_INVALID but no ${regime.enrolmentKey}"
-              )
-            )
+          case None => Future.successful(AllocationOutcome.MissingEnrolment)
         }
       }
 
-  private def handleAlreadySubscribed(
+  private def failAsAlreadySubscribed(
     workItem: WorkItem[SubscriptionWorkItem],
     regime: LegacyRegime
   ): Future[AllocationOutcome] =
@@ -242,4 +225,6 @@ object AllocationOutcome:
   case object RetriedAfterConflict
   extends AllocationOutcome
   case object AlreadySubscribed
+  extends AllocationOutcome
+  case object MissingEnrolment
   extends AllocationOutcome
