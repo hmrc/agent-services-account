@@ -154,7 +154,7 @@ extends Logging:
         enrolments.find(_.service == regime.enrolmentKey) match {
           case Some(enrolment) if isActive(enrolment) => failAsAlreadySubscribed(workItem, regime)
           case Some(inactiveEnrolment) =>
-            inactiveEnrolment.identifiers.find(_.key == "AgentReferenceNumber").map(_.value) match {
+            inactiveEnrolment.identifiers.find(_.key == regime.agentReferenceKey).map(_.value) match {
               case Some(existingAgentReference) =>
                 for {
                   _ <- enrolmentStoreProxyConnector.deallocateAgentEnrolment(

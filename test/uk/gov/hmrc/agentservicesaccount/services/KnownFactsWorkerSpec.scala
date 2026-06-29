@@ -536,7 +536,7 @@ with MockLegacySubscriptionEmailService:
             Seq(Enrolment(
               service = regime.enrolmentKey,
               state = "Inactive",
-              identifiers = Seq(Identifier("AgentReferenceNumber", "OLD-AGENT-REF"))
+              identifiers = Seq(Identifier("IRAgentReference", "OLD-AGENT-REF"))
             ))
           ))
 
