@@ -611,6 +611,100 @@ with MockLegacySubscriptionEmailService:
         verify(workItemService).markPermanentlyFailed(workItem)
         verify(workItemService, never()).complete(workItem)
       }
+
+      "treat missing enrolment during MULTIPLE_ENROLMENTS_INVALID as a processing failure" in {
+        val workItem = buildWorkItem(
+          regime,
+          failureCount = 0,
+          subscriptionRequest = subscriptionRequest
+        )
+
+        val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
+
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(response)))
+
+        when(connector.allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.failed(multipleEnrolmentsInvalidError))
+
+        when(connector.queryEnrolmentsAllocatedToGroup(any[GroupId])(using any[RequestHeader]))
+          .thenReturn(Future.successful(Nil))
+
+        when(workItemService.markFailed(workItem))
+          .thenReturn(Future.successful(Done))
+
+        worker.runOnce(using jobConfig, regime).futureValue
+
+        verify(workItemService).markFailed(workItem)
+        verify(workItemService, never()).complete(workItem)
+      }
+
+      "treat agent reference during MULTIPLE_ENROLMENTS_INVALID as a processing failure" in {
+        val workItem = buildWorkItem(
+          regime,
+          failureCount = 0,
+          subscriptionRequest = subscriptionRequest
+        )
+
+        val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
+
+        when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
+          .thenReturn(Future.successful(Some(workItem)))
+
+        when(connector.queryKnownFactsForAgent(
+          eqTo(regime),
+          eqTo("A12345"),
+          eqTo(expectedValidatedPostcode(regime))
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(response)))
+
+        when(connector.allocateAgentEnrolment(
+          any[LegacyRegime],
+          any[GroupId],
+          any[String],
+          any[CredId]
+        )(using any[HeaderCarrier]))
+          .thenReturn(Future.failed(multipleEnrolmentsInvalidError))
+
+        when(connector.queryEnrolmentsAllocatedToGroup(any[GroupId])(using any[RequestHeader]))
+          .thenReturn(
+            Future.successful(
+              Seq(
+                Enrolment(
+                  service = regime.enrolmentKey,
+                  state = "Inactive",
+                  identifiers = Seq.empty
+                )
+              )
+            )
+          )
+
+        when(workItemService.markFailed(workItem))
+          .thenReturn(Future.successful(Done))
+
+        worker.runOnce(using jobConfig, regime).futureValue
+
+        verify(connector, never()).deallocateAgentEnrolment(
+          any[GroupId],
+          any[LegacyRegime],
+          any[String]
+        )(using any[HeaderCarrier])
+
+        verify(workItemService).markFailed(workItem)
+        verify(workItemService, never()).complete(workItem)
+      }
     }
   }
 

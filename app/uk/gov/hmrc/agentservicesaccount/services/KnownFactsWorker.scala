@@ -105,7 +105,9 @@ extends Logging:
         _ <- legacySubscriptionEmailService.sendCompletionEmailIgnoreErrors(workItem.item)
         done <- workItemService.complete(workItem)
       } yield done
-    case _ => Future.successful(Done)
+    case AllocationOutcome.MissingEnrolment => Future.failed(new RuntimeException("Could not find enrolment while dealing with MultipleEnrolmentsConflict"))
+    case AllocationOutcome.MissingAgentReference => Future.failed(new RuntimeException("Could not find agent reference in inactive enrolment while dealing with MultipleEnrolmentsConflict"))
+    case AllocationOutcome.AlreadySubscribed => Future.successful(Done)
   }
 
   private def allocateAgentEnrolment(
