@@ -58,7 +58,8 @@ with EmailStub {
     "agent.entity-check.lock.expires" -> "1 seconds",
     "agent.automap.lock.expires" -> "1 seconds",
     "agent.entity-check.email.lock.expires" -> "1 seconds",
-    "features.get-agent-record-via-hip" -> false
+    "features.get-agent-record-via-hip" -> false,
+    "features.updated-hip-put-agent-record" -> true
   )
 
   val testArn = Arn("AARN0000002")

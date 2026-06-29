@@ -37,15 +37,43 @@ case class HipAmendPayload(
   directorPartnerUpdateStatus: Option[UpdateStatus] = None,
   acceptNewTermsStatus: Option[UpdateStatus] = None,
   reriskStatus: Option[UpdateStatus] = None
-)
+) {
+  private def withAmlsDetailsUpdate(amlsDetails: AmlsDetails): HipAmendPayload = {
+    this.copy(
+      supervisoryBody = Some(amlsDetails.supervisoryBody.value),
+      membershipNumber = Some(amlsDetails.membershipNumber.value),
+      evidenceObjectReference = amlsDetails.evidenceObjectReference.map(_.value)
+    )
+  }
+  
+  private def withAgencyDetailsUpdate(agencyDetails: AgencyDetails): HipAmendPayload = {
+    val payloadWithNameEmailPhone = this.copy(
+      name = agencyDetails.agencyName.orElse(name),
+      email = agencyDetails.agencyEmail.orElse(email),
+      phone = agencyDetails.agencyTelephone.orElse(phone)
+    )
+    agencyDetails.agencyAddress.map(agencyAddress => {
+      payloadWithNameEmailPhone.copy(
+        addr1 = Some(agencyAddress.addressLine1),
+        addr2 = agencyAddress.addressLine2,
+        addr3 = agencyAddress.addressLine3,
+        addr4 = agencyAddress.addressLine4,
+        postcode = agencyAddress.postalCode,
+        country = Some(agencyAddress.countryCode)
+      )
+    }).getOrElse(payloadWithNameEmailPhone)
+  }
+}
 
 object HipAmendPayload:
 
   given Writes[HipAmendPayload] = Json.writes[HipAmendPayload]
 
   extension (request: AgentRecordUpdateRequest)
-    def toHipAmendPayload(oldRecord: AgentDetailsDesResponse)(logger: Logger): HipAmendPayload =
-      // TODO replace this with the new PUT API solution when it is implemented on ETMP.
+    def toHipAmendPayload(
+      oldRecord: AgentDetailsDesResponse,
+      useUpdatedHipPutAgentRecord: Boolean
+    )(logger: Logger): HipAmendPayload =
       def addressLineWithFallback(
         newLine: Option[String],
         oldLine: Option[String],
@@ -58,14 +86,18 @@ object HipAmendPayload:
         else None
       }
 
-      request match
-        case AmlsUpdateRequest(update) =>
+      (request, useUpdatedHipPutAgentRecord) match
+        case (AmlsUpdateRequest(update), true) =>
+          oldRecord.toInitHipAmendPayload.withAmlsDetailsUpdate(update)
+        case (AgencyDetailsUpdateRequest(update), true) =>
+          oldRecord.toInitHipAmendPayload.withAgencyDetailsUpdate(update)
+        case (AmlsUpdateRequest(update), false) =>
           HipAmendPayload(
             supervisoryBody = Some(update.supervisoryBody.value),
             membershipNumber = Some(update.membershipNumber.value),
             evidenceObjectReference = update.evidenceObjectReference.map(_.value)
           )
-        case AgencyDetailsUpdateRequest(update) =>
+        case (AgencyDetailsUpdateRequest(update), false) =>
           HipAmendPayload(
             name = update.agencyName,
             addr1 = update.agencyAddress.map(_.addressLine1),
