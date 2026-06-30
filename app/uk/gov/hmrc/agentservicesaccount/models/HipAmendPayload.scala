@@ -38,6 +38,7 @@ case class HipAmendPayload(
   acceptNewTermsStatus: Option[UpdateStatus] = None,
   reriskStatus: Option[UpdateStatus] = None
 ) {
+
   private def withAmlsDetailsUpdate(amlsDetails: AmlsDetails): HipAmendPayload = {
     this.copy(
       supervisoryBody = Some(amlsDetails.supervisoryBody.value),
@@ -45,7 +46,7 @@ case class HipAmendPayload(
       evidenceObjectReference = amlsDetails.evidenceObjectReference.map(_.value)
     )
   }
-  
+
   private def withAgencyDetailsUpdate(agencyDetails: AgencyDetails): HipAmendPayload = {
     val payloadWithNameEmailPhone = this.copy(
       name = agencyDetails.agencyName.orElse(name),
@@ -63,6 +64,7 @@ case class HipAmendPayload(
       )
     }).getOrElse(payloadWithNameEmailPhone)
   }
+
 }
 
 object HipAmendPayload:
@@ -87,10 +89,8 @@ object HipAmendPayload:
       }
 
       (request, useUpdatedHipPutAgentRecord) match
-        case (AmlsUpdateRequest(update), true) =>
-          oldRecord.toInitHipAmendPayload.withAmlsDetailsUpdate(update)
-        case (AgencyDetailsUpdateRequest(update), true) =>
-          oldRecord.toInitHipAmendPayload.withAgencyDetailsUpdate(update)
+        case (AmlsUpdateRequest(update), true) => oldRecord.toInitHipAmendPayload.withAmlsDetailsUpdate(update)
+        case (AgencyDetailsUpdateRequest(update), true) => oldRecord.toInitHipAmendPayload.withAgencyDetailsUpdate(update)
         case (AmlsUpdateRequest(update), false) =>
           HipAmendPayload(
             supervisoryBody = Some(update.supervisoryBody.value),

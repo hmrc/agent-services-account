@@ -40,11 +40,11 @@ case class HipAgentSubscriptionSuccess(
   supervisoryBody: Option[String],
   membershipNumber: Option[String],
   evidenceObjectReference: Option[String],
-  updateDetailsStatus: Option[String],
-  amlSupervisionUpdateStatus: Option[String],
-  directorPartnerUpdateStatus: Option[String],
-  acceptNewTermsStatus: Option[String],
-  reriskStatus: Option[String]
+  updateDetailsStatus: Option[UpdateStatus],
+  amlSupervisionUpdateStatus: Option[UpdateStatus],
+  directorPartnerUpdateStatus: Option[UpdateStatus],
+  acceptNewTermsStatus: Option[UpdateStatus],
+  reriskStatus: Option[UpdateStatus]
 )
 
 object HipAgentSubscriptionResponse {
@@ -85,11 +85,11 @@ object HipAgentSubscriptionResponse {
         readNullableString(__ \ "supervisoryBody") and
         readNullableString(__ \ "membershipNumber") and
         readNullableString(__ \ "evidenceObjectReference") and
-        readNullableString(__ \ "updateDetailsStatus") and
-        readNullableString(__ \ "amlSupervisionUpdateStatus") and
-        readNullableString(__ \ "directorPartnerUpdateStatus") and
-        readNullableString(__ \ "acceptNewTermsStatus") and
-        readNullableString(__ \ "reriskStatus")
+        (__ \ "updateDetailsStatus").readNullable[UpdateStatus] and
+        (__ \ "amlSupervisionUpdateStatus").readNullable[UpdateStatus] and
+        (__ \ "directorPartnerUpdateStatus").readNullable[UpdateStatus] and
+        (__ \ "acceptNewTermsStatus").readNullable[UpdateStatus] and
+        (__ \ "reriskStatus").readNullable[UpdateStatus]
     )(HipAgentSubscriptionSuccess.apply)
 
   given Reads[HipAgentSubscriptionResponse] = (__ \ "success").read[HipAgentSubscriptionSuccess]

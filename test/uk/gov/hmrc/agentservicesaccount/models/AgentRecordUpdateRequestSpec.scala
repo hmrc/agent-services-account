@@ -179,7 +179,7 @@ extends UnitSpec {
       membershipNumber = MembershipNumber("XAML00000123456"),
       evidenceObjectReference = Some(EvidenceObjectReference("f28047ef-33f9-482e-a76a-ec4304de7b62"))
     )
-    
+
     "when useUpdatedHipPutAgentRecord false" should {
       "map AMLS details correctly" in {
         val request = AmlsUpdateRequest(AmlsDetails(
@@ -313,7 +313,7 @@ extends UnitSpec {
         hipAmendPayload.reriskStatus shouldBe None
       }
 
-      "return correct HipAmendPayload when passed AmlsUpdateRequest" in :
+      "return correct HipAmendPayload when passed AmlsUpdateRequest" in:
         val amlsUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
         val hipAmendPayload = amlsUpdateRequest.toHipAmendPayload(oldRecord, false)(logger)
 
@@ -325,7 +325,7 @@ extends UnitSpec {
         assertAgencyAddressNoneInPayload(hipAmendPayload)
         assertMMTARFieldsNoneInPayload(hipAmendPayload)
 
-      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated" in :
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated" in:
         val agencyDetailsNoAddress = agencyDetails.copy(agencyAddress = None)
         val agencyDetailsUpdateRequestNoAddress: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsNoAddress)
         val hipAmendPayload = agencyDetailsUpdateRequestNoAddress.toHipAmendPayload(oldRecord, false)(logger)
@@ -338,8 +338,13 @@ extends UnitSpec {
         assertAgencyAddressNoneInPayload(hipAmendPayload)
         assertMMTARFieldsNoneInPayload(hipAmendPayload)
 
-      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated" in :
-        val agencyDetailsAddressOnly = AgencyDetails(None, None, None, agencyDetails.agencyAddress)
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated" in:
+        val agencyDetailsAddressOnly = AgencyDetails(
+          None,
+          None,
+          None,
+          agencyDetails.agencyAddress
+        )
         val agencyDetailsUpdateRequestAddressOnly: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsAddressOnly)
         val hipAmendPayload = agencyDetailsUpdateRequestAddressOnly.toHipAmendPayload(oldRecord, false)(logger)
 
@@ -354,7 +359,7 @@ extends UnitSpec {
         assertAgencyNameTelephoneEmailNoneInPayload(hipAmendPayload)
         assertMMTARFieldsNoneInPayload(hipAmendPayload)
 
-      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated" in :
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated" in:
         val agencyDetailsUpdateRequest: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetails)
         val hipAmendPayload = agencyDetailsUpdateRequest.toHipAmendPayload(oldRecord, false)(logger)
 
@@ -397,19 +402,28 @@ extends UnitSpec {
 
     "when useUpdatedHipPutAgentRecord true" should {
 
-      def assertAmlsDetailsSameAsOldRecordInPayload(hipAmendPayload: HipAmendPayload, oldRecord: AgentDetailsDesResponse): Unit = {
+      def assertAmlsDetailsSameAsOldRecordInPayload(
+        hipAmendPayload: HipAmendPayload,
+        oldRecord: AgentDetailsDesResponse
+      ): Unit = {
         hipAmendPayload.supervisoryBody shouldBe oldRecord.amlsDetails.map(_.supervisoryBody)
         hipAmendPayload.membershipNumber shouldBe oldRecord.amlsDetails.map(_.membershipNumber)
         hipAmendPayload.evidenceObjectReference shouldBe oldRecord.amlsDetails.flatMap(_.evidenceObjectReference)
       }
 
-      def assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload: HipAmendPayload, oldRecord: AgentDetailsDesResponse): Unit = {
+      def assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(
+        hipAmendPayload: HipAmendPayload,
+        oldRecord: AgentDetailsDesResponse
+      ): Unit = {
         hipAmendPayload.name shouldBe oldRecord.agencyDetails.flatMap(_.agencyName)
         hipAmendPayload.phone shouldBe oldRecord.agencyDetails.flatMap(_.agencyTelephone)
         hipAmendPayload.email shouldBe oldRecord.agencyDetails.flatMap(_.agencyEmail)
       }
 
-      def assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload: HipAmendPayload, oldRecord: AgentDetailsDesResponse): Unit = {
+      def assertAgencyAddressSameAsOldRecordInPayload(
+        hipAmendPayload: HipAmendPayload,
+        oldRecord: AgentDetailsDesResponse
+      ): Unit = {
         hipAmendPayload.addr1 shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).map(_.addressLine1)
         hipAmendPayload.addr2 shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine2)
         hipAmendPayload.addr3 shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine3)
@@ -426,7 +440,7 @@ extends UnitSpec {
         hipAmendPayload.reriskStatus shouldBe Some(ACCEPTED)
       }
 
-      "return correct HipAmendPayload when passed AmlsUpdateRequest" in :
+      "return correct HipAmendPayload when passed AmlsUpdateRequest" in:
         val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
         val hipAmendPayload = agentRecordUpdateRequest.toHipAmendPayload(oldRecord, true)(logger)
 
@@ -438,7 +452,7 @@ extends UnitSpec {
         assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertMMTARFieldsSetAsAcceptedInPayload(hipAmendPayload)
 
-      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated" in :
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated" in:
         val agencyDetailsNoAddress = agencyDetails.copy(agencyAddress = None)
         val agencyDetailsUpdateRequestNoAddress: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsNoAddress)
         val hipAmendPayload = agencyDetailsUpdateRequestNoAddress.toHipAmendPayload(oldRecord, true)(logger)
@@ -451,8 +465,13 @@ extends UnitSpec {
         assertAgencyAddressSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertMMTARFieldsSetAsAcceptedInPayload(hipAmendPayload)
 
-      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated" in :
-        val agencyDetailsAddressOnly = AgencyDetails(None, None, None, agencyDetails.agencyAddress)
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with address only updated" in:
+        val agencyDetailsAddressOnly = AgencyDetails(
+          None,
+          None,
+          None,
+          agencyDetails.agencyAddress
+        )
         val agencyDetailsUpdateRequestAddressOnly: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsAddressOnly)
         val hipAmendPayload = agencyDetailsUpdateRequestAddressOnly.toHipAmendPayload(oldRecord, true)(logger)
 
@@ -467,7 +486,7 @@ extends UnitSpec {
         assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(hipAmendPayload, oldRecord)
         assertMMTARFieldsSetAsAcceptedInPayload(hipAmendPayload)
 
-      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated" in :
+      "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated" in:
         val agencyDetailsUpdateRequest: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetails)
         val hipAmendPayload = agencyDetailsUpdateRequest.toHipAmendPayload(oldRecord, true)(logger)
 
