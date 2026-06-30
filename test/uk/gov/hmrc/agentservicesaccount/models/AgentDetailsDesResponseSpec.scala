@@ -22,6 +22,8 @@ import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
+import uk.gov.hmrc.agentservicesaccount.models.UpdateStatus.ACCEPTED
+import uk.gov.hmrc.agentservicesaccount.models.UpdateStatus.REJECTED
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.*
 
@@ -74,7 +76,9 @@ extends UnitSpec:
     agencyDetails = Some(testAgencyDetails),
     suspensionDetails = Some(testSuspension),
     isAnIndividual = Some(false),
-    amlsDetails = Some(testAmlsDetails)
+    amlsDetails = Some(testAmlsDetails),
+    updateDetailsStatus = Some(ACCEPTED),
+    amlSupervisionUpdateStatus = Some(REJECTED)
   )
 
   "AgentDetailsDesResponse" should {
@@ -110,7 +114,9 @@ extends UnitSpec:
           "supervisoryBody" -> "HMRC",
           "membershipNumber" -> "AMLS123",
           "evidenceObjectReference" -> "evidence-ref-001"
-        )
+        ),
+        "updateDetailsStatus" -> "ACCEPTED",
+        "amlSupervisionUpdateStatus" -> "REJECTED"
       )
 
       val result = Json.fromJson[AgentDetailsDesResponse](json).get
@@ -141,5 +147,27 @@ extends UnitSpec:
       val json = Json.toJson(partial)
       val result = Json.fromJson[AgentDetailsDesResponse](json).get
       result mustBe partial
+    }
+
+    "create HipAmendPayload UpdateStatus defaults to ACCEPTED" in {
+      val agencyDetailsUpdateStatus = AgentDetailsDesResponse(
+        uniqueTaxReference = None,
+        agencyDetails = None,
+        suspensionDetails = None,
+        isAnIndividual = None,
+        updateDetailsStatus = Some(UpdateStatus.ACCEPTED),
+        amlSupervisionUpdateStatus = Some(UpdateStatus.REJECTED),
+        directorPartnerUpdateStatus = None,
+        acceptNewTermsStatus = None,
+        reriskStatus = None
+      )
+      val expected = HipAmendPayload(
+        updateDetailsStatus = Some(UpdateStatus.ACCEPTED),
+        amlSupervisionUpdateStatus = Some(UpdateStatus.REJECTED),
+        directorPartnerUpdateStatus = Some(UpdateStatus.ACCEPTED),
+        acceptNewTermsStatus = Some(UpdateStatus.ACCEPTED),
+        reriskStatus = Some(UpdateStatus.ACCEPTED)
+      )
+      agencyDetailsUpdateStatus.toInitHipAmendPayload mustBe expected
     }
   }
