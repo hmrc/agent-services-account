@@ -31,11 +31,11 @@ case class AgentDetailsDesResponse(
   suspensionDetails: Option[SuspensionDetails],
   isAnIndividual: Option[Boolean],
   amlsDetails: Option[AmlsDetails] = None,
-  updateDetailsStatus: Option[String] = None,
-  amlSupervisionUpdateStatus: Option[String] = None,
-  directorPartnerUpdateStatus: Option[String] = None,
-  acceptNewTermsStatus: Option[String] = None,
-  reriskStatus: Option[String] = None
+  updateDetailsStatus: Option[UpdateStatus] = None,
+  amlSupervisionUpdateStatus: Option[UpdateStatus] = None,
+  directorPartnerUpdateStatus: Option[UpdateStatus] = None,
+  acceptNewTermsStatus: Option[UpdateStatus] = None,
+  reriskStatus: Option[UpdateStatus] = None
 ) {
   private[models] def toInitHipAmendPayload: HipAmendPayload = {
     HipAmendPayload(
@@ -51,11 +51,11 @@ case class AgentDetailsDesResponse(
       supervisoryBody = amlsDetails.map(_.supervisoryBody.toString),
       membershipNumber = amlsDetails.map(_.membershipNumber.toString),
       evidenceObjectReference = amlsDetails.flatMap(_.evidenceObjectReference).map(_.toString),
-      updateDetailsStatus = Some(updateDetailsStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
-      amlSupervisionUpdateStatus = Some(amlSupervisionUpdateStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
-      directorPartnerUpdateStatus = Some(directorPartnerUpdateStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
-      acceptNewTermsStatus = Some(acceptNewTermsStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
-      reriskStatus = Some(reriskStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED))
+      updateDetailsStatus = Some(updateDetailsStatus.getOrElse(ACCEPTED)),
+      amlSupervisionUpdateStatus = Some(amlSupervisionUpdateStatus.getOrElse(ACCEPTED)),
+      directorPartnerUpdateStatus = Some(directorPartnerUpdateStatus.getOrElse(ACCEPTED)),
+      acceptNewTermsStatus = Some(acceptNewTermsStatus.getOrElse(ACCEPTED)),
+      reriskStatus = Some(reriskStatus.getOrElse(ACCEPTED))
     )
   }
 }
@@ -75,11 +75,11 @@ object AgentDetailsDesResponse {
       .and((__ \ "suspensionDetails").formatNullable[SuspensionDetails])
       .and((__ \ "isAnIndividual").formatNullable[Boolean])
       .and((__ \ "amlsDetails").formatNullable[AmlsDetails](using AmlsDetails.amlsDetailsDatabaseFormat))
-      .and((__ \ "updateDetailsStatus").formatNullable[String])
-      .and((__ \ "amlSupervisionUpdateStatus").formatNullable[String])
-      .and((__ \ "directorPartnerUpdateStatus").formatNullable[String])
-      .and((__ \ "acceptNewTermsStatus").formatNullable[String])
-      .and((__ \ "reriskStatus").formatNullable[String])(
+      .and((__ \ "updateDetailsStatus").formatNullable[UpdateStatus])
+      .and((__ \ "amlSupervisionUpdateStatus").formatNullable[UpdateStatus])
+      .and((__ \ "directorPartnerUpdateStatus").formatNullable[UpdateStatus])
+      .and((__ \ "acceptNewTermsStatus").formatNullable[UpdateStatus])
+      .and((__ \ "reriskStatus").formatNullable[UpdateStatus])(
         AgentDetailsDesResponse.apply,
         adr =>
           (
