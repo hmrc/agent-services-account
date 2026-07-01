@@ -25,7 +25,14 @@ import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, AmlsDetails, BusinessAddress, HipAgentSubscriptionResponse, HipAmendPayload, HipAmendResponse, UpdateStatus}
+import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails
+import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
+import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
+import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
+import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
+import uk.gov.hmrc.agentservicesaccount.models.UpdateStatus
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider

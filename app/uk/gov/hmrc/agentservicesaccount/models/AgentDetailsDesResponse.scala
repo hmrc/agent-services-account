@@ -52,9 +52,9 @@ case class AgentDetailsDesResponse(
       membershipNumber = amlsDetails.map(_.membershipNumber.toString),
       evidenceObjectReference = amlsDetails.flatMap(_.evidenceObjectReference).map(_.toString),
       updateDetailsStatus = Some(updateDetailsStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
-      amlSupervisionUpdateStatus =  Some(amlSupervisionUpdateStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
-      directorPartnerUpdateStatus =  Some(directorPartnerUpdateStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
-      acceptNewTermsStatus =  Some(acceptNewTermsStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
+      amlSupervisionUpdateStatus = Some(amlSupervisionUpdateStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
+      directorPartnerUpdateStatus = Some(directorPartnerUpdateStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
+      acceptNewTermsStatus = Some(acceptNewTermsStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED)),
       reriskStatus = Some(reriskStatus.map(_.asInstanceOf[UpdateStatus]).getOrElse(ACCEPTED))
     )
   }
@@ -81,7 +81,19 @@ object AgentDetailsDesResponse {
       .and((__ \ "acceptNewTermsStatus").formatNullable[String])
       .and((__ \ "reriskStatus").formatNullable[String])(
         AgentDetailsDesResponse.apply,
-        adr => (adr.uniqueTaxReference, adr.agencyDetails, adr.suspensionDetails, adr.isAnIndividual, adr.amlsDetails, adr.updateDetailsStatus, adr.amlSupervisionUpdateStatus, adr.directorPartnerUpdateStatus, adr.acceptNewTermsStatus, adr.reriskStatus)
+        adr =>
+          (
+            adr.uniqueTaxReference,
+            adr.agencyDetails,
+            adr.suspensionDetails,
+            adr.isAnIndividual,
+            adr.amlsDetails,
+            adr.updateDetailsStatus,
+            adr.amlSupervisionUpdateStatus,
+            adr.directorPartnerUpdateStatus,
+            adr.acceptNewTermsStatus,
+            adr.reriskStatus
+          )
       )
 
 }
