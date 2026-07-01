@@ -247,7 +247,7 @@ extends Logging:
         )
       case optWorkItem =>
         enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).flatMap {
-          case enrolments if enrolments.exists(e => e.service == regime.enrolmentKey) =>
+          case enrolments if enrolments.exists(e => e.service == regime.enrolmentKey && e.state == "Activated") =>
             Future.successful(
               SubscriptionInfo(
                 regime = regime,
