@@ -64,6 +64,18 @@ object AgentDetailsDesResponse {
 
   given agentRecordDetailsFormat: OFormat[AgentDetailsDesResponse] = Json.format[AgentDetailsDesResponse]
 
+  private val safeNullableUpdateStatusFormat: Format[Option[UpdateStatus]] = Format(
+    Reads {
+      case JsNull => JsSuccess(None)
+      case JsString(s) => JsSuccess(UpdateStatus.values.find(_.toString == s.trim))
+      case _ => JsSuccess(None)
+    },
+    Writes {
+      case Some(status) => JsString(status.toString)
+      case None => JsNull
+    }
+  )
+
   def agentRecordDatabaseDetailsFormat(using crypto: Encrypter & Decrypter): Format[AgentDetailsDesResponse] =
     (__ \ "uniqueTaxReference")
       .formatNullable[String](using stringEncrypterDecrypter)
@@ -75,11 +87,11 @@ object AgentDetailsDesResponse {
       .and((__ \ "suspensionDetails").formatNullable[SuspensionDetails])
       .and((__ \ "isAnIndividual").formatNullable[Boolean])
       .and((__ \ "amlsDetails").formatNullable[AmlsDetails](using AmlsDetails.amlsDetailsDatabaseFormat))
-      .and((__ \ "updateDetailsStatus").formatNullable[UpdateStatus])
-      .and((__ \ "amlSupervisionUpdateStatus").formatNullable[UpdateStatus])
-      .and((__ \ "directorPartnerUpdateStatus").formatNullable[UpdateStatus])
-      .and((__ \ "acceptNewTermsStatus").formatNullable[UpdateStatus])
-      .and((__ \ "reriskStatus").formatNullable[UpdateStatus])(
+      .and((__ \ "updateDetailsStatus").format[Option[UpdateStatus]](using safeNullableUpdateStatusFormat))
+      .and((__ \ "amlSupervisionUpdateStatus").format[Option[UpdateStatus]](using safeNullableUpdateStatusFormat))
+      .and((__ \ "directorPartnerUpdateStatus").format[Option[UpdateStatus]](using safeNullableUpdateStatusFormat))
+      .and((__ \ "acceptNewTermsStatus").format[Option[UpdateStatus]](using safeNullableUpdateStatusFormat))
+      .and((__ \ "reriskStatus").format[Option[UpdateStatus]](using safeNullableUpdateStatusFormat))(
         AgentDetailsDesResponse.apply,
         adr =>
           (

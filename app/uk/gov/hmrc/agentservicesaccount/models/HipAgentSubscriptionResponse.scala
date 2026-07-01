@@ -54,6 +54,11 @@ object HipAgentSubscriptionResponse {
     case other => other
   }
 
+  private def safeReadNullableUpdateStatus(path: JsPath): Reads[Option[UpdateStatus]] = path.readNullable[String].map {
+    case Some(s) => UpdateStatus.values.find(_.toString == s.trim)
+    case _ => None
+  }
+
   private val utrReads: Reads[Option[String]] = (__ \ "utr").readNullable[JsValue].map {
     case Some(JsNumber(n)) => Some(n.toString)
     case Some(JsString(s)) if s.trim.nonEmpty => Some(s)
@@ -85,11 +90,11 @@ object HipAgentSubscriptionResponse {
         readNullableString(__ \ "supervisoryBody") and
         readNullableString(__ \ "membershipNumber") and
         readNullableString(__ \ "evidenceObjectReference") and
-        (__ \ "updateDetailsStatus").readNullable[UpdateStatus] and
-        (__ \ "amlSupervisionUpdateStatus").readNullable[UpdateStatus] and
-        (__ \ "directorPartnerUpdateStatus").readNullable[UpdateStatus] and
-        (__ \ "acceptNewTermsStatus").readNullable[UpdateStatus] and
-        (__ \ "reriskStatus").readNullable[UpdateStatus]
+        safeReadNullableUpdateStatus(__ \ "updateDetailsStatus") and
+        safeReadNullableUpdateStatus(__ \ "amlSupervisionUpdateStatus") and
+        safeReadNullableUpdateStatus(__ \ "directorPartnerUpdateStatus") and
+        safeReadNullableUpdateStatus(__ \ "acceptNewTermsStatus") and
+        safeReadNullableUpdateStatus(__ \ "reriskStatus")
     )(HipAgentSubscriptionSuccess.apply)
 
   given Reads[HipAgentSubscriptionResponse] = (__ \ "success").read[HipAgentSubscriptionSuccess]

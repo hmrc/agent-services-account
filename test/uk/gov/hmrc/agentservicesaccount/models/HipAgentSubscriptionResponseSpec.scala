@@ -109,3 +109,40 @@ extends UnitSpec:
       response.success.addr3 shouldBe Some("Town Centre")
       response.success.addr4 shouldBe Some("Telford")
       response.success.postcode shouldBe Some("TF3 4ER")
+
+    "parse UpdateStatus successfully" in:
+      val statusFields = Json.obj(
+        "updateDetailsStatus" -> "ACCEPTED",
+        "amlSupervisionUpdateStatus" -> "PENDING",
+        "directorPartnerUpdateStatus" -> "REQUIRED",
+        "acceptNewTermsStatus" -> "REJECTED"
+      )
+
+      val response = Json.obj(
+        "success" -> (baseSuccessJson ++ statusFields)
+      ).as[HipAgentSubscriptionResponse]
+
+      response.success.updateDetailsStatus shouldBe Some(UpdateStatus.ACCEPTED)
+      response.success.amlSupervisionUpdateStatus shouldBe Some(UpdateStatus.PENDING)
+      response.success.directorPartnerUpdateStatus shouldBe Some(UpdateStatus.REQUIRED)
+      response.success.acceptNewTermsStatus shouldBe Some(UpdateStatus.REJECTED)
+      response.success.reriskStatus shouldBe None
+
+    "parse invalid UpdateStatus values as None" in:
+      val statusFields = Json.obj(
+        "updateDetailsStatus" -> " ",
+        "amlSupervisionUpdateStatus" -> "",
+        "directorPartnerUpdateStatus" -> "NOT_VALID",
+        "acceptNewTermsStatus" -> "null",
+        "reriskStatus" -> "ACCEPTED    "
+      )
+
+      val response = Json.obj(
+        "success" -> (baseSuccessJson ++ statusFields)
+      ).as[HipAgentSubscriptionResponse]
+
+      response.success.updateDetailsStatus shouldBe None
+      response.success.amlSupervisionUpdateStatus shouldBe None
+      response.success.directorPartnerUpdateStatus shouldBe None
+      response.success.acceptNewTermsStatus shouldBe None
+      response.success.reriskStatus shouldBe Some(UpdateStatus.ACCEPTED)

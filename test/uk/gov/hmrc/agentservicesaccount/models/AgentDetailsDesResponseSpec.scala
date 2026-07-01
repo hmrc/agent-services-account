@@ -90,6 +90,8 @@ extends UnitSpec:
       (json \ "amlsDetails" \ "supervisoryBody").as[String] mustBe "HMRC"
       (json \ "amlsDetails" \ "membershipNumber").as[String] mustBe "AMLS123"
       (json \ "amlsDetails" \ "evidenceObjectReference").as[String] mustBe "evidence-ref-001"
+      (json \ "updateDetailsStatus").as[String] mustBe "ACCEPTED"
+      (json \ "amlSupervisionUpdateStatus").as[String] mustBe "REJECTED"
     }
 
     "deserialize from JSON using the standard format" in {
@@ -129,12 +131,35 @@ extends UnitSpec:
       (encrypted \ "amlsDetails" \ "supervisoryBody").as[String] must startWith("ENC(")
       (encrypted \ "amlsDetails" \ "membershipNumber").as[String] must startWith("ENC(")
       (encrypted \ "amlsDetails" \ "evidenceObjectReference").as[String] must startWith("ENC(")
+      (encrypted \ "updateDetailsStatus").as[String] mustBe "ACCEPTED"
+      (encrypted \ "amlSupervisionUpdateStatus").as[String] mustBe "REJECTED"
+      (encrypted \ "directorPartnerUpdateStatus").get mustBe JsNull
+      (encrypted \ "acceptNewTermsStatus").get mustBe JsNull
+      (encrypted \ "reriskStatus").get mustBe JsNull
     }
 
     "deserialize from encrypted JSON" in {
       val encrypted = Json.toJson(testAgentDetails)(using AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat)
       val roundtrip = Json.fromJson[AgentDetailsDesResponse](encrypted)(using AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat).get
       roundtrip mustBe testAgentDetails
+    }
+
+    "deserialize from database JSON where UpdateStatus value is not valid" in {
+      val encrypted = Json.obj(
+        "updateDetailsStatus" -> " ",
+        "amlSupervisionUpdateStatus" -> "",
+        "directorPartnerUpdateStatus" -> JsNull,
+        "acceptNewTermsStatus" -> "INVALID",
+        "reriskStatus" -> "ACCEPTED   "
+      )
+
+      val result = Json.fromJson[AgentDetailsDesResponse](encrypted)(using AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat).get
+
+      result.updateDetailsStatus mustBe None
+      result.amlSupervisionUpdateStatus mustBe None
+      result.directorPartnerUpdateStatus mustBe None
+      result.acceptNewTermsStatus mustBe None
+      result.reriskStatus mustBe Some(UpdateStatus.ACCEPTED)
     }
 
     "support partial objects" in {

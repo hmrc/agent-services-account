@@ -22,7 +22,7 @@ import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import play.api.Configuration
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.agentmtdidentifiers.model.{SuspensionDetails, Utr}
-import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress}
+import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress, UpdateStatus}
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
 import uk.gov.hmrc.crypto.{Crypted, Decrypter, Encrypter, PlainText}
@@ -88,7 +88,12 @@ class AgentDetailsCacheRepositoryISpec
     uniqueTaxReference = Some(Utr("aa123456789")),
     agencyDetails = Some(agencyDetails),
     suspensionDetails = Some(suspensionDetails),
-    isAnIndividual = Some(true)
+    isAnIndividual = Some(true),
+    updateDetailsStatus = Some(UpdateStatus.ACCEPTED),
+    amlSupervisionUpdateStatus = Some(UpdateStatus.REJECTED),
+    directorPartnerUpdateStatus = Some(UpdateStatus.REQUIRED),
+    acceptNewTermsStatus = Some(UpdateStatus.PENDING),
+    reriskStatus = None
   )
 
   private val agentDetailsEncryptedJson: JsValue = Json.parse("""
@@ -114,7 +119,12 @@ class AgentDetailsCacheRepositoryISpec
                                                                 |        "ALL"
                                                                 |      ]
                                                                 |    },
-                                                                |    "isAnIndividual": true
+                                                                |    "isAnIndividual": true,
+                                                                |    "updateDetailsStatus" : "ACCEPTED",
+                                                                |    "amlSupervisionUpdateStatus" : "REJECTED",
+                                                                |    "directorPartnerUpdateStatus": "REQUIRED",
+                                                                |    "acceptNewTermsStatus": "PENDING",
+                                                                |    "reriskStatus": null
                                                                 |  }
                                                                 |}
                                                                 |""".stripMargin)
