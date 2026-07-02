@@ -92,6 +92,9 @@ extends UnitSpec:
       (json \ "amlsDetails" \ "evidenceObjectReference").as[String] mustBe "evidence-ref-001"
       (json \ "updateDetailsStatus").as[String] mustBe "ACCEPTED"
       (json \ "amlSupervisionUpdateStatus").as[String] mustBe "REJECTED"
+      (json \ "directorPartnerUpdateStatus").isDefined mustBe false
+      (json \ "acceptNewTermsStatus").isDefined mustBe false
+      (json \ "reriskStatus").isDefined mustBe false
     }
 
     "deserialize from JSON using the standard format" in {
