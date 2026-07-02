@@ -64,6 +64,11 @@ object AgentDetailsDesResponse {
 
   given agentRecordDetailsFormat: OFormat[AgentDetailsDesResponse] = Json.format[AgentDetailsDesResponse]
 
+  private def safeNullableUpdateStatusFormat(fieldName: String): OFormat[Option[UpdateStatus]] = OFormat(
+    (__ \ fieldName).readNullable[String].map(_.flatMap(updateStatus => UpdateStatus.values.find(_.toString == updateStatus.trim))),
+    (__ \ fieldName).writeNullable[UpdateStatus]
+  )
+
   def agentRecordDatabaseDetailsFormat(using crypto: Encrypter & Decrypter): Format[AgentDetailsDesResponse] =
     (__ \ "uniqueTaxReference")
       .formatNullable[String](using stringEncrypterDecrypter)
@@ -75,11 +80,11 @@ object AgentDetailsDesResponse {
       .and((__ \ "suspensionDetails").formatNullable[SuspensionDetails])
       .and((__ \ "isAnIndividual").formatNullable[Boolean])
       .and((__ \ "amlsDetails").formatNullable[AmlsDetails](using AmlsDetails.amlsDetailsDatabaseFormat))
-      .and((__ \ "updateDetailsStatus").formatNullable[UpdateStatus])
-      .and((__ \ "amlSupervisionUpdateStatus").formatNullable[UpdateStatus])
-      .and((__ \ "directorPartnerUpdateStatus").formatNullable[UpdateStatus])
-      .and((__ \ "acceptNewTermsStatus").formatNullable[UpdateStatus])
-      .and((__ \ "reriskStatus").formatNullable[UpdateStatus])(
+      .and(safeNullableUpdateStatusFormat("updateDetailsStatus"))
+      .and(safeNullableUpdateStatusFormat("amlSupervisionUpdateStatus"))
+      .and(safeNullableUpdateStatusFormat("directorPartnerUpdateStatus"))
+      .and(safeNullableUpdateStatusFormat("acceptNewTermsStatus"))
+      .and(safeNullableUpdateStatusFormat("reriskStatus"))(
         AgentDetailsDesResponse.apply,
         adr =>
           (

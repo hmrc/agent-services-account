@@ -15,10 +15,10 @@ This service is tested by the following automated test repositories:
 - [agent-services-performance-tests](https://github.com/hmrc/agent-services-account-performance-tests)
 
 ## Running the app locally
-
-    sm2 --start AGENT_ONBOARDING
-    sm2 --stop AGENT_SUBSCRIPTION
-    sbt -Dwork-item-jobs.sa-robotics.enabled=true run
+    
+    ./run.sh
+    sm2 --start AGENT_MANAGE_ACCOUNT
+    
 
 ## Endpoints
 
