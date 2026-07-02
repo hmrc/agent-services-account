@@ -133,9 +133,9 @@ extends UnitSpec:
       (encrypted \ "amlsDetails" \ "evidenceObjectReference").as[String] must startWith("ENC(")
       (encrypted \ "updateDetailsStatus").as[String] mustBe "ACCEPTED"
       (encrypted \ "amlSupervisionUpdateStatus").as[String] mustBe "REJECTED"
-      (encrypted \ "directorPartnerUpdateStatus").get mustBe JsNull
-      (encrypted \ "acceptNewTermsStatus").get mustBe JsNull
-      (encrypted \ "reriskStatus").get mustBe JsNull
+      (encrypted \ "directorPartnerUpdateStatus").isDefined mustBe false
+      (encrypted \ "acceptNewTermsStatus").isDefined mustBe false
+      (encrypted \ "reriskStatus").isDefined mustBe false
     }
 
     "deserialize from encrypted JSON" in {

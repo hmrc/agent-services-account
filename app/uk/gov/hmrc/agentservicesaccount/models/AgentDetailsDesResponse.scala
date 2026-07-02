@@ -64,16 +64,9 @@ object AgentDetailsDesResponse {
 
   given agentRecordDetailsFormat: OFormat[AgentDetailsDesResponse] = Json.format[AgentDetailsDesResponse]
 
-  private val safeNullableUpdateStatusFormat: Format[Option[UpdateStatus]] = Format(
-    Reads {
-      case JsNull => JsSuccess(None)
-      case JsString(s) => JsSuccess(UpdateStatus.values.find(_.toString == s.trim))
-      case _ => JsSuccess(None)
-    },
-    Writes {
-      case Some(status) => JsString(status.toString)
-      case None => JsNull
-    }
+  private def safeNullableUpdateStatusFormat(fieldName: String): OFormat[Option[UpdateStatus]] = OFormat(
+    (__ \ fieldName).readNullable[String].map(_.flatMap(updateStatus => UpdateStatus.values.find(_.toString == updateStatus.trim))),
+    (__ \ fieldName).writeNullable[UpdateStatus]
   )
 
   def agentRecordDatabaseDetailsFormat(using crypto: Encrypter & Decrypter): Format[AgentDetailsDesResponse] =
@@ -87,11 +80,11 @@ object AgentDetailsDesResponse {
       .and((__ \ "suspensionDetails").formatNullable[SuspensionDetails])
       .and((__ \ "isAnIndividual").formatNullable[Boolean])
       .and((__ \ "amlsDetails").formatNullable[AmlsDetails](using AmlsDetails.amlsDetailsDatabaseFormat))
-      .and((__ \ "updateDetailsStatus").format[Option[UpdateStatus]](using safeNullableUpdateStatusFormat))
-      .and((__ \ "amlSupervisionUpdateStatus").format[Option[UpdateStatus]](using safeNullableUpdateStatusFormat))
-      .and((__ \ "directorPartnerUpdateStatus").format[Option[UpdateStatus]](using safeNullableUpdateStatusFormat))
-      .and((__ \ "acceptNewTermsStatus").format[Option[UpdateStatus]](using safeNullableUpdateStatusFormat))
-      .and((__ \ "reriskStatus").format[Option[UpdateStatus]](using safeNullableUpdateStatusFormat))(
+      .and(safeNullableUpdateStatusFormat("updateDetailsStatus"))
+      .and(safeNullableUpdateStatusFormat("amlSupervisionUpdateStatus"))
+      .and(safeNullableUpdateStatusFormat("directorPartnerUpdateStatus"))
+      .and(safeNullableUpdateStatusFormat("acceptNewTermsStatus"))
+      .and(safeNullableUpdateStatusFormat("reriskStatus"))(
         AgentDetailsDesResponse.apply,
         adr =>
           (

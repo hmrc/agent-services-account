@@ -123,8 +123,7 @@ class AgentDetailsCacheRepositoryISpec
                                                                 |    "updateDetailsStatus" : "ACCEPTED",
                                                                 |    "amlSupervisionUpdateStatus" : "REJECTED",
                                                                 |    "directorPartnerUpdateStatus": "REQUIRED",
-                                                                |    "acceptNewTermsStatus": "PENDING",
-                                                                |    "reriskStatus": null
+                                                                |    "acceptNewTermsStatus": "PENDING"
                                                                 |  }
                                                                 |}
                                                                 |""".stripMargin)
