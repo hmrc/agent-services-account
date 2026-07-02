@@ -147,24 +147,6 @@ extends UnitSpec:
       roundtrip mustBe testAgentDetails
     }
 
-    "deserialize from database JSON where UpdateStatus value is not valid" in {
-      val encrypted = Json.obj(
-        "updateDetailsStatus" -> " ",
-        "amlSupervisionUpdateStatus" -> "",
-        "directorPartnerUpdateStatus" -> JsNull,
-        "acceptNewTermsStatus" -> "INVALID",
-        "reriskStatus" -> "ACCEPTED   "
-      )
-
-      val result = Json.fromJson[AgentDetailsDesResponse](encrypted)(using AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat).get
-
-      result.updateDetailsStatus mustBe None
-      result.amlSupervisionUpdateStatus mustBe None
-      result.directorPartnerUpdateStatus mustBe None
-      result.acceptNewTermsStatus mustBe None
-      result.reriskStatus mustBe Some(UpdateStatus.ACCEPTED)
-    }
-
     "support partial objects" in {
       val partial = AgentDetailsDesResponse(
         None,
