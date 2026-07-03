@@ -1,14 +1,14 @@
-import sbt._
+import sbt.*
 
 object AppDependencies {
 
-  private val bootstrapVersion     = "10.7.0"
+  private val bootstrapVersion     = "10.8.0"
   private val hmrcMongoVersion     = "2.12.0"
-  private val openHtmlToPdfVersion = "1.1.31"
+  private val openHtmlToPdfVersion = "1.1.37"
   private val pekkoVer = "1.0.3"
   private val playVer: String = "play-30"
 
-  val compile = Seq(
+  val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"            %% s"bootstrap-backend-$playVer"         % bootstrapVersion,
     "uk.gov.hmrc.mongo"      %% s"hmrc-mongo-work-item-repo-$playVer" % hmrcMongoVersion,
     "uk.gov.hmrc"            %% s"agent-mtd-identifiers"             % "3.0.0",
@@ -18,12 +18,12 @@ object AppDependencies {
     "io.github.samueleresca" %% "pekko-quartz-scheduler"            % "1.2.2-pekko-1.0.x"
   )
 
-  val test = Seq(
+  val test: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"       %% s"bootstrap-test-$playVer"  % bootstrapVersion % Test,
     "uk.gov.hmrc.mongo" %% s"hmrc-mongo-test-$playVer" % hmrcMongoVersion % Test,
     "org.apache.pekko" %% "pekko-actor-testkit-typed"% pekkoVer         % Test,
-    "org.scalamock"     %% "scalamock"               % "7.5.0"          % Test,
+    "org.scalamock"     %% "scalamock"               % "7.5.5"          % Test,
   )
 
-  val it = Seq.empty
+  val it: Seq[Nothing] = Seq.empty
 }
