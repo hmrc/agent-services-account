@@ -166,7 +166,7 @@ class EnrolmentStoreProxyConnector @Inject() (
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
 
     http
-      .delete(url"$baseUrl/tax-enrolments/groups/${groupId.value}/enrolments/$enrolmentKey")
+      .delete(url"$baseUrl/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments/$enrolmentKey")
       .execute[HttpResponse]
       .map { response =>
         response.status match {
