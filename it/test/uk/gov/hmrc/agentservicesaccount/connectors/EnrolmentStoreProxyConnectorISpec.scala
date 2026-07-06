@@ -126,7 +126,7 @@ with EnrolmentStoreProxyStubs {
       connector.deallocateAgentEnrolment(testGroupId, SA, "A12345").futureValue
     }
 
-    "throw error when tax-enrolments returns an error" in {
+    "throw error when enrolment-store-proxy returns an error" in {
       givenEs9CallFails(testGroupId, SA, "A12345")
 
       intercept[TestFailedException](connector.deallocateAgentEnrolment(testGroupId, SA, "A12345").futureValue)

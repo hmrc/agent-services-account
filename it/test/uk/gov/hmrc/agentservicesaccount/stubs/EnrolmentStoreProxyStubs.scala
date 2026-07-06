@@ -87,7 +87,7 @@ trait EnrolmentStoreProxyStubs:
   ): Unit = {
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
     stubFor(
-      delete(urlEqualTo(s"/tax-enrolments/groups/${groupId.value}/enrolments/$enrolmentKey"))
+      delete(urlEqualTo(s"/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments/$enrolmentKey"))
         .willReturn(
           aResponse()
             .withStatus(204)
@@ -102,7 +102,7 @@ trait EnrolmentStoreProxyStubs:
   ): Unit = {
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
     stubFor(
-      delete(urlEqualTo(s"/tax-enrolments/groups/${groupId.value}/enrolments/$enrolmentKey"))
+      delete(urlEqualTo(s"/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments/$enrolmentKey"))
         .willReturn(
           aResponse()
             .withStatus(500)

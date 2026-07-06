@@ -106,7 +106,8 @@ extends Logging:
         done <- workItemService.complete(workItem)
       } yield done
     case AllocationOutcome.MissingEnrolment => Future.failed(new RuntimeException("Could not find enrolment while dealing with MultipleEnrolmentsConflict"))
-    case AllocationOutcome.MissingAgentReference => Future.failed(new RuntimeException("Could not find agent reference in inactive enrolment while dealing with MultipleEnrolmentsConflict"))
+    case AllocationOutcome.MissingAgentReference =>
+      Future.failed(new RuntimeException("Could not find agent reference in inactive enrolment while dealing with MultipleEnrolmentsConflict"))
     case AllocationOutcome.AlreadySubscribed => Future.successful(Done)
   }
 
