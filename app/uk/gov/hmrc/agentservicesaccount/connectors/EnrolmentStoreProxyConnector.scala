@@ -36,6 +36,7 @@ import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
+import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.hc
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpResponse
@@ -59,15 +60,13 @@ class EnrolmentStoreProxyConnector @Inject() (
    */
   def queryEnrolmentsAllocatedToGroup(
     groupId: GroupId
-  )(using
-    request: RequestHeader
-  ): Future[List[Enrolment]] = {
+  )(using request: RequestHeader): Future[List[Enrolment]] =
     val url = url"$baseUrl/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments?type=principal"
     http
       .get(url)
       .execute[HttpResponse]
       .map { response =>
-        response.status match {
+        response.status match
           case OK => (response.json \ "enrolments").as[List[Enrolment]]
           case NO_CONTENT => Nil
           case other =>
@@ -76,9 +75,7 @@ class EnrolmentStoreProxyConnector @Inject() (
               other,
               other
             )
-        }
       }
-  }
 
   def queryKnownFactsForAgent(
     regime: LegacyRegime,
@@ -130,6 +127,7 @@ class EnrolmentStoreProxyConnector @Inject() (
           )
     }
 
+  // ES8
   def allocateAgentEnrolment(
     regime: LegacyRegime,
     groupId: GroupId,
@@ -149,6 +147,30 @@ class EnrolmentStoreProxyConnector @Inject() (
       .map { response =>
         response.status match {
           case CREATED => ()
+          case status =>
+            throw UpstreamErrorResponse(
+              response.body,
+              status,
+              status
+            )
+        }
+      }
+  }
+
+  // ES9
+  def deallocateAgentEnrolment(
+    groupId: GroupId,
+    regime: LegacyRegime,
+    agentReference: String
+  )(using HeaderCarrier): Future[Unit] = {
+    val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
+
+    http
+      .delete(url"$baseUrl/tax-enrolments/groups/${groupId.value}/enrolments/$enrolmentKey")
+      .execute[HttpResponse]
+      .map { response =>
+        response.status match {
+          case NO_CONTENT => ()
           case status =>
             throw UpstreamErrorResponse(
               response.body,

@@ -258,7 +258,11 @@ with BeforeAndAfterEach {
       "fail when SA enrolment already exists on the group" in {
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(
-          Future.successful(List(Enrolment(service = LegacyRegime.SA.enrolmentKey, state = "Activated")))
+          Future.successful(List(Enrolment(
+            service = LegacyRegime.SA.enrolmentKey,
+            state = "Activated",
+            identifiers = Seq.empty
+          )))
         )
 
         val ex =
@@ -361,7 +365,11 @@ with BeforeAndAfterEach {
       "fail when SA enrolment already exists on the group" in {
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(
-          Future.successful(List(Enrolment(service = LegacyRegime.CT.enrolmentKey, state = "Activated")))
+          Future.successful(List(Enrolment(
+            service = LegacyRegime.CT.enrolmentKey,
+            state = "Activated",
+            identifiers = Seq.empty
+          )))
         )
 
         val ex =

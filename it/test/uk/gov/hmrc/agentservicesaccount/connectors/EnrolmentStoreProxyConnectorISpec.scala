@@ -23,7 +23,7 @@ import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.{CT, PAYE, SA}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
-import uk.gov.hmrc.agentservicesaccount.models.{Enrolment, Es20Enrolment, Es20Response, GroupId}
+import uk.gov.hmrc.agentservicesaccount.models.{Enrolment, Es20Enrolment, Es20Response, GroupId, Identifier}
 import uk.gov.hmrc.agentservicesaccount.stubs.EnrolmentStoreProxyStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.http.HeaderCarrier
@@ -46,9 +46,9 @@ with EnrolmentStoreProxyStubs {
       val result = connector.queryEnrolmentsAllocatedToGroup(testGroupId).futureValue
 
       result shouldBe Seq(
-        Enrolment(service = SA.enrolmentKey, state = "Activated"),
-        Enrolment(service = CT.enrolmentKey, state = "Activated"),
-        Enrolment(service = PAYE.enrolmentKey, state = "Activated")
+        Enrolment(service = SA.enrolmentKey, state = "Activated", identifiers = Seq(Identifier("AgentReferenceNumber", "TestAgentReferenceNumber"))),
+        Enrolment(service = CT.enrolmentKey, state = "Activated", identifiers = Seq(Identifier("AgentReferenceNumber", "TestAgentReferenceNumber"))),
+        Enrolment(service = PAYE.enrolmentKey, state = "Activated", identifiers = Seq(Identifier("AgentReferenceNumber", "TestAgentReferenceNumber")))
       )
     }
 
@@ -119,4 +119,17 @@ with EnrolmentStoreProxyStubs {
     }
   }
 
+  "ES9" should {
+    "deallocate enrolment successfully" in {
+      givenEs9CallSucceeds(testGroupId, SA, "A12345")
+
+      connector.deallocateAgentEnrolment(testGroupId, SA, "A12345").futureValue
+    }
+
+    "throw error when tax-enrolments returns an error" in {
+      givenEs9CallFails(testGroupId, SA, "A12345")
+
+      intercept[TestFailedException](connector.deallocateAgentEnrolment(testGroupId, SA, "A12345").futureValue)
+    }
+  }
 }

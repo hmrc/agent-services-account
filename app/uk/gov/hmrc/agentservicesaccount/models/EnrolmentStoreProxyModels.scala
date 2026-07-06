@@ -22,7 +22,8 @@ import play.api.libs.json.OFormat
 
 final case class Enrolment(
   service: String,
-  state: String
+  state: String,
+  identifiers: Seq[Identifier]
 )
 
 object Enrolment:
@@ -68,3 +69,17 @@ final case class Es8Request(
 
 object Es8Request:
   given Format[Es8Request] = Json.format[Es8Request]
+
+case class Identifier(
+  key: String,
+  value: String
+) {
+  override def toString: String = s"${key.toUpperCase}~${value.replace(" ", "")}"
+}
+
+object Identifier {
+
+  implicit val format: Format[Identifier] = Json.format[Identifier]
+  implicit val ordering: Ordering[Identifier] = Ordering.by(_.key)
+
+}
