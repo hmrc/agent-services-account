@@ -46,7 +46,8 @@ with BeforeAndAfterEach {
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private val repoConfig = ConfigFactory.parseString(
-    """work-item-repository.subscriptions.retry-in-progress-after = 1s""".stripMargin
+    """work-item-repository.subscriptions.retry-in-progress-after = 1s
+      | work-item-repository.subscriptions.permanently-failed-ttl = 30 days""".stripMargin
   )
 
   private val repository =

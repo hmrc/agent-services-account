@@ -30,8 +30,6 @@ import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemReposit
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.ObservableFuture
-import uk.gov.hmrc.mongo.logging.ObservableFutureImplicits.SingleObservableFuture
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem
@@ -40,6 +38,7 @@ import uk.gov.hmrc.mongo.workitem.WorkItemRepository
 
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -65,6 +64,15 @@ extends WorkItemRepository[SubscriptionWorkItem](
       IndexOptions()
         .name("uniqueArnRegime")
         .unique(true)
+    ),
+    IndexModel(
+      Indexes.ascending("receivedAt"),
+      IndexOptions()
+        .name("permanentlyFailedTtl")
+        .expireAfter(config.getDuration("work-item-repository.subscriptions.permanently-failed-ttl").toDays, TimeUnit.DAYS)
+        .partialFilterExpression(
+          Filters.eq("status", ProcessingStatus.PermanentlyFailed.toString)
+        )
     )
   )
 )
