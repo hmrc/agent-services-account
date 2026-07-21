@@ -21,7 +21,6 @@ import javax.inject.Singleton
 import scala.concurrent.duration.*
 import play.api.Configuration
 import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem
-import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.CESA
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.time.Instant
