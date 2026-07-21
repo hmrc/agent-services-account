@@ -66,7 +66,7 @@ extends WorkItemRepository[SubscriptionWorkItem](
         .unique(true)
     ),
     IndexModel(
-      Indexes.ascending("receivedAt"),
+      Indexes.ascending("updatedAt"),
       IndexOptions()
         .name("permanentlyFailedTtl")
         .expireAfter(config.getDuration("work-item-repository.subscriptions.permanently-failed-ttl").toDays, TimeUnit.DAYS)
