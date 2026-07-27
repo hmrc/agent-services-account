@@ -71,7 +71,7 @@ extends WorkItemRepository[SubscriptionWorkItem](
         .name("permanentlyFailedTtl")
         .expireAfter(config.getDuration("work-item-repository.subscriptions.permanently-failed-ttl").toDays, TimeUnit.DAYS)
         .partialFilterExpression(
-          Filters.eq("status", ProcessingStatus.PermanentlyFailed.toString)
+          Filters.eq("status", ProcessingStatus.PermanentlyFailed)
         )
     )
   )
@@ -81,8 +81,6 @@ with Logging:
   // Unique per (arn, regime) to prevent multiple concurrent subscription attempts for the same regime.
   // Retries after PermanentlyFailed are supported by deleting the old work item and inserting a fresh attempt.
   lazy val coll: MongoCollection[WorkItem[SubscriptionWorkItem]] = collection // necessary to avoid IntelliJ "Cannot resolve symbol 'collection'" error
-
-  override lazy val requiresTtlIndex = false // TODO do we need a TTL to clean up permanently failed items?
 
   override def now(): Instant = Instant.now()
 
