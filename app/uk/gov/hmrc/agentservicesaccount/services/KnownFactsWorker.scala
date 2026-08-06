@@ -52,7 +52,7 @@ extends Logging:
     case Some(workItem) =>
       process(workItem).recoverWith {
         case NonFatal(error) =>
-          logger.warn(s"[KnownFactsWorker] $regime failed for work item ${workItem.id}", error)
+          logger.warn(s"[KnownFactsWorker] $regime failed for work item ${workItem.item.requestId}", error)
           handleFailure(workItem)
       }
   }
@@ -63,11 +63,11 @@ extends Logging:
   ): Future[Done] =
     (regime, workItem.item.agentReference, postcodeFor(workItem.item)) match
       case (_, None, _) =>
-        logger.error(s"[KnownFactsWorker] $regime work item missing agent reference: ${workItem.id}" +
+        logger.error(s"[KnownFactsWorker] $regime work item missing agent reference: ${workItem.item.requestId}" +
           s"(this should not be possible as the mongo query requires an agent reference to be present)")
         handleFailure(workItem)
       case (LegacyRegime.PAYE, Some(_), None) =>
-        logger.warn(s"[KnownFactsWorker] PAYE work item missing usable postcode for ES20 lookup: ${workItem.id}")
+        logger.warn(s"[KnownFactsWorker] PAYE work item missing usable postcode for ES20 lookup: ${workItem.item.requestId}")
         workItemService.markPermanentlyFailed(workItem)
       case (_, Some(agentReference), postcode) =>
         // Local stubs expect auth/session headers; QA/Prod use internal auth and leave these empty.
@@ -82,7 +82,7 @@ extends Logging:
         )
           .flatMap {
             case None =>
-              logger.info(s"[KnownFactsWorker] $regime known facts not available yet for work item: ${workItem.id}")
+              logger.warn(s"[KnownFactsWorker] $regime known facts not available yet for work item: ${workItem.item.requestId}")
               handleFailure(workItem)
             case Some(_) => handleSuccess(workItem, agentReference)
           }
