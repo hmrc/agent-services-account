@@ -89,7 +89,7 @@ with Logging:
       else
         legacySubscriptionService.handleRoboticsCallback(request.body).map {
           case SubscriptionService.CallbackHandling.Handled =>
-            val msg = s"Processed callback for requestId: ${request.body.requestId}"
+            val msg = s"Processed callback for requestId: ${request.body.requestId}, success: ${request.body.status}"
             logger.warn(s"[roboticsCallback] $msg")
             NoContent
           case SubscriptionService.CallbackHandling.NotFound =>
