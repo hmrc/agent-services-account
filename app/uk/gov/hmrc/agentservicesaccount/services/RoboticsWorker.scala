@@ -59,7 +59,7 @@ extends Logging:
     case None => Future.successful(Done)
     case Some(workItem) =>
       process(workItem).recoverWith { case NonFatal(error) =>
-        logger.error(s"[RoboticsWorker] ${regime.toString} robotics invocation failed for work item ${workItem.id}", error)
+        logger.error(s"[RoboticsWorker] ${regime.toString} robotics invocation failed for work item ${workItem.item.requestId}", error)
         // TODO it is unclear how robotics handles duplicate requests that can happen if we receive an error/timeout response but they process the request successfully.
         //  When HIP contract is finalised we should address the possibility of this happening as currently we may continue retrying
         //  Which could either generate multiple robotics cases or fail the work item permanently if we exceed max attempts.
@@ -160,7 +160,7 @@ extends Logging:
     roboticsInvocationConnector
       .invoke(payload, correlationId = correlationId)
       .flatMap { _ =>
-        logger.info(s"[RoboticsWorker] Robotics invoked for $regime, work item: ${workItem.id}")
+        logger.info(s"[RoboticsWorker] Robotics invoked for $regime, work item: ${workItem.item.requestId}")
         workItemService.markAsInvoked(workItem)
       }
   }

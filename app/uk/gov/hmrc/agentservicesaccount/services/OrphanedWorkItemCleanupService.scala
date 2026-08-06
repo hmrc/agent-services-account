@@ -74,10 +74,11 @@ extends Logging {
             regime = item.regime,
             failureReason = reason
           )
+          _ = logger.warn(s"[OrphanedWorkItemCleanupService] Marked work item permanently failed as it did not receive a callback for too long: ${workItem.item.requestId}")
           _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(item)
         } yield Done
       case false =>
-        logger.warn(s"[OrphanedWorkItemCleanupService] Failed to mark work item permanently failed: ${workItem.id}")
+        logger.warn(s"[OrphanedWorkItemCleanupService] Failed to mark work item permanently failed: ${workItem.item.requestId}")
         Future.successful(Done)
     }
   }
