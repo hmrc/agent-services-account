@@ -113,6 +113,7 @@ with Logging {
         .map(_ => response)
     }
 
+//  TODO: 11995 Rename AgentDetailsDesResponse to AgentDetailsResponse?
   private def mapHipToDesModel(
     hipResponse: HipAgentSubscriptionResponse
   ): AgentDetailsDesResponse = {

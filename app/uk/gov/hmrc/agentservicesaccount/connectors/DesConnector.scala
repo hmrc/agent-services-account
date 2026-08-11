@@ -64,6 +64,7 @@ with Logging {
   private val Environment = "Environment"
   private val CorrelationId = "CorrelationId"
 
+//  TODO: 11995 Can I remove this?
   // API #1170 (API#4) Get Agent Record
   def getAgentRecord(arn: Arn)(using request: RequestHeader): Future[AgentDetailsDesResponse] = {
     val url = url"$baseUrl/registration/personal-details/arn/${arn.value}"

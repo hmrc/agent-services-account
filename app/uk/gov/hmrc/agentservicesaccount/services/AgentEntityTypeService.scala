@@ -40,12 +40,11 @@ class AgentEntityTypeService @Inject() (
 extends Logging:
 
   def resolve(arn: Arn)(using request: RequestHeader): Future[String] =
-    val agentRecord =
-//      TODO: 11995 Assume true
-      if appConfig.getAgentRecordViaHIP then
-        hipConnector.getAgentRecord(arn)
-      else
-        desConnector.getAgentRecord(arn)
+    val agentRecord = hipConnector.getAgentRecord(arn)
+//      if appConfig.getAgentRecordViaHIP then
+//        hipConnector.getAgentRecord(arn)
+//      else
+//        desConnector.getAgentRecord(arn)
 
     agentRecord
       .flatMap { record =>

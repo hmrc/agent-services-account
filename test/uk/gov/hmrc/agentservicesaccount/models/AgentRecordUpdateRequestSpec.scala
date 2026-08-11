@@ -160,6 +160,7 @@ extends UnitSpec {
     }
   }
 
+//  TODO: 11995 false tests should be removed
   "toHipAmendPayload" should {
 
     val agencyDetails = AgencyDetails(

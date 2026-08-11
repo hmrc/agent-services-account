@@ -63,12 +63,11 @@ class AgentDetailsService @Inject() (
   )(using request: RequestHeader): Future[EntityCheckResult] = {
 
     for {
-      agentRecord <-
-        //      TODO: 11995 Assume true
-        if (appConfig.getAgentRecordViaHIP)
-          hipConnector.getAgentRecord(arn)
-        else
-          desConnector.getAgentRecord(arn)
+      agentRecord <- hipConnector.getAgentRecord(arn)
+//        if (appConfig.getAgentRecordViaHIP)
+//          hipConnector.getAgentRecord(arn)
+//        else
+//          desConnector.getAgentRecord(arn)
 
       _ =
         if (doAutoMapping)
