@@ -63,6 +63,7 @@ with BeforeAndAfterEach:
 
   "resolve" should {
     "use HIP for agent record lookup when the feature flag is enabled" in {
+//      TODO: 11995 Remove reference to feature flag in this test
       when(appConfig.getAgentRecordViaHIP).thenReturn(true)
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
       when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
@@ -78,6 +79,7 @@ with BeforeAndAfterEach:
     }
 
     "use DES for agent record lookup when the feature flag is disabled" in {
+//      TODO: 11995 Can likely remove test
       when(appConfig.getAgentRecordViaHIP).thenReturn(false)
       when(desConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
       when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
@@ -93,7 +95,6 @@ with BeforeAndAfterEach:
     }
 
     "return Overseas when the agent record has no UTR" in {
-      when(appConfig.getAgentRecordViaHIP).thenReturn(true)
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithoutUtr))
 
       service.resolve(testArn).futureValue shouldBe AgentEntityType.Overseas
@@ -110,7 +111,6 @@ with BeforeAndAfterEach:
       "0000" -> AgentEntityType.Unknown
     ).foreach { case (desOrganisationType, expectedEntityType) =>
       s"map DES organisation type '$desOrganisationType' to '$expectedEntityType'" in {
-        when(appConfig.getAgentRecordViaHIP).thenReturn(true)
         when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
         when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
           .thenReturn(Future.successful(Some(DesRegistrationResponse(
@@ -123,7 +123,6 @@ with BeforeAndAfterEach:
     }
 
     "return Unknown when registration lookup returns no data" in {
-      when(appConfig.getAgentRecordViaHIP).thenReturn(true)
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
       when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader])).thenReturn(Future.successful(None))
 
@@ -131,7 +130,6 @@ with BeforeAndAfterEach:
     }
 
     "return Unknown when a lookup fails" in {
-      when(appConfig.getAgentRecordViaHIP).thenReturn(true)
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.failed(new RuntimeException("boom")))
 
       service.resolve(testArn).futureValue shouldBe AgentEntityType.Unknown

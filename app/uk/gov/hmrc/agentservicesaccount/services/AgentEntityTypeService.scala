@@ -41,6 +41,7 @@ extends Logging:
 
   def resolve(arn: Arn)(using request: RequestHeader): Future[String] =
     val agentRecord =
+//      TODO: 11995 Assume true
       if appConfig.getAgentRecordViaHIP then
         hipConnector.getAgentRecord(arn)
       else

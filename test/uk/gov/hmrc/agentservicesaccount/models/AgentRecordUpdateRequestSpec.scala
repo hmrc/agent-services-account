@@ -180,6 +180,7 @@ extends UnitSpec {
       evidenceObjectReference = Some(EvidenceObjectReference("f28047ef-33f9-482e-a76a-ec4304de7b62"))
     )
 
+//    TODO: 11995 Can likely remove these tests
     "when useUpdatedHipPutAgentRecord false" should {
       "map AMLS details correctly" in {
         val request = AmlsUpdateRequest(AmlsDetails(
@@ -400,6 +401,7 @@ extends UnitSpec {
       }
     }
 
+//    TODO: 11995 Remove references to feature flag
     "when useUpdatedHipPutAgentRecord true" should {
 
       def assertAmlsDetailsSameAsOldRecordInPayload(

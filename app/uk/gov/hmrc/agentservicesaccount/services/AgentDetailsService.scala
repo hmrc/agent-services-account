@@ -64,6 +64,7 @@ class AgentDetailsService @Inject() (
 
     for {
       agentRecord <-
+        //      TODO: 11995 Assume true
         if (appConfig.getAgentRecordViaHIP)
           hipConnector.getAgentRecord(arn)
         else

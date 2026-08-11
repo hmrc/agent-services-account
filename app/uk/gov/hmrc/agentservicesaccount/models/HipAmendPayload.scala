@@ -74,6 +74,7 @@ object HipAmendPayload:
   extension (request: AgentRecordUpdateRequest)
     def toHipAmendPayload(
       oldRecord: AgentDetailsDesResponse,
+      //      TODO: 11995 Assume true
       useUpdatedHipPutAgentRecord: Boolean
     )(logger: Logger): HipAmendPayload =
       def addressLineWithFallback(
@@ -88,6 +89,7 @@ object HipAmendPayload:
         else None
       }
 
+      //      TODO: 11995 Assume true
       (request, useUpdatedHipPutAgentRecord) match
         case (AmlsUpdateRequest(update), true) => oldRecord.toInitHipAmendPayload.withAmlsDetailsUpdate(update)
         case (AgencyDetailsUpdateRequest(update), true) => oldRecord.toInitHipAmendPayload.withAgencyDetailsUpdate(update)
