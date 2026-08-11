@@ -62,9 +62,7 @@ with BeforeAndAfterEach:
   private given RequestHeader = FakeRequest()
 
   "resolve" should {
-    "use HIP for agent record lookup when the feature flag is enabled" in {
-//      TODO: 11995 Remove reference to feature flag in this test
-      when(appConfig.getAgentRecordViaHIP).thenReturn(true)
+    "use HIP for agent record lookup" in {
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
       when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
         .thenReturn(Future.successful(Some(DesRegistrationResponse(
@@ -76,22 +74,6 @@ with BeforeAndAfterEach:
 
       verify(hipConnector).getAgentRecord(eqTo(testArn))(using any[RequestHeader])
       verify(desConnector, never()).getAgentRecord(eqTo(testArn))(using any[RequestHeader])
-    }
-
-    "use DES for agent record lookup when the feature flag is disabled" in {
-//      TODO: 11995 Can likely remove test
-      when(appConfig.getAgentRecordViaHIP).thenReturn(false)
-      when(desConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
-      when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
-        .thenReturn(Future.successful(Some(DesRegistrationResponse(
-          isAnIndividual = false,
-          organisation = Some(DesRegistrationOrganisation(Some("Partnership")))
-        ))))
-
-      service.resolve(testArn).futureValue shouldBe AgentEntityType.Partnership
-
-      verify(desConnector).getAgentRecord(eqTo(testArn))(using any[RequestHeader])
-      verify(hipConnector, never()).getAgentRecord(eqTo(testArn))(using any[RequestHeader])
     }
 
     "return Overseas when the agent record has no UTR" in {
