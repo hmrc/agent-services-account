@@ -135,10 +135,6 @@ extends MockitoSugar { this: TestSuite =>
     when(mockConfig.getOptional[String](meq("work-item-jobs.ct-robotics.available-at"))(using any()))
       .thenReturn(None)
 
-//    TODO: 19995 Tests using this can likely be deleted
-    when(mockConfig.get[Boolean](meq("features.get-agent-record-via-hip"))(using any()))
-      .thenReturn(false)
-
     when(mockServiceConfig.getString(meq("stride.roles.agent-services-account")))
       .thenReturn("maintain_agent_manually_assure")
 
