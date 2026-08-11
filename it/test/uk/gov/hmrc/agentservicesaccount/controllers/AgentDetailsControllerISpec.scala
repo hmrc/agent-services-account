@@ -57,9 +57,7 @@ with EmailStub {
     "agent.entity.cache.expires" -> "1 seconds",
     "agent.entity-check.lock.expires" -> "1 seconds",
     "agent.automap.lock.expires" -> "1 seconds",
-    "agent.entity-check.email.lock.expires" -> "1 seconds",
-//    TODO: 11995 Tests using this can likely be deleted
-    "features.get-agent-record-via-hip" -> false
+    "agent.entity-check.email.lock.expires" -> "1 seconds"
   )
 
   val testArn = Arn("AARN0000002")
