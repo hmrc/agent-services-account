@@ -76,6 +76,7 @@ object HipAmendPayload:
       oldRecord: AgentDetailsDesResponse,
       //      TODO: 11995 Assume true
       useUpdatedHipPutAgentRecord: Boolean = true
+//  TODO: 11995 Remove logger
     )(logger: Logger): HipAmendPayload =
 //      def addressLineWithFallback(
 //        newLine: Option[String],
