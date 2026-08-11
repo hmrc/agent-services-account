@@ -77,22 +77,21 @@ object HipAmendPayload:
       //      TODO: 11995 Assume true
       useUpdatedHipPutAgentRecord: Boolean = true
     )(logger: Logger): HipAmendPayload =
-      def addressLineWithFallback(
-        newLine: Option[String],
-        oldLine: Option[String],
-        fallback: String
-      ): Option[String] = {
-        if newLine.nonEmpty then newLine
-        else if oldLine.exists(_.nonEmpty) then // If it's an empty string in the record we don't want to touch it.
-          logger.warn(s"[HipAmendPayload] old record has optional field defined but update request is not overriding it. Using fallback '$fallback' to force override.")
-          Some(fallback)
-        else None
-      }
+//      def addressLineWithFallback(
+//        newLine: Option[String],
+//        oldLine: Option[String],
+//        fallback: String
+//      ): Option[String] = {
+//        if newLine.nonEmpty then newLine
+//        else if oldLine.exists(_.nonEmpty) then // If it's an empty string in the record we don't want to touch it.
+//          logger.warn(s"[HipAmendPayload] old record has optional field defined but update request is not overriding it. Using fallback '$fallback' to force override.")
+//          Some(fallback)
+//        else None
+//      }
 
-      //      TODO: 11995 Assume true
-      (request, useUpdatedHipPutAgentRecord) match
-        case (AmlsUpdateRequest(update), true) => oldRecord.toInitHipAmendPayload.withAmlsDetailsUpdate(update)
-        case (AgencyDetailsUpdateRequest(update), true) => oldRecord.toInitHipAmendPayload.withAgencyDetailsUpdate(update)
+      request match
+        case AmlsUpdateRequest(update) => oldRecord.toInitHipAmendPayload.withAmlsDetailsUpdate(update)
+        case AgencyDetailsUpdateRequest(update) => oldRecord.toInitHipAmendPayload.withAgencyDetailsUpdate(update)
 //        case (AmlsUpdateRequest(update), false) =>
 //          HipAmendPayload(
 //            supervisoryBody = Some(update.supervisoryBody.value),
