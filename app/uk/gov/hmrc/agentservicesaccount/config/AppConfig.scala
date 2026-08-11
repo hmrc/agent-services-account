@@ -52,7 +52,9 @@ class AppConfig @Inject() (
 
   val hipBaseUrl: String = servicesConfig.baseUrl("hip")
   val hipAuthToken: String = servicesConfig.getString("microservice.services.hip.authorization-token")
+//  TODO: 11995: Remove references to this throughout code
   val getAgentRecordViaHIP: Boolean = config.get[Boolean]("features.get-agent-record-via-hip")
+//  TODO: 11995: Remove references to this throughout code
   val updatedHipPutAgentRecord: Boolean = config.get[Boolean]("features.updated-hip-put-agent-record")
 
   val automapLockExpires: Duration = servicesConfig.getDuration("agent.automap.lock.expires")
