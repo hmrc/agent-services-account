@@ -16,11 +16,6 @@
 
 package uk.gov.hmrc.agentservicesaccount.mocks
 
-// Add these:
-
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.eq as meq
-import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Configuration

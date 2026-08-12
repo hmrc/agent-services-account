@@ -238,7 +238,6 @@ with MockLegacySubscriptionEmailService:
 
         verify(workItemService).complete(workItem)
         verify(workItemService, never()).markFailed(workItem)
-        val captor = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
 
         verify(mockLegacySubscriptionAuditService).auditSuccess(
           arn = workItem.item.arn,
@@ -488,7 +487,6 @@ with MockLegacySubscriptionEmailService:
 
         verify(workItemService).markPermanentlyFailed(workItem)
         verify(workItemService, never()).markFailed(workItem)
-        val captor = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
 
         verify(mockLegacySubscriptionAuditService).auditFailure(
           arn = workItem.item.arn,
@@ -737,18 +735,6 @@ with MockLegacySubscriptionEmailService:
     }
 
   private def expectedValidatedPostcode(regime: LegacyRegime): Option[PayePostcode.Valid] = PayePostcode.from(expectedPostcode(regime))
-
-  private def expectedServiceName(regime: LegacyRegime): String =
-    regime match
-      case PAYE => "PAYE/CIS"
-      case SA => "Self Assessment"
-      case CT => "Corporation Tax"
-
-  private def expectedServiceSectionName(regime: LegacyRegime): String =
-    regime match
-      case PAYE => "Pay as you earn (PAYE)/Construction Industry Scheme (CIS)"
-      case SA => "Self Assessment"
-      case CT => "Corporation Tax"
 
   private def invalidCredentialIdError: UpstreamErrorResponse = UpstreamErrorResponse(
     """{"code":"INVALID_CREDENTIAL_ID","message":"Credential id is invalid"}""",

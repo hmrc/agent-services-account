@@ -33,7 +33,7 @@ extends MockitoSugar {
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   lazy val mockEmailService: EmailService = new EmailService(mockAppConfig, mockEmailConnector)
 
-  def mockSendEntityCheckNotification()(using request: RequestHeader): Unit = {
+  def mockSendEntityCheckNotification(): Unit = {
     when(mockEmailConnector.sendEmail(any[EmailInformation])(using any[RequestHeader]))
       .thenReturn(Future.unit)
 
