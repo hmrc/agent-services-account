@@ -220,7 +220,7 @@ extends UnitSpec {
 
     "return correct HipAmendPayload when passed AmlsUpdateRequest" in:
       val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
-      val hipAmendPayload = agentRecordUpdateRequest.toHipAmendPayload(oldRecord, true)(logger)
+      val hipAmendPayload = agentRecordUpdateRequest.toHipAmendPayload(oldRecord)(logger)
 
       hipAmendPayload.supervisoryBody shouldBe Some(amlsDetails.supervisoryBody.toString)
       hipAmendPayload.membershipNumber shouldBe Some(amlsDetails.membershipNumber.toString)
@@ -233,7 +233,7 @@ extends UnitSpec {
     "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated" in:
       val agencyDetailsNoAddress = agencyDetails.copy(agencyAddress = None)
       val agencyDetailsUpdateRequestNoAddress: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsNoAddress)
-      val hipAmendPayload = agencyDetailsUpdateRequestNoAddress.toHipAmendPayload(oldRecord, true)(logger)
+      val hipAmendPayload = agencyDetailsUpdateRequestNoAddress.toHipAmendPayload(oldRecord)(logger)
 
       hipAmendPayload.name shouldBe agencyDetails.agencyName
       hipAmendPayload.email shouldBe agencyDetails.agencyEmail
@@ -251,7 +251,7 @@ extends UnitSpec {
         agencyDetails.agencyAddress
       )
       val agencyDetailsUpdateRequestAddressOnly: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsAddressOnly)
-      val hipAmendPayload = agencyDetailsUpdateRequestAddressOnly.toHipAmendPayload(oldRecord, true)(logger)
+      val hipAmendPayload = agencyDetailsUpdateRequestAddressOnly.toHipAmendPayload(oldRecord)(logger)
 
       hipAmendPayload.addr1 shouldBe agencyDetails.agencyAddress.map(_.addressLine1)
       hipAmendPayload.addr2 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine2)
@@ -266,7 +266,7 @@ extends UnitSpec {
 
     "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated" in:
       val agencyDetailsUpdateRequest: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetails)
-      val hipAmendPayload = agencyDetailsUpdateRequest.toHipAmendPayload(oldRecord, true)(logger)
+      val hipAmendPayload = agencyDetailsUpdateRequest.toHipAmendPayload(oldRecord)(logger)
 
       hipAmendPayload.name shouldBe agencyDetails.agencyName
       hipAmendPayload.email shouldBe agencyDetails.agencyEmail
@@ -287,7 +287,7 @@ extends UnitSpec {
         membershipNumber = MembershipNumber("XAML00000123456")
       ))
 
-      val payload = request.toHipAmendPayload(oldRecord, true)(logger)
+      val payload = request.toHipAmendPayload(oldRecord)(logger)
 
       val fields = Json.toJson(payload).as[JsObject].keys
 

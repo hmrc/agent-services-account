@@ -72,12 +72,8 @@ object HipAmendPayload:
   given Writes[HipAmendPayload] = Json.writes[HipAmendPayload]
 
   extension (request: AgentRecordUpdateRequest)
-    def toHipAmendPayload(
-      oldRecord: AgentDetailsDesResponse,
-      //      TODO: 11995 Assume true
-      useUpdatedHipPutAgentRecord: Boolean = true
-//  TODO: 11995 Remove logger
-    )(logger: Logger): HipAmendPayload =
+    //  TODO: 11995 Remove logger
+    def toHipAmendPayload(oldRecord: AgentDetailsDesResponse)(logger: Logger): HipAmendPayload =
 //      def addressLineWithFallback(
 //        newLine: Option[String],
 //        oldLine: Option[String],
