@@ -149,9 +149,8 @@ with EmailStub {
   "GET client /agent-services-account/agent-record-with-checks/arn/:arn" should {
 
     "return suspension details when agent record contains suspension details (without making auto mapping call)" in {
-//      TODO: 11995 FIX
       stubInternalAuthorised()
-      givenHIPGetAgentRecordSuspendedAgent(testArn, testUtr.value)
+      givenHIPGetAgentRecordSuspendedAgentWithStringRegime(testArn, testUtr.value, "ITSA")
       givenCitizenIsAlive(testSaUtr)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
 
@@ -168,10 +167,9 @@ with EmailStub {
     }
 
     "return suspension details and send email for deceased" in {
-//      TODO: 11995 FIX
       retry(5) {
         stubInternalAuthorised()
-        givenHIPGetAgentRecordSuspendedAgent(testArn, testUtr.value)
+        givenHIPGetAgentRecordSuspendedAgentWithStringRegime(testArn, testUtr.value, "ITSA")
         givenCitizenIsDeceased(testSaUtr)
         givenAgentUtrCheckWithRefusalToDealWithTrue(testUtr)
         givenEmailSent(emailInformation(
@@ -247,7 +245,6 @@ with EmailStub {
     }
 
     "NOT trigger auto-mapping again within lock TTL even if multiple requests are made" in {
-//      TODO: 11995 FIX
       retry(5) {
         isLoggedInAsASAgent(testArn2)
         givenHipGetAgentRecord(testArn2, Some(testUtr1))
@@ -263,7 +260,6 @@ with EmailStub {
     }
 
     "trigger auto-mapping again after lock TTL expires" in {
-//      TODO: 11995 FIX
       retry(5) {
         isLoggedInAsASAgent(testArn2)
         givenHipGetAgentRecord(testArn2, Some(testUtr1))
