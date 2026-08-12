@@ -105,7 +105,15 @@ with EmailStub {
 
     val utrField: Option[(String, JsValue)] = utr.map(u => "uniqueTaxReference" -> JsString(u.value))
 
-    JsObject(utrField.toSeq ++ baseFields)
+    val amlsField: Seq[(String, JsValue)] = Seq(
+      "amlsDetails" -> Json.obj(
+        "supervisoryBody" -> "HMRC",
+        "membershipNumber" -> "AMLS123",
+        "evidenceObjectReference" -> "evidence-ref-001"
+      )
+    )
+
+    JsObject(utrField.toSeq ++ baseFields ++ amlsField)
   }
 
   private val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy h:mma")
@@ -185,7 +193,7 @@ with EmailStub {
 
     "return OK when HIP returns agent record with no UTR" in {
       stubInternalAuthorised()
-      givenHIPGetAgentRecordSuspendedAgent(testArn, "")
+      givenHipGetAgentRecord(testArn, None)
 
       val response = get(clientUrl(testArn))
 
