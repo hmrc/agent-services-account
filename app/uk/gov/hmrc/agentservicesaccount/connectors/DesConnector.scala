@@ -22,13 +22,10 @@ import play.api.Logging
 import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 import play.api.libs.ws.writeableOf_JsValue
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
 import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationRequest
 import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationResponse
-import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.HttpReads.Implicits.*
@@ -39,7 +36,6 @@ import uk.gov.hmrc.http.StringContextOps
 import play.api.http.Status.NOT_FOUND
 import play.api.http.Status.OK
 
-import java.net.URL
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -50,7 +46,6 @@ import scala.concurrent.Future
 class DesConnector @Inject() (
   appConfig: AppConfig,
   httpV2: HttpClientV2,
-  agentCacheProvider: CacheProvider,
   override val configuration: Config,
   override val actorSystem: ActorSystem
 )(using ec: ExecutionContext)
@@ -63,15 +58,6 @@ with Logging {
 
   private val Environment = "Environment"
   private val CorrelationId = "CorrelationId"
-
-//  TODO: 11995 Can I remove this?
-  // API #1170 (API#4) Get Agent Record
-  def getAgentRecord(arn: Arn)(using request: RequestHeader): Future[AgentDetailsDesResponse] = {
-    val url = url"$baseUrl/registration/personal-details/arn/${arn.value}"
-    agentCacheProvider.agentDetailsCache(arn.value) {
-      getWithDesHeadersWithRetry[AgentDetailsDesResponse]("GetAgentRecordCached", url)
-    }
-  }
 
   // API #1163 / #1164 (API 1 / 4) Registration. Existing agent-subscription uses the individual path for UTR lookups.
   def getRegistration(utr: Utr)(using request: RequestHeader): Future[Option[DesRegistrationResponse]] = {
@@ -90,25 +76,6 @@ with Logging {
           case response if response.status == NOT_FOUND => Future.successful(None)
           case response => response.error
         }
-    }
-  }
-
-  private def getWithDesHeadersWithRetry[A: HttpReads](
-    apiName: String,
-    url: URL
-  )(using
-    request: RequestHeader,
-    x: Reads[A]
-  ): Future[A] = {
-
-    retryFor[A](s"$apiName connector get $url")(retryCondition) {
-      httpV2
-        .get(url)
-        .setHeader(desHeaders(
-          authorizationToken,
-          environment
-        )*)
-        .executeAndDeserialise[A]
     }
   }
 
