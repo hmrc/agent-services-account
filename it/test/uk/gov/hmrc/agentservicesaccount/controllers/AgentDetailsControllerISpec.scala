@@ -36,7 +36,6 @@ class AgentDetailsControllerISpec
 extends ComponentSpecHelper
 with AgentAuthStubs
 with AgentMappingStubs
-with DesStubs
 with HipStubs
 with InternalAuthStub
 with CitizenDetailsStubs
@@ -143,7 +142,7 @@ with EmailStub {
 
     "return suspension details when agent record contains suspension details (without making auto mapping call)" in {
       stubInternalAuthorised()
-      givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
+      givenHIPGetAgentRecordSuspendedAgent(testArn, testUtr.value)
       givenCitizenIsAlive(testSaUtr)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
 
@@ -162,7 +161,7 @@ with EmailStub {
     "return suspension details and send email for deceased" in {
       retry(5) {
         stubInternalAuthorised()
-        givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
+        givenHIPGetAgentRecordSuspendedAgent(testArn, testUtr.value)
         givenCitizenIsDeceased(testSaUtr)
         givenAgentUtrCheckWithRefusalToDealWithTrue(testUtr)
         givenEmailSent(emailInformation(
@@ -184,9 +183,9 @@ with EmailStub {
 
     }
 
-    "return OK when DES returns agent record with no UTR" in {
+    "return OK when HIP returns agent record with no UTR" in {
       stubInternalAuthorised()
-      givenDESGetAgentRecordSuspendedAgent(testArn, None)
+      givenHIPGetAgentRecordSuspendedAgent(testArn, "")
 
       val response = get(clientUrl(testArn))
 
@@ -205,9 +204,9 @@ with EmailStub {
       response.status shouldBe UNAUTHORIZED
     }
 
-    "return 404 when DES fails" in {
+    "return 404 when HIP fails" in {
       stubInternalAuthorised()
-      givenAgentIsUnknown404(testArn)
+      givenHipAgentIsUnknown404(testArn)
 
       val response = get(clientUrl(testArn))
 
@@ -219,7 +218,7 @@ with EmailStub {
     "return agentRecord and DO NOT send out email when isRefusalToDealWith is false" in {
       givenAutoMappingCallSucceeds(testArn2)
       isLoggedInAsASAgent(testArn2)
-      givenDESGetAgentRecord(testArn2, Some(testUtr1))
+      givenHipGetAgentRecord(testArn2, Some(testUtr1))
       givenCitizenIsAlive(testSaUtr1)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr1)
 
@@ -238,7 +237,7 @@ with EmailStub {
     "NOT trigger auto-mapping again within lock TTL even if multiple requests are made" in {
       retry(5) {
         isLoggedInAsASAgent(testArn2)
-        givenDESGetAgentRecord(testArn2, Some(testUtr1))
+        givenHipGetAgentRecord(testArn2, Some(testUtr1))
         givenCitizenIsAlive(testSaUtr1)
         givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr1)
         givenAutoMappingCallSucceeds(testArn2)
@@ -253,7 +252,7 @@ with EmailStub {
     "trigger auto-mapping again after lock TTL expires" in {
       retry(5) {
         isLoggedInAsASAgent(testArn2)
-        givenDESGetAgentRecord(testArn2, Some(testUtr1))
+        givenHipGetAgentRecord(testArn2, Some(testUtr1))
         givenCitizenIsAlive(testSaUtr1)
         givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr1)
         givenAutoMappingCallSucceeds(testArn2)
@@ -269,7 +268,7 @@ with EmailStub {
     "after lock expire return agent record and and send out email if agent is on refusalToDealWith" in {
       retry(5) {
         isLoggedInAsASAgent(testArn2)
-        givenDESGetAgentRecord(testArn2, Some(testUtr1))
+        givenHipGetAgentRecord(testArn2, Some(testUtr1))
         givenCitizenIsAlive(testSaUtr1)
         givenAgentUtrCheckWithRefusalToDealWithTrue(testUtr1)
         givenEmailSent(emailInformation(
@@ -325,7 +324,7 @@ with EmailStub {
     val url = "/agent-record-update"
     "return OK status when the update was successful" in {
       isLoggedInAsASAgent(testArn)
-      givenDESGetAgentRecord(testArn, Some(testUtr))
+      givenHipGetAgentRecord(testArn, Some(testUtr))
       givenCitizenIsAlive(testSaUtr)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
       givenAutoMappingCallSucceeds(testArn)

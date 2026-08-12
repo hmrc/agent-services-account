@@ -21,7 +21,7 @@ import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 
 trait HipStubs {
 
@@ -88,6 +88,80 @@ trait HipStubs {
               }
             """
         )
+      )
+  )
+
+  private def personalDetailsResponseBodyWithValidData(
+                                                optUtr: Option[Utr],
+                                                overseas: Boolean
+                                              ) =
+    s"""
+       |{
+       |   "isAnOrganisation" : true,
+       |   "contactDetails" : {
+       |      "phoneNumber" : "07000000000"
+       |   },
+       |   "isAnAgent" : true,
+       |   "safeId" : "XB0000100101711",
+       |   """.stripMargin ++ optUtr
+      .map(utr =>
+        s""" "uniqueTaxReference": "${utr.value}",
+           |""".stripMargin)
+      .getOrElse("") ++
+      s""" "agencyDetails" : {
+         |      "agencyAddress" : {
+         |         "addressLine2" : "Grange Central",
+         |         "addressLine3" : "Town Centre",
+         |         "addressLine4" : "Telford",
+         |         "postalCode" : "TF3 4ER",
+         |         "countryCode" : "${
+        if (overseas)
+          "NZ"
+        else
+          "GB"
+      }",
+         |         "addressLine1" : "Matheson House"
+         |      },
+         |      "agencyName" : "ABC Accountants",
+         |      "agencyEmail" : "abc@xyz.com",
+         |      "agencyTelephone" : "07345678901"
+         |   },
+         |   "suspensionDetails": {"suspensionStatus": false},
+         |   "organisation" : {
+         |      "organisationName" : "CT AGENT 183",
+         |      "isAGroup" : false,
+         |      "organisationType" : "0000"
+         |   },
+         |   "addressDetails" : {
+         |      "addressLine2" : "Grange Central 183",
+         |      "addressLine3" : "Telford 183",
+         |      "addressLine4" : "Shropshire 183",
+         |      "postalCode" : "TF3 4ER",
+         |      "countryCode" : "GB",
+         |      "addressLine1" : "Matheson House 183"
+         |   },
+         |   "individual" : {
+         |      "firstName" : "John",
+         |      "lastName" : "Smith"
+         |   },
+         |   "isAnASAgent" : true,
+         |   "isAnIndividual" : false,
+         |   "businessPartnerExists" : true,
+         |   "agentReferenceNumber" : "TestARN"
+         |}
+            """.stripMargin
+
+//  TODO: 11995 Need to sort this
+  def givenHipGetAgentRecord(
+                              arn: Arn,
+                              utr: Option[Utr],
+                              overseas: Boolean = false
+                            ) = stubFor(
+    get(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
+      .willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody(personalDetailsResponseBodyWithValidData(utr, overseas))
       )
   )
 
