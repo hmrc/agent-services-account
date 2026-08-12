@@ -149,6 +149,7 @@ with EmailStub {
   "GET client /agent-services-account/agent-record-with-checks/arn/:arn" should {
 
     "return suspension details when agent record contains suspension details (without making auto mapping call)" in {
+//      TODO: 11995 FIX
       stubInternalAuthorised()
       givenHIPGetAgentRecordSuspendedAgent(testArn, testUtr.value)
       givenCitizenIsAlive(testSaUtr)
@@ -167,6 +168,7 @@ with EmailStub {
     }
 
     "return suspension details and send email for deceased" in {
+//      TODO: 11995 FIX
       retry(5) {
         stubInternalAuthorised()
         givenHIPGetAgentRecordSuspendedAgent(testArn, testUtr.value)
@@ -192,6 +194,7 @@ with EmailStub {
     }
 
     "return OK when HIP returns agent record with no UTR" in {
+//      TODO: 11995 FIX
       stubInternalAuthorised()
       givenHipGetAgentRecord(testArn, None)
 
@@ -224,6 +227,7 @@ with EmailStub {
 
   "GET agent /agent-services-account/agent-record-with-checks" should {
     "return agentRecord and DO NOT send out email when isRefusalToDealWith is false" in {
+//      TODO: 11995 FIX
       givenAutoMappingCallSucceeds(testArn2)
       isLoggedInAsASAgent(testArn2)
       givenHipGetAgentRecord(testArn2, Some(testUtr1))
@@ -243,6 +247,7 @@ with EmailStub {
     }
 
     "NOT trigger auto-mapping again within lock TTL even if multiple requests are made" in {
+//      TODO: 11995 FIX
       retry(5) {
         isLoggedInAsASAgent(testArn2)
         givenHipGetAgentRecord(testArn2, Some(testUtr1))
@@ -258,6 +263,7 @@ with EmailStub {
     }
 
     "trigger auto-mapping again after lock TTL expires" in {
+//      TODO: 11995 FIX
       retry(5) {
         isLoggedInAsASAgent(testArn2)
         givenHipGetAgentRecord(testArn2, Some(testUtr1))
@@ -274,6 +280,7 @@ with EmailStub {
     }
 
     "after lock expire return agent record and and send out email if agent is on refusalToDealWith" in {
+//      TODO: 11995 FIX
       retry(5) {
         isLoggedInAsASAgent(testArn2)
         givenHipGetAgentRecord(testArn2, Some(testUtr1))
@@ -331,6 +338,7 @@ with EmailStub {
   "POST /agent-record-update" should {
     val url = "/agent-record-update"
     "return OK status when the update was successful" in {
+//      TODO: 11995 FIX
       isLoggedInAsASAgent(testArn)
       givenHipGetAgentRecord(testArn, Some(testUtr))
       givenCitizenIsAlive(testSaUtr)
