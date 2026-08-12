@@ -91,7 +91,6 @@ with IntegrationPatience {
   }
 
   "verifyAgent" should {
-//    TODO: 119995 FIX THIS TEST
     "return Some(SuspensionDetails) when the agent is suspended" in {
 
       val agentDetailsDesResponse = testAgentDetailsDesResponse
@@ -103,7 +102,7 @@ with IntegrationPatience {
         businessName = None
       )
 
-      mockDesGetAgentRecord(testArn)(agentDetailsDesResponse)
+      mockHipGetAgentRecord(testArn)(agentDetailsDesResponse)
       mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
@@ -113,7 +112,6 @@ with IntegrationPatience {
       result shouldBe EntityCheckResult(agentDetailsDesResponse, Seq(AgentIsOnRefuseToDealList))
     }
 
-//    TODO: 119995 FIX THIS TEST
     "return None when the agent is not suspended" in {
       val agentDetailsDesResponse = testAgentDetailsDesResponse
 
@@ -123,7 +121,7 @@ with IntegrationPatience {
         businessName = None
       )
 
-      mockDesGetAgentRecord(testArn)(agentDetailsDesResponse)
+      mockHipGetAgentRecord(testArn)(agentDetailsDesResponse)
       mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
@@ -133,7 +131,6 @@ with IntegrationPatience {
       result shouldBe EntityCheckResult(agentDetailsDesResponse, Seq.empty[EntityCheckException])
     }
 
-//    TODO: 119995 FIX THIS TEST
     "return Some(SuspensionDetails) and do entityChecks and sent email with deceased failed" in {
 
       val agentDetailsDesResponse = testAgentDetailsDesResponse
@@ -148,7 +145,7 @@ with IntegrationPatience {
         businessName = None
       )
 
-      mockDesGetAgentRecord(testArn)(agentDetailsDesResponse)
+      mockHipGetAgentRecord(testArn)(agentDetailsDesResponse)
       mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
       mockGetCitizenDeceasedFlag(SaUtr(testUtr.value))(Some(EntityDeceasedCheckFailed))
       mockSendEntityCheckNotification()
@@ -160,42 +157,6 @@ with IntegrationPatience {
 
     }
 
-//    TODO: 11995 DELETE THIS TEST
-//    "call DES connector when feature switch is disabled" in {
-//      val utrChecksResponse = UtrChecksResponse(
-//        isManuallyAssured = false,
-//        isRefusalToDealWith = true,
-//        businessName = None
-//      )
-//      mockDesGetAgentRecord(testArn)(testAgentDetailsDesResponse)
-//      mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
-//      mockSendEntityCheckNotification()
-//      mockAuditEntityCheckFailureNotificationSent()
-//
-//      service.getAgentDetailsWithChecks(testArn).futureValue
-//
-//      verify(mockDesConnector).getAgentRecord(testArn)
-//      verify(mockHipConnector, never()).getAgentRecord(testArn)
-//    }
-
-//    TODO: 11995 Is this test specifically required or can it be covered by other test cases?
-    "call HIP connector when feature switch is enabled" in {
-
-      val utrChecksResponse = UtrChecksResponse(
-        isManuallyAssured = false,
-        isRefusalToDealWith = true,
-        businessName = None
-      )
-      mockHipGetAgentRecord(testArn)(testAgentDetailsDesResponse)
-      mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
-      mockSendEntityCheckNotification()
-      mockAuditEntityCheckFailureNotificationSent()
-
-      serviceHip.getAgentDetailsWithChecks(testArn).futureValue
-
-      verify(mockHipConnector).getAgentRecord(testArn)
-      verify(mockDesConnector, never()).getAgentRecord(testArn)
-    }
   }
 
 }

@@ -33,6 +33,7 @@ extends MockitoSugar { this: TestSuite =>
 
   val mockDesConnector: DesConnector = mock[DesConnector]
 
+//  TODO: 11995 Can this be removed?
   def mockDesGetAgentRecord(arn: Arn)(response: AgentDetailsDesResponse): Unit = {
     when(
       mockDesConnector.getAgentRecord(meq(arn))(using any[RequestHeader])
