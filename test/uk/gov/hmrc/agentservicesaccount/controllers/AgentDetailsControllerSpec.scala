@@ -42,7 +42,6 @@ with GuiceOneAppPerTest
 with MockAppConfig
 with MockAuthConnector
 with MockAgentEntityService
-with MockDesConnector
 with MockHipConnector
 with MockInternalAuth
 with MockDmsService
