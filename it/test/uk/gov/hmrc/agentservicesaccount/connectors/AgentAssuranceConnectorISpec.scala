@@ -47,7 +47,7 @@ class AgentAssuranceConnectorISpec
   lazy val connector = new AgentAssuranceConnector(
     app.injector.instanceOf[AppConfig],
     app.injector.instanceOf[HttpClientV2]
-  )(ec)
+  )(using ec)
 
   val utr = Utr("1234567890")
 

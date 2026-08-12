@@ -42,10 +42,6 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 import java.util.UUID
 import org.scalatest.OptionValues.*
 
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
-
 class LegacySubscriptionControllerISpec
 extends ComponentSpecHelper
 with AgentEpayeRegistrationStubs

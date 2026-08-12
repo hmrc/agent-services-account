@@ -30,7 +30,7 @@ trait AgentEpayeRegistrationStubs:
   def givenEpayeRegisterCallSucceeds(request: PayeSubscriptionRequest)(agentReference: AgentReference): Unit = stubFor(
     post(urlEqualTo("/agent-epaye-registration/registrations"))
       .withRequestBody(equalToJson(
-        Json.toJson(request)(PayeSubscriptionRequest.registerWrites).toString
+        Json.toJson(request)(using PayeSubscriptionRequest.registerWrites).toString
       ))
       .willReturn(
         aResponse()
@@ -44,7 +44,7 @@ trait AgentEpayeRegistrationStubs:
   def givenEpayeRegisterCallFails(request: PayeSubscriptionRequest): Unit = stubFor(
     post(urlEqualTo(s"/agent-epaye-registration/registrations"))
       .withRequestBody(equalToJson(
-        Json.toJson(request)(PayeSubscriptionRequest.registerWrites).toString
+        Json.toJson(request)(using PayeSubscriptionRequest.registerWrites).toString
       ))
       .willReturn(
         aResponse()
