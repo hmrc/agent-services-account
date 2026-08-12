@@ -73,7 +73,6 @@ with BeforeAndAfterEach:
       service.resolve(testArn).futureValue shouldBe AgentEntityType.SoleTrader
 
       verify(hipConnector).getAgentRecord(eqTo(testArn))(using any[RequestHeader])
-      verify(desConnector, never()).getAgentRecord(eqTo(testArn))(using any[RequestHeader])
     }
 
     "return Overseas when the agent record has no UTR" in {

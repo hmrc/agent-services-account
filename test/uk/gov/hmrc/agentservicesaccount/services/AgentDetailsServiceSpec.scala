@@ -42,7 +42,6 @@ import scala.concurrent.ExecutionContext
 class AgentDetailsServiceSpec
 extends UnitSpec
 with CleanMongoCollectionSupport
-with MockDesConnector
 with MockHipConnector
 with MockCitizenDetailsConnector
 with MockAppConfig
@@ -61,21 +60,6 @@ with IntegrationPatience {
 
   val service =
     new AgentDetailsService(
-      ac,
-      mockDesConnector,
-      mockHipConnector,
-      mockCitizenDetailsConnector,
-      mockAgentAssuranceConnector,
-      mockAgentMappingConnector,
-      mongoLockService,
-      mockEmailService,
-      mockAuditService
-    )
-
-  val serviceHip =
-    new AgentDetailsService(
-      mockAppConfigHip,
-      mockDesConnector,
       mockHipConnector,
       mockCitizenDetailsConnector,
       mockAgentAssuranceConnector,
@@ -87,7 +71,7 @@ with IntegrationPatience {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockDesConnector, mockHipConnector)
+    reset(mockHipConnector)
   }
 
   "verifyAgent" should {
