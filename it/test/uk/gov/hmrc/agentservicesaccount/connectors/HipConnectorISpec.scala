@@ -137,6 +137,7 @@ with HipStubs {
     }
 
     "cache agency details after first call" in {
+//      TODO: 11995 Fix this test
       givenHIPGetAgentRecordSuspendedAgent(arn)
 
       hipConnector.getAgentRecord(arn).futureValue shouldBe expectedResponse
