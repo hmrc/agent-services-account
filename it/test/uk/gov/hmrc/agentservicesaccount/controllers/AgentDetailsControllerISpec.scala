@@ -192,7 +192,7 @@ with EmailStub {
     }
 
     "return OK when HIP returns agent record with no UTR" in {
-//      TODO: 11995 FIX
+//      TODO: 11995 FIX suspension false/true
       stubInternalAuthorised()
       givenHipGetAgentRecord(testArn, None)
 
@@ -225,7 +225,7 @@ with EmailStub {
 
   "GET agent /agent-services-account/agent-record-with-checks" should {
     "return agentRecord and DO NOT send out email when isRefusalToDealWith is false" in {
-//      TODO: 11995 FIX
+//      TODO: 11995 FIX  isAnIndividual true/false
       givenAutoMappingCallSucceeds(testArn2)
       isLoggedInAsASAgent(testArn2)
       givenHipGetAgentRecord(testArn2, Some(testUtr1))
@@ -276,7 +276,7 @@ with EmailStub {
     }
 
     "after lock expire return agent record and and send out email if agent is on refusalToDealWith" in {
-//      TODO: 11995 FIX
+//      TODO: 11995 FIX isAnIndividual true/false
       retry(5) {
         isLoggedInAsASAgent(testArn2)
         givenHipGetAgentRecord(testArn2, Some(testUtr1))
