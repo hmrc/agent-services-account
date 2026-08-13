@@ -92,7 +92,7 @@ with Logging {
         case Some(JsSuccess(updateRequest, _)) =>
           for
             oldRecord <- agentEntityService.getAgentDetailsWithChecks(arn)
-            hipPayload = updateRequest.toHipAmendPayload(oldRecord.agentRecord)(logger)
+            hipPayload = updateRequest.toHipAmendPayload(oldRecord.agentRecord)
             response <- hipConnector.putAgentRecord(arn, hipPayload)
           yield Ok(Json.obj("processingDate" -> response.success.processingDate))
         case Some(JsError(errors)) => Future.successful(BadRequest(s"Invalid agent record update request, errors: $errors"))

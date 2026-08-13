@@ -72,8 +72,7 @@ object HipAmendPayload:
   given Writes[HipAmendPayload] = Json.writes[HipAmendPayload]
 
   extension (request: AgentRecordUpdateRequest)
-    //  TODO: 11995 Remove logger
-    def toHipAmendPayload(oldRecord: AgentDetailsResponse)(logger: Logger): HipAmendPayload =
+    def toHipAmendPayload(oldRecord: AgentDetailsResponse): HipAmendPayload =
       request match
         case AmlsUpdateRequest(update) => oldRecord.toInitHipAmendPayload.withAmlsDetailsUpdate(update)
         case AgencyDetailsUpdateRequest(update) => oldRecord.toInitHipAmendPayload.withAgencyDetailsUpdate(update)

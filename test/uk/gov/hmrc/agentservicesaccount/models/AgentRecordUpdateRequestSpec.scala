@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentservicesaccount.models
 
-import play.api.Logger
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
@@ -27,7 +26,6 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 class AgentRecordUpdateRequestSpec
 extends UnitSpec {
 
-  val logger = Logger("")
   val oldRecord = AgentDetailsResponse(
     uniqueTaxReference = Some(Utr("1234567890")),
     agencyDetails = Some(AgencyDetails(
@@ -220,7 +218,7 @@ extends UnitSpec {
 
     "return correct HipAmendPayload when passed AmlsUpdateRequest" in:
       val agentRecordUpdateRequest: AgentRecordUpdateRequest = AmlsUpdateRequest(amlsDetails)
-      val hipAmendPayload = agentRecordUpdateRequest.toHipAmendPayload(oldRecord)(logger)
+      val hipAmendPayload = agentRecordUpdateRequest.toHipAmendPayload(oldRecord)
 
       hipAmendPayload.supervisoryBody shouldBe Some(amlsDetails.supervisoryBody.toString)
       hipAmendPayload.membershipNumber shouldBe Some(amlsDetails.membershipNumber.toString)
@@ -233,7 +231,7 @@ extends UnitSpec {
     "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with name, phone, email only updated" in:
       val agencyDetailsNoAddress = agencyDetails.copy(agencyAddress = None)
       val agencyDetailsUpdateRequestNoAddress: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsNoAddress)
-      val hipAmendPayload = agencyDetailsUpdateRequestNoAddress.toHipAmendPayload(oldRecord)(logger)
+      val hipAmendPayload = agencyDetailsUpdateRequestNoAddress.toHipAmendPayload(oldRecord)
 
       hipAmendPayload.name shouldBe agencyDetails.agencyName
       hipAmendPayload.email shouldBe agencyDetails.agencyEmail
@@ -251,7 +249,7 @@ extends UnitSpec {
         agencyDetails.agencyAddress
       )
       val agencyDetailsUpdateRequestAddressOnly: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetailsAddressOnly)
-      val hipAmendPayload = agencyDetailsUpdateRequestAddressOnly.toHipAmendPayload(oldRecord)(logger)
+      val hipAmendPayload = agencyDetailsUpdateRequestAddressOnly.toHipAmendPayload(oldRecord)
 
       hipAmendPayload.addr1 shouldBe agencyDetails.agencyAddress.map(_.addressLine1)
       hipAmendPayload.addr2 shouldBe agencyDetails.agencyAddress.flatMap(_.addressLine2)
@@ -266,7 +264,7 @@ extends UnitSpec {
 
     "return correct HipAmendPayload when passed AgencyDetailsUpdateRequest with all fields updated" in:
       val agencyDetailsUpdateRequest: AgentRecordUpdateRequest = AgencyDetailsUpdateRequest(agencyDetails)
-      val hipAmendPayload = agencyDetailsUpdateRequest.toHipAmendPayload(oldRecord)(logger)
+      val hipAmendPayload = agencyDetailsUpdateRequest.toHipAmendPayload(oldRecord)
 
       hipAmendPayload.name shouldBe agencyDetails.agencyName
       hipAmendPayload.email shouldBe agencyDetails.agencyEmail
@@ -287,7 +285,7 @@ extends UnitSpec {
         membershipNumber = MembershipNumber("XAML00000123456")
       ))
 
-      val payload = request.toHipAmendPayload(oldRecord)(logger)
+      val payload = request.toHipAmendPayload(oldRecord)
 
       val fields = Json.toJson(payload).as[JsObject].keys
 
