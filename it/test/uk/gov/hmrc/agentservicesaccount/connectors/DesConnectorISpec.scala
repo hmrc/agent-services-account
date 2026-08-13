@@ -18,30 +18,15 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
-import play.api.Configuration
 import play.api.mvc.AnyContentAsEmpty
 import play.api.mvc.Request
 import play.api.test.FakeRequest
-import play.api.test.Helpers.*
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
-import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
-import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
-import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.stubs.DataStreamStub
 import uk.gov.hmrc.agentservicesaccount.stubs.DesStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
-import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
-import uk.gov.hmrc.crypto.Decrypter
-import uk.gov.hmrc.crypto.Encrypter
-import uk.gov.hmrc.crypto.PlainText
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.mongo.CurrentTimestampSupport
-import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import scala.concurrent.ExecutionContext
 
