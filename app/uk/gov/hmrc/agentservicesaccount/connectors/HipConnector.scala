@@ -70,7 +70,7 @@ with Logging {
 
     agentCacheProvider.agentDetailsCache(arn.value) {
       getWithHipHeadersWithRetry(url)
-        .map(mapHipToDesModel)
+        .map(_.success.toAgentDetailsResponse)
     }
   }
 
@@ -113,53 +113,53 @@ with Logging {
         .map(_ => response)
     }
 
-//  TODO: Put this on model class?
-  private def mapHipToDesModel(
-    hipResponse: HipAgentSubscriptionResponse
-  ): AgentDetailsResponse = {
-
-    val s = hipResponse.success
-    val suspension = SuspensionDetails(
-      suspensionStatus = s.suspensionStatus == "T",
-      regimes = s.regime.filter(_.nonEmpty).map(_.toSet)
-    )
-    val amlsDetails =
-      for {
-        sb <- s.supervisoryBody
-        mn <- s.membershipNumber
-      } yield AmlsDetails(
-        SupervisoryBody(sb),
-        MembershipNumber(mn),
-        s.evidenceObjectReference.map(EvidenceObjectReference(_))
-      )
-    AgentDetailsResponse(
-      uniqueTaxReference = s.utr.map(Utr(_)),
-      agencyDetails = Some(
-        AgencyDetails(
-          agencyName = Some(s.name),
-          agencyEmail = Some(s.email),
-          agencyTelephone = s.phone,
-          agencyAddress = Some(
-            BusinessAddress(
-              addressLine1 = s.addr1,
-              addressLine2 = s.addr2,
-              addressLine3 = s.addr3,
-              addressLine4 = s.addr4,
-              postalCode = s.postcode,
-              countryCode = s.country
-            )
-          )
-        )
-      ),
-      suspensionDetails = Some(suspension),
-      isAnIndividual = Some(true),
-      amlsDetails = amlsDetails,
-      updateDetailsStatus = s.updateDetailsStatus,
-      amlSupervisionUpdateStatus = s.amlSupervisionUpdateStatus,
-      directorPartnerUpdateStatus = s.directorPartnerUpdateStatus,
-      acceptNewTermsStatus = s.acceptNewTermsStatus,
-      reriskStatus = s.reriskStatus
-    )
-  }
+//  TODO: 11995 Put this on model class?
+//  private def mapHipToDesModel(
+//    hipResponse: HipAgentSubscriptionResponse
+//  ): AgentDetailsResponse = {
+//
+//    val s = hipResponse.success
+//    val suspension = SuspensionDetails(
+//      suspensionStatus = s.suspensionStatus == "T",
+//      regimes = s.regime.filter(_.nonEmpty).map(_.toSet)
+//    )
+//    val amlsDetails =
+//      for {
+//        sb <- s.supervisoryBody
+//        mn <- s.membershipNumber
+//      } yield AmlsDetails(
+//        SupervisoryBody(sb),
+//        MembershipNumber(mn),
+//        s.evidenceObjectReference.map(EvidenceObjectReference(_))
+//      )
+//    AgentDetailsResponse(
+//      uniqueTaxReference = s.utr.map(Utr(_)),
+//      agencyDetails = Some(
+//        AgencyDetails(
+//          agencyName = Some(s.name),
+//          agencyEmail = Some(s.email),
+//          agencyTelephone = s.phone,
+//          agencyAddress = Some(
+//            BusinessAddress(
+//              addressLine1 = s.addr1,
+//              addressLine2 = s.addr2,
+//              addressLine3 = s.addr3,
+//              addressLine4 = s.addr4,
+//              postalCode = s.postcode,
+//              countryCode = s.country
+//            )
+//          )
+//        )
+//      ),
+//      suspensionDetails = Some(suspension),
+//      isAnIndividual = Some(true),
+//      amlsDetails = amlsDetails,
+//      updateDetailsStatus = s.updateDetailsStatus,
+//      amlSupervisionUpdateStatus = s.amlSupervisionUpdateStatus,
+//      directorPartnerUpdateStatus = s.directorPartnerUpdateStatus,
+//      acceptNewTermsStatus = s.acceptNewTermsStatus,
+//      reriskStatus = s.reriskStatus
+//    )
+//  }
 
 }
