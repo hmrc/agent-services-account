@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
 import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationOrganisation
 import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationResponse
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentEntityType
@@ -52,7 +52,7 @@ with BeforeAndAfterEach:
 
   private val testArn = Arn("AARN0000001")
   private val testUtr = Utr("7000000002")
-  private val agentRecordWithUtr = AgentDetailsDesResponse(
+  private val agentRecordWithUtr = AgentDetailsResponse(
     uniqueTaxReference = Some(testUtr),
     agencyDetails = None,
     suspensionDetails = None,

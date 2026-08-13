@@ -28,7 +28,7 @@ class AgentRecordUpdateRequestSpec
 extends UnitSpec {
 
   val logger = Logger("")
-  val oldRecord = AgentDetailsDesResponse(
+  val oldRecord = AgentDetailsResponse(
     uniqueTaxReference = Some(Utr("1234567890")),
     agencyDetails = Some(AgencyDetails(
       agencyName = Some("Old Agency Name"),
@@ -182,7 +182,7 @@ extends UnitSpec {
 
     def assertAmlsDetailsSameAsOldRecordInPayload(
       hipAmendPayload: HipAmendPayload,
-      oldRecord: AgentDetailsDesResponse
+      oldRecord: AgentDetailsResponse
     ): Unit = {
       hipAmendPayload.supervisoryBody shouldBe oldRecord.amlsDetails.map(_.supervisoryBody)
       hipAmendPayload.membershipNumber shouldBe oldRecord.amlsDetails.map(_.membershipNumber)
@@ -191,7 +191,7 @@ extends UnitSpec {
 
     def assertAgencyNameTelephoneEmailSameAsOldRecordInPayload(
       hipAmendPayload: HipAmendPayload,
-      oldRecord: AgentDetailsDesResponse
+      oldRecord: AgentDetailsResponse
     ): Unit = {
       hipAmendPayload.name shouldBe oldRecord.agencyDetails.flatMap(_.agencyName)
       hipAmendPayload.phone shouldBe oldRecord.agencyDetails.flatMap(_.agencyTelephone)
@@ -200,7 +200,7 @@ extends UnitSpec {
 
     def assertAgencyAddressSameAsOldRecordInPayload(
       hipAmendPayload: HipAmendPayload,
-      oldRecord: AgentDetailsDesResponse
+      oldRecord: AgentDetailsResponse
     ): Unit = {
       hipAmendPayload.addr1 shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).map(_.addressLine1)
       hipAmendPayload.addr2 shouldBe oldRecord.agencyDetails.flatMap(_.agencyAddress).flatMap(_.addressLine2)

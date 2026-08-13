@@ -73,7 +73,7 @@ object HipAmendPayload:
 
   extension (request: AgentRecordUpdateRequest)
     //  TODO: 11995 Remove logger
-    def toHipAmendPayload(oldRecord: AgentDetailsDesResponse)(logger: Logger): HipAmendPayload =
+    def toHipAmendPayload(oldRecord: AgentDetailsResponse)(logger: Logger): HipAmendPayload =
 //      def addressLineWithFallback(
 //        newLine: Option[String],
 //        oldLine: Option[String],

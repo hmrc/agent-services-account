@@ -26,7 +26,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails
 import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
 import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
@@ -64,7 +64,7 @@ with Logging {
   private val originatingSystem = "MDTP-ASA"
   private val transmittingSystem = "HIP"
 
-  def getAgentRecord(arn: Arn)(using request: RequestHeader): Future[AgentDetailsDesResponse] = {
+  def getAgentRecord(arn: Arn)(using request: RequestHeader): Future[AgentDetailsResponse] = {
 
     val url = url"$baseUrl/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"
 
@@ -113,10 +113,10 @@ with Logging {
         .map(_ => response)
     }
 
-//  TODO: 11995 Rename AgentDetailsDesResponse to AgentDetailsResponse?
+//  TODO: Put this on model class?
   private def mapHipToDesModel(
     hipResponse: HipAgentSubscriptionResponse
-  ): AgentDetailsDesResponse = {
+  ): AgentDetailsResponse = {
 
     val s = hipResponse.success
     val suspension = SuspensionDetails(
@@ -132,7 +132,7 @@ with Logging {
         MembershipNumber(mn),
         s.evidenceObjectReference.map(EvidenceObjectReference(_))
       )
-    AgentDetailsDesResponse(
+    AgentDetailsResponse(
       uniqueTaxReference = s.utr.map(Utr(_)),
       agencyDetails = Some(
         AgencyDetails(

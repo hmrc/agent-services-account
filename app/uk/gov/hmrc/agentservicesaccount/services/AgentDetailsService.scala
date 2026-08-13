@@ -28,7 +28,7 @@ import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.models.AgentCheckOutcome
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
 import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
 import uk.gov.hmrc.agentservicesaccount.models.agententity.RefusalCheckException.AgentIsOnRefuseToDealList
 import uk.gov.hmrc.domain.SaUtr
@@ -181,9 +181,9 @@ class AgentDetailsService @Inject() (
   }
 
   private def sendEmail(
-    agentRecord: AgentDetailsDesResponse,
-    entityCheckExceptions: Seq[EntityCheckException],
-    arn: Arn
+                         agentRecord: AgentDetailsResponse,
+                         entityCheckExceptions: Seq[EntityCheckException],
+                         arn: Arn
   )(using request: RequestHeader): Future[Unit] = {
     val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy h:mma")
 

@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentservicesaccount.models.UpdateStatus.REJECTED
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.*
 
-class AgentDetailsDesResponseSpec
+class AgentDetailsResponseSpec
 extends UnitSpec:
 
   // Fake crypto for encryption tests
@@ -71,7 +71,7 @@ extends UnitSpec:
     Some(EvidenceObjectReference("evidence-ref-001"))
   )
 
-  val testAgentDetails = AgentDetailsDesResponse(
+  val testAgentDetails = AgentDetailsResponse(
     uniqueTaxReference = Some(testUtr),
     agencyDetails = Some(testAgencyDetails),
     suspensionDetails = Some(testSuspension),
@@ -124,12 +124,12 @@ extends UnitSpec:
         "amlSupervisionUpdateStatus" -> "REJECTED"
       )
 
-      val result = Json.fromJson[AgentDetailsDesResponse](json).get
+      val result = Json.fromJson[AgentDetailsResponse](json).get
       result mustBe testAgentDetails
     }
 
     "serialize to encrypted JSON" in {
-      val encrypted = Json.toJson(testAgentDetails)(using AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat)
+      val encrypted = Json.toJson(testAgentDetails)(using AgentDetailsResponse.agentRecordDatabaseDetailsFormat)
       (encrypted \ "uniqueTaxReference").as[String] must startWith("ENC(")
       (encrypted \ "amlsDetails" \ "supervisoryBody").as[String] must startWith("ENC(")
       (encrypted \ "amlsDetails" \ "membershipNumber").as[String] must startWith("ENC(")
@@ -142,25 +142,25 @@ extends UnitSpec:
     }
 
     "deserialize from encrypted JSON" in {
-      val encrypted = Json.toJson(testAgentDetails)(using AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat)
-      val roundtrip = Json.fromJson[AgentDetailsDesResponse](encrypted)(using AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat).get
+      val encrypted = Json.toJson(testAgentDetails)(using AgentDetailsResponse.agentRecordDatabaseDetailsFormat)
+      val roundtrip = Json.fromJson[AgentDetailsResponse](encrypted)(using AgentDetailsResponse.agentRecordDatabaseDetailsFormat).get
       roundtrip mustBe testAgentDetails
     }
 
     "support partial objects" in {
-      val partial = AgentDetailsDesResponse(
+      val partial = AgentDetailsResponse(
         None,
         None,
         None,
         None
       )
       val json = Json.toJson(partial)
-      val result = Json.fromJson[AgentDetailsDesResponse](json).get
+      val result = Json.fromJson[AgentDetailsResponse](json).get
       result mustBe partial
     }
 
     "create HipAmendPayload UpdateStatus defaults to ACCEPTED" in {
-      val agencyDetailsUpdateStatus = AgentDetailsDesResponse(
+      val agencyDetailsUpdateStatus = AgentDetailsResponse(
         uniqueTaxReference = None,
         agencyDetails = None,
         suspensionDetails = None,

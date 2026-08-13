@@ -77,7 +77,7 @@ with IntegrationPatience {
   "verifyAgent" should {
     "return Some(SuspensionDetails) when the agent is suspended" in {
 
-      val agentDetailsDesResponse = testAgentDetailsDesResponse
+      val agentDetailsDesResponse = testAgentDetailsResponse
         .copy(suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))))
 
       val utrChecksResponse = UtrChecksResponse(
@@ -97,7 +97,7 @@ with IntegrationPatience {
     }
 
     "return None when the agent is not suspended" in {
-      val agentDetailsDesResponse = testAgentDetailsDesResponse
+      val agentDetailsDesResponse = testAgentDetailsResponse
 
       val utrChecksResponse = UtrChecksResponse(
         isManuallyAssured = false,
@@ -117,7 +117,7 @@ with IntegrationPatience {
 
     "return Some(SuspensionDetails) and do entityChecks and sent email with deceased failed" in {
 
-      val agentDetailsDesResponse = testAgentDetailsDesResponse
+      val agentDetailsDesResponse = testAgentDetailsResponse
         .copy(
           suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))),
           isAnIndividual = Some(true)

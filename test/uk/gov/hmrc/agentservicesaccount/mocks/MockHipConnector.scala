@@ -24,7 +24,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
 
@@ -35,7 +35,7 @@ extends MockitoSugar { this: TestSuite =>
 
   val mockHipConnector: HipConnector = mock[HipConnector]
 
-  def mockHipGetAgentRecord(arn: Arn)(response: AgentDetailsDesResponse): Unit = {
+  def mockHipGetAgentRecord(arn: Arn)(response: AgentDetailsResponse): Unit = {
     when(
       mockHipConnector.getAgentRecord(meq(arn))(using any[RequestHeader])
     ).thenReturn(Future.successful(response))

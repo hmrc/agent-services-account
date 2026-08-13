@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentservicesaccount.repositories
 import com.codahale.metrics.MetricRegistry
 import play.api.Configuration
 import play.api.libs.json.*
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
 import uk.gov.hmrc.agentservicesaccount.services.Cache
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
@@ -51,10 +51,10 @@ class AgencyDetailsCacheRepository @Inject() (
   @Named("aes") crypto: Encrypter & Decrypter
 )
 //TODO WG - I have to use my custom EntityCache as is incorrectly implemented EntityCache
-extends EntityCacheCustom[String, AgentDetailsDesResponse]
-with Cache[AgentDetailsDesResponse] {
+extends EntityCacheCustom[String, AgentDetailsResponse]
+with Cache[AgentDetailsResponse] {
 
-  override val format: Format[AgentDetailsDesResponse] = AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat(using crypto)
+  override val format: Format[AgentDetailsResponse] = AgentDetailsResponse.agentRecordDatabaseDetailsFormat(using crypto)
 
   override val cacheRepo: MongoCacheRepository[String] =
     new MongoCacheRepository(
@@ -65,7 +65,7 @@ with Cache[AgentDetailsDesResponse] {
       cacheIdType = CacheIdType.SimpleCacheId,
       replaceIndexes = true,
       extraCodecs = Seq(
-        Codecs.playFormatCodec[AgentDetailsDesResponse](AgentDetailsDesResponse.agentRecordDatabaseDetailsFormat(using crypto))
+        Codecs.playFormatCodec[AgentDetailsResponse](AgentDetailsResponse.agentRecordDatabaseDetailsFormat(using crypto))
       )
     )
 
@@ -73,7 +73,7 @@ with Cache[AgentDetailsDesResponse] {
 
   def apply(
     key: String
-  )(body: => Future[AgentDetailsDesResponse])(implicit ec: ExecutionContext): Future[AgentDetailsDesResponse] = {
+  )(body: => Future[AgentDetailsResponse])(implicit ec: ExecutionContext): Future[AgentDetailsResponse] = {
     val encryptedKey = crypto.encrypt(PlainText(key)).value
     getFromCache(encryptedKey).flatMap {
       case Some(v) =>

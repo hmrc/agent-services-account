@@ -28,7 +28,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
@@ -92,7 +92,7 @@ with HipStubs {
 
   val arn = Arn("AARN00012345")
 
-  val expectedResponse = AgentDetailsDesResponse(
+  val expectedResponse = AgentDetailsResponse(
     Some(Utr("123456")),
     Some(
       AgencyDetails(
