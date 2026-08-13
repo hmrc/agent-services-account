@@ -24,7 +24,6 @@ import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
-import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
@@ -40,12 +39,10 @@ class AgentEntityTypeServiceSpec
 extends UnitSpec
 with BeforeAndAfterEach:
 
-  private val appConfig = mock[AppConfig]
   private val desConnector = mock[DesConnector]
   private val hipConnector = mock[HipConnector]
   private val service =
     new AgentEntityTypeService(
-      appConfig,
       desConnector,
       hipConnector
     )
@@ -120,7 +117,6 @@ with BeforeAndAfterEach:
   override protected def beforeEach(): Unit =
     super.beforeEach()
     reset(
-      appConfig,
       desConnector,
       hipConnector
     )

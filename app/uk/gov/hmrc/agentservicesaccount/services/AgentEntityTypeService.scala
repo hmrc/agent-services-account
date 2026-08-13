@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentservicesaccount.services
 import play.api.Logging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
 import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationResponse
@@ -33,8 +32,6 @@ import scala.util.control.NonFatal
 
 @Singleton
 class AgentEntityTypeService @Inject() (
-// TODO: 11995 Remove appConfig
-  appConfig: AppConfig,
   desConnector: DesConnector,
   hipConnector: HipConnector
 )(using ec: ExecutionContext)
