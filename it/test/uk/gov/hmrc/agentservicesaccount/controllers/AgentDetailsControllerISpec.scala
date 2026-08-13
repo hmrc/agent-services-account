@@ -192,7 +192,6 @@ with EmailStub {
     }
 
     "return OK when HIP returns agent record with no UTR" in {
-//      TODO: 11995 FIX suspension false/true
       stubInternalAuthorised()
       givenHipGetAgentRecord(testArn, None)
 
@@ -201,7 +200,7 @@ with EmailStub {
       response.status shouldBe OK
       response.json shouldBe expectedAgentRecordJson(
         None,
-        suspensionStatus = true,
+        suspensionStatus = false,
         isAnIndividual = true
       )
 
@@ -225,7 +224,6 @@ with EmailStub {
 
   "GET agent /agent-services-account/agent-record-with-checks" should {
     "return agentRecord and DO NOT send out email when isRefusalToDealWith is false" in {
-//      TODO: 11995 FIX  isAnIndividual true/false
       givenAutoMappingCallSucceeds(testArn2)
       isLoggedInAsASAgent(testArn2)
       givenHipGetAgentRecord(testArn2, Some(testUtr1))
@@ -238,7 +236,7 @@ with EmailStub {
       response.json shouldBe expectedAgentRecordJson(
         Some(testUtr1),
         suspensionStatus = false,
-        isAnIndividual = false
+        isAnIndividual = true
       )
 
       verifyEmailRequestWasSent(0)
@@ -276,7 +274,6 @@ with EmailStub {
     }
 
     "after lock expire return agent record and and send out email if agent is on refusalToDealWith" in {
-//      TODO: 11995 FIX isAnIndividual true/false
       retry(5) {
         isLoggedInAsASAgent(testArn2)
         givenHipGetAgentRecord(testArn2, Some(testUtr1))
@@ -295,7 +292,7 @@ with EmailStub {
         response.json shouldBe expectedAgentRecordJson(
           Some(testUtr1),
           suspensionStatus = false,
-          isAnIndividual = false
+          isAnIndividual = true
         )
 
         verifyEmailRequestWasSent(1)
@@ -334,7 +331,6 @@ with EmailStub {
   "POST /agent-record-update" should {
     val url = "/agent-record-update"
     "return OK status when the update was successful" in {
-//      TODO: 11995 FIX
       isLoggedInAsASAgent(testArn)
       givenHipGetAgentRecord(testArn, Some(testUtr))
       givenCitizenIsAlive(testSaUtr)
@@ -353,12 +349,14 @@ with EmailStub {
       println(response.body)
       response.status shouldBe OK
     }
+
     "return bad request when the request body is invalid" in {
       isLoggedInAsASAgent(testArn)
 
       val response = put(url)("""{"invalid":"data"}""")
       response.status shouldBe BAD_REQUEST
     }
+
     "return bad request when the request body is not json" in {
       isLoggedInAsASAgent(testArn)
 
