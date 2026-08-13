@@ -33,6 +33,7 @@ import scala.util.control.NonFatal
 
 @Singleton
 class AgentEntityTypeService @Inject() (
+// TODO: 11995 Remove appConfig
   appConfig: AppConfig,
   desConnector: DesConnector,
   hipConnector: HipConnector
@@ -40,13 +41,7 @@ class AgentEntityTypeService @Inject() (
 extends Logging:
 
   def resolve(arn: Arn)(using request: RequestHeader): Future[String] =
-    val agentRecord = hipConnector.getAgentRecord(arn)
-//      if appConfig.getAgentRecordViaHIP then
-//        hipConnector.getAgentRecord(arn)
-//      else
-//        desConnector.getAgentRecord(arn)
-
-    agentRecord
+    hipConnector.getAgentRecord(arn)
       .flatMap { record =>
         record.uniqueTaxReference match
           case None => Future.successful(AgentEntityType.Overseas)

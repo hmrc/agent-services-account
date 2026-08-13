@@ -60,11 +60,6 @@ class AgentDetailsService @Inject() (
 
     for {
       agentRecord <- hipConnector.getAgentRecord(arn)
-//        if (appConfig.getAgentRecordViaHIP)
-//          hipConnector.getAgentRecord(arn)
-//        else
-//          desConnector.getAgentRecord(arn)
-
       _ =
         if (doAutoMapping)
           mongoLockService.automapLock(arn) {
@@ -181,9 +176,9 @@ class AgentDetailsService @Inject() (
   }
 
   private def sendEmail(
-                         agentRecord: AgentDetailsResponse,
-                         entityCheckExceptions: Seq[EntityCheckException],
-                         arn: Arn
+    agentRecord: AgentDetailsResponse,
+    entityCheckExceptions: Seq[EntityCheckException],
+    arn: Arn
   )(using request: RequestHeader): Future[Unit] = {
     val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy h:mma")
 

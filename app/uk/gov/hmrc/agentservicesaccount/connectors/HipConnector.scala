@@ -21,18 +21,12 @@ import org.apache.pekko.actor.ActorSystem
 import play.api.Logging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
-import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
-import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails
-import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
 import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
-import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
@@ -112,54 +106,5 @@ with Logging {
         .recover { case e => logger.warn(s"Failed to invalidate agent details cache: ${e.getMessage}") }
         .map(_ => response)
     }
-
-//  TODO: 11995 Put this on model class?
-//  private def mapHipToDesModel(
-//    hipResponse: HipAgentSubscriptionResponse
-//  ): AgentDetailsResponse = {
-//
-//    val s = hipResponse.success
-//    val suspension = SuspensionDetails(
-//      suspensionStatus = s.suspensionStatus == "T",
-//      regimes = s.regime.filter(_.nonEmpty).map(_.toSet)
-//    )
-//    val amlsDetails =
-//      for {
-//        sb <- s.supervisoryBody
-//        mn <- s.membershipNumber
-//      } yield AmlsDetails(
-//        SupervisoryBody(sb),
-//        MembershipNumber(mn),
-//        s.evidenceObjectReference.map(EvidenceObjectReference(_))
-//      )
-//    AgentDetailsResponse(
-//      uniqueTaxReference = s.utr.map(Utr(_)),
-//      agencyDetails = Some(
-//        AgencyDetails(
-//          agencyName = Some(s.name),
-//          agencyEmail = Some(s.email),
-//          agencyTelephone = s.phone,
-//          agencyAddress = Some(
-//            BusinessAddress(
-//              addressLine1 = s.addr1,
-//              addressLine2 = s.addr2,
-//              addressLine3 = s.addr3,
-//              addressLine4 = s.addr4,
-//              postalCode = s.postcode,
-//              countryCode = s.country
-//            )
-//          )
-//        )
-//      ),
-//      suspensionDetails = Some(suspension),
-//      isAnIndividual = Some(true),
-//      amlsDetails = amlsDetails,
-//      updateDetailsStatus = s.updateDetailsStatus,
-//      amlSupervisionUpdateStatus = s.amlSupervisionUpdateStatus,
-//      directorPartnerUpdateStatus = s.directorPartnerUpdateStatus,
-//      acceptNewTermsStatus = s.acceptNewTermsStatus,
-//      reriskStatus = s.reriskStatus
-//    )
-//  }
 
 }

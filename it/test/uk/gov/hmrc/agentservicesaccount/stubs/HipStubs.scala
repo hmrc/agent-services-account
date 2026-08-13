@@ -17,6 +17,7 @@
 package uk.gov.hmrc.agentservicesaccount.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.Seconds
@@ -28,7 +29,7 @@ trait HipStubs {
   def givenHIPGetAgentRecordSuspendedAgent(
     arn: Arn,
     utr: String = "123456"
-  ) = stubFor(
+  ): StubMapping = stubFor(
     get(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
       .willReturn(
         okJson(
@@ -61,7 +62,7 @@ trait HipStubs {
     arn: Arn,
     utr: String = "123456",
     regime: String = "ALL"
-  ) = stubFor(
+  ): StubMapping = stubFor(
     get(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
       .willReturn(
         okJson(
@@ -91,12 +92,11 @@ trait HipStubs {
       )
   )
 
-//  TODO: 11995 ITs failing are due to this - need to fix
   def givenHipGetAgentRecord(
                               arn: Arn,
                               utr: Option[Utr],
                               overseas: Boolean = false
-                            ) = stubFor(
+                            ): StubMapping = stubFor(
     get(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
       .willReturn(
         okJson(
