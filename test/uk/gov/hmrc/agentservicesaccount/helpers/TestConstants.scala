@@ -121,25 +121,25 @@ object TestConstants {
       "GB"
     ))
   )
-  val testAgentDetailsDesEmptyResponse: AgentDetailsDesResponse = AgentDetailsDesResponse(
+  val testAgentDetailsDesEmptyResponse: AgentDetailsResponse = AgentDetailsResponse(
     None,
     None,
     None,
     None
   )
-  val testAgentDetailsDesAddressUtrResponse: AgentDetailsDesResponse = AgentDetailsDesResponse(
+  val testAgentDetailsDesAddressUtrResponse: AgentDetailsResponse = AgentDetailsResponse(
     uniqueTaxReference = Some(testUtr),
     agencyDetails = Some(agencyDetails),
     suspensionDetails = None,
     isAnIndividual = None
   )
-  val testAgentDetailsDesOverseas: AgentDetailsDesResponse = testAgentDetailsDesAddressUtrResponse.copy(agencyDetails = Some(agencyDetailsOverseas))
-  val testAgentDetailsDesResponse: AgentDetailsDesResponse = AgentDetailsDesResponse(
+  val testAgentDetailsDesOverseas: AgentDetailsResponse = testAgentDetailsDesAddressUtrResponse.copy(agencyDetails = Some(agencyDetailsOverseas))
+  val testAgentDetailsResponse: AgentDetailsResponse = AgentDetailsResponse(
     uniqueTaxReference = Some(testUtr),
     agencyDetails = None,
     suspensionDetails = None,
     isAnIndividual = None
   )
-  val testAgentDetailsDesResponseNoUtr: AgentDetailsDesResponse = testAgentDetailsDesResponse.copy(uniqueTaxReference = None)
+  val testAgentDetailsResponseNoUtr: AgentDetailsResponse = testAgentDetailsResponse.copy(uniqueTaxReference = None)
 
 }

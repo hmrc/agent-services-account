@@ -16,11 +16,6 @@
 
 package uk.gov.hmrc.agentservicesaccount.mocks
 
-// Add these:
-
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.eq as meq
-import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Configuration
@@ -40,8 +35,6 @@ extends MockitoSugar { this: TestSuite =>
   val mockServiceConfigHip: ServicesConfig = mock[ServicesConfig]
   val mockConfigHip: Configuration = mock[Configuration]
   stubCommonConfig(mockConfigHip, mockServiceConfigHip)
-  when(mockConfigHip.get[Boolean](meq("features.get-agent-record-via-hip"))(using any()))
-    .thenReturn(true)
   val mockAppConfigHip: AppConfig = new AppConfig(mockConfigHip, mockServiceConfigHip)
 
   def stubCommonConfig(
@@ -136,9 +129,6 @@ extends MockitoSugar { this: TestSuite =>
 
     when(mockConfig.getOptional[String](meq("work-item-jobs.ct-robotics.available-at"))(using any()))
       .thenReturn(None)
-
-    when(mockConfig.get[Boolean](meq("features.get-agent-record-via-hip"))(using any()))
-      .thenReturn(false)
 
     when(mockServiceConfig.getString(meq("stride.roles.agent-services-account")))
       .thenReturn("maintain_agent_manually_assure")

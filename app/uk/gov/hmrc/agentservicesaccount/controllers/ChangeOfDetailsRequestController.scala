@@ -37,7 +37,7 @@ class ChangeOfDetailsRequestController @Inject() (
 )(using ec: ExecutionContext)
 extends BackendController(cc):
 
-  def find(arn: String): Action[AnyContent] = Action.async: request =>
+  def find(arn: String): Action[AnyContent] = Action.async: _ =>
     changeOfDetailsRequestService
       .find(arn)
       .map:
@@ -52,7 +52,7 @@ extends BackendController(cc):
         .recover:
           case _ => throw new InternalServerException("Failed to upsert ChangeOfDetailsRequest for ARN: " + request.body.arn)
 
-  def delete(arn: String): Action[AnyContent] = Action.async: request =>
+  def delete(arn: String): Action[AnyContent] = Action.async: _ =>
     changeOfDetailsRequestService
       .delete(arn)
       .map:

@@ -28,7 +28,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.AgencyDetails
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 import uk.gov.hmrc.agentservicesaccount.models.BusinessAddress
@@ -60,9 +60,7 @@ with HipStubs {
     "http-verbs.retries.intervals" -> List("1ms"),
     "agent.entity.cache.enabled" -> true,
     "agent.entity.cache.expires" -> "1 second",
-    "auditing.enabled" -> false,
-    "features.get-agent-record-via-hip" -> true,
-    "features.updated-hip-put-agent-record" -> true
+    "auditing.enabled" -> false
   )
 
   private implicit lazy val configuration: Config = app.injector.instanceOf[Config]
@@ -94,7 +92,7 @@ with HipStubs {
 
   val arn = Arn("AARN00012345")
 
-  val expectedResponse = AgentDetailsDesResponse(
+  val expectedResponse = AgentDetailsResponse(
     Some(Utr("123456")),
     Some(
       AgencyDetails(

@@ -17,18 +17,19 @@
 package uk.gov.hmrc.agentservicesaccount.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 
 trait HipStubs {
 
   def givenHIPGetAgentRecordSuspendedAgent(
     arn: Arn,
     utr: String = "123456"
-  ) = stubFor(
+  ): StubMapping = stubFor(
     get(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
       .willReturn(
         okJson(
@@ -61,7 +62,7 @@ trait HipStubs {
     arn: Arn,
     utr: String = "123456",
     regime: String = "ALL"
-  ) = stubFor(
+  ): StubMapping = stubFor(
     get(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
       .willReturn(
         okJson(
@@ -81,6 +82,39 @@ trait HipStubs {
                   "email": "abc@xyz.com",
                   "suspensionStatus": "T",
                   "regime": "$regime",
+                  "supervisoryBody": "HMRC",
+                  "membershipNumber": "AMLS123",
+                  "evidenceObjectReference": "evidence-ref-001"
+                }
+              }
+            """
+        )
+      )
+  )
+
+  def givenHipGetAgentRecord(
+                              arn: Arn,
+                              utr: Option[Utr],
+                              overseas: Boolean = false
+                            ): StubMapping = stubFor(
+    get(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
+      .willReturn(
+        okJson(
+          s"""
+              {
+                "success": {
+                  "processingDate": "2025-02-25",
+                  "utr": "${utr.map(_.value).getOrElse("")}",
+                  "name": "ABC Accountants",
+                  "addr1": "Matheson House",
+                  "addr2": "Grange Central",
+                  "addr3": "Town Centre",
+                  "addr4": "Telford",
+                  "postcode": "TF3 4ER",
+                  "country": "${if overseas then "NZ" else "GB"}",
+                  "phone": "07345678901",
+                  "email": "abc@xyz.com",
+                  "suspensionStatus": "F",
                   "supervisoryBody": "HMRC",
                   "membershipNumber": "AMLS123",
                   "evidenceObjectReference": "evidence-ref-001"

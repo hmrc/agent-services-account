@@ -19,7 +19,6 @@ package uk.gov.hmrc.agentservicesaccount.services
 import play.api.Logging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
 import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationResponse
@@ -33,20 +32,13 @@ import scala.util.control.NonFatal
 
 @Singleton
 class AgentEntityTypeService @Inject() (
-  appConfig: AppConfig,
   desConnector: DesConnector,
   hipConnector: HipConnector
 )(using ec: ExecutionContext)
 extends Logging:
 
   def resolve(arn: Arn)(using request: RequestHeader): Future[String] =
-    val agentRecord =
-      if appConfig.getAgentRecordViaHIP then
-        hipConnector.getAgentRecord(arn)
-      else
-        desConnector.getAgentRecord(arn)
-
-    agentRecord
+    hipConnector.getAgentRecord(arn)
       .flatMap { record =>
         record.uniqueTaxReference match
           case None => Future.successful(AgentEntityType.Overseas)

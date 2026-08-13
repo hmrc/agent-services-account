@@ -25,7 +25,7 @@ import uk.gov.hmrc.crypto.json.JsonEncryption.stringEncrypterDecrypter
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 
-case class AgentDetailsDesResponse(
+case class AgentDetailsResponse(
   uniqueTaxReference: Option[Utr],
   agencyDetails: Option[AgencyDetails],
   suspensionDetails: Option[SuspensionDetails],
@@ -60,11 +60,11 @@ case class AgentDetailsDesResponse(
   }
 }
 
-object AgentDetailsDesResponse {
+object AgentDetailsResponse {
 
-  given agentRecordDetailsFormat: OFormat[AgentDetailsDesResponse] = Json.format[AgentDetailsDesResponse]
+  given agentRecordDetailsFormat: OFormat[AgentDetailsResponse] = Json.format[AgentDetailsResponse]
 
-  def agentRecordDatabaseDetailsFormat(using crypto: Encrypter & Decrypter): Format[AgentDetailsDesResponse] =
+  def agentRecordDatabaseDetailsFormat(using crypto: Encrypter & Decrypter): Format[AgentDetailsResponse] =
     (__ \ "uniqueTaxReference")
       .formatNullable[String](using stringEncrypterDecrypter)
       .bimap[Option[Utr]](
@@ -80,7 +80,7 @@ object AgentDetailsDesResponse {
       .and((__ \ "directorPartnerUpdateStatus").formatNullable[UpdateStatus])
       .and((__ \ "acceptNewTermsStatus").formatNullable[UpdateStatus])
       .and((__ \ "reriskStatus").formatNullable[UpdateStatus])(
-        AgentDetailsDesResponse.apply,
+        AgentDetailsResponse.apply,
         adr =>
           (
             adr.uniqueTaxReference,

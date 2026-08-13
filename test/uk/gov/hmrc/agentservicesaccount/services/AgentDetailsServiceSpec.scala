@@ -16,9 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import org.mockito.Mockito.never
 import org.mockito.Mockito.reset
-import org.mockito.Mockito.verify
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.mvc.Request
 import play.api.test.FakeRequest
@@ -42,7 +40,6 @@ import scala.concurrent.ExecutionContext
 class AgentDetailsServiceSpec
 extends UnitSpec
 with CleanMongoCollectionSupport
-with MockDesConnector
 with MockHipConnector
 with MockCitizenDetailsConnector
 with MockAppConfig
@@ -61,21 +58,6 @@ with IntegrationPatience {
 
   val service =
     new AgentDetailsService(
-      ac,
-      mockDesConnector,
-      mockHipConnector,
-      mockCitizenDetailsConnector,
-      mockAgentAssuranceConnector,
-      mockAgentMappingConnector,
-      mongoLockService,
-      mockEmailService,
-      mockAuditService
-    )
-
-  val serviceHip =
-    new AgentDetailsService(
-      mockAppConfigHip,
-      mockDesConnector,
       mockHipConnector,
       mockCitizenDetailsConnector,
       mockAgentAssuranceConnector,
@@ -87,13 +69,13 @@ with IntegrationPatience {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockDesConnector, mockHipConnector)
+    reset(mockHipConnector)
   }
 
   "verifyAgent" should {
     "return Some(SuspensionDetails) when the agent is suspended" in {
 
-      val agentDetailsDesResponse = testAgentDetailsDesResponse
+      val agentDetailsDesResponse = testAgentDetailsResponse
         .copy(suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))))
 
       val utrChecksResponse = UtrChecksResponse(
@@ -102,7 +84,7 @@ with IntegrationPatience {
         businessName = None
       )
 
-      mockDesGetAgentRecord(testArn)(agentDetailsDesResponse)
+      mockHipGetAgentRecord(testArn)(agentDetailsDesResponse)
       mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
@@ -113,7 +95,7 @@ with IntegrationPatience {
     }
 
     "return None when the agent is not suspended" in {
-      val agentDetailsDesResponse = testAgentDetailsDesResponse
+      val agentDetailsDesResponse = testAgentDetailsResponse
 
       val utrChecksResponse = UtrChecksResponse(
         isManuallyAssured = false,
@@ -121,7 +103,7 @@ with IntegrationPatience {
         businessName = None
       )
 
-      mockDesGetAgentRecord(testArn)(agentDetailsDesResponse)
+      mockHipGetAgentRecord(testArn)(agentDetailsDesResponse)
       mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
       mockSendEntityCheckNotification()
       mockAuditEntityCheckFailureNotificationSent()
@@ -133,7 +115,7 @@ with IntegrationPatience {
 
     "return Some(SuspensionDetails) and do entityChecks and sent email with deceased failed" in {
 
-      val agentDetailsDesResponse = testAgentDetailsDesResponse
+      val agentDetailsDesResponse = testAgentDetailsResponse
         .copy(
           suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))),
           isAnIndividual = Some(true)
@@ -145,7 +127,7 @@ with IntegrationPatience {
         businessName = None
       )
 
-      mockDesGetAgentRecord(testArn)(agentDetailsDesResponse)
+      mockHipGetAgentRecord(testArn)(agentDetailsDesResponse)
       mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
       mockGetCitizenDeceasedFlag(SaUtr(testUtr.value))(Some(EntityDeceasedCheckFailed))
       mockSendEntityCheckNotification()
@@ -157,40 +139,6 @@ with IntegrationPatience {
 
     }
 
-    "call DES connector when feature switch is disabled" in {
-      val utrChecksResponse = UtrChecksResponse(
-        isManuallyAssured = false,
-        isRefusalToDealWith = true,
-        businessName = None
-      )
-      mockDesGetAgentRecord(testArn)(testAgentDetailsDesResponse)
-      mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
-      mockSendEntityCheckNotification()
-      mockAuditEntityCheckFailureNotificationSent()
-
-      service.getAgentDetailsWithChecks(testArn).futureValue
-
-      verify(mockDesConnector).getAgentRecord(testArn)
-      verify(mockHipConnector, never()).getAgentRecord(testArn)
-    }
-
-    "call HIP connector when feature switch is enabled" in {
-
-      val utrChecksResponse = UtrChecksResponse(
-        isManuallyAssured = false,
-        isRefusalToDealWith = true,
-        businessName = None
-      )
-      mockHipGetAgentRecord(testArn)(testAgentDetailsDesResponse)
-      mockGetAgentUtrChecks(testUtr)(utrChecksResponse)
-      mockSendEntityCheckNotification()
-      mockAuditEntityCheckFailureNotificationSent()
-
-      serviceHip.getAgentDetailsWithChecks(testArn).futureValue
-
-      verify(mockHipConnector).getAgentRecord(testArn)
-      verify(mockDesConnector, never()).getAgentRecord(testArn)
-    }
   }
 
 }

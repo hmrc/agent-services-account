@@ -36,7 +36,6 @@ class AgentDetailsControllerISpec
 extends ComponentSpecHelper
 with AgentAuthStubs
 with AgentMappingStubs
-with DesStubs
 with HipStubs
 with InternalAuthStub
 with CitizenDetailsStubs
@@ -57,9 +56,7 @@ with EmailStub {
     "agent.entity.cache.expires" -> "1 seconds",
     "agent.entity-check.lock.expires" -> "1 seconds",
     "agent.automap.lock.expires" -> "1 seconds",
-    "agent.entity-check.email.lock.expires" -> "1 seconds",
-    "features.get-agent-record-via-hip" -> false,
-    "features.updated-hip-put-agent-record" -> true
+    "agent.entity-check.email.lock.expires" -> "1 seconds"
   )
 
   val testArn = Arn("AARN0000002")
@@ -108,7 +105,15 @@ with EmailStub {
 
     val utrField: Option[(String, JsValue)] = utr.map(u => "uniqueTaxReference" -> JsString(u.value))
 
-    JsObject(utrField.toSeq ++ baseFields)
+    val amlsField: Seq[(String, JsValue)] = Seq(
+      "amlsDetails" -> Json.obj(
+        "supervisoryBody" -> "HMRC",
+        "membershipNumber" -> "AMLS123",
+        "evidenceObjectReference" -> "evidence-ref-001"
+      )
+    )
+
+    JsObject(utrField.toSeq ++ baseFields ++ amlsField)
   }
 
   private val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy h:mma")
@@ -134,7 +139,7 @@ with EmailStub {
   def retry[T](n: Int)(block: => T): T = {
     Try(block) match {
       case Success(result) => result
-      case Failure(e) if n > 1 =>
+      case Failure(_) if n > 1 =>
         Thread.sleep(500)
         retry(n - 1)(block)
       case Failure(e) => throw e
@@ -145,7 +150,7 @@ with EmailStub {
 
     "return suspension details when agent record contains suspension details (without making auto mapping call)" in {
       stubInternalAuthorised()
-      givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
+      givenHIPGetAgentRecordSuspendedAgentWithStringRegime(testArn, testUtr.value, "ITSA")
       givenCitizenIsAlive(testSaUtr)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
 
@@ -164,7 +169,7 @@ with EmailStub {
     "return suspension details and send email for deceased" in {
       retry(5) {
         stubInternalAuthorised()
-        givenDESGetAgentRecordSuspendedAgent(testArn, Some(testUtr))
+        givenHIPGetAgentRecordSuspendedAgentWithStringRegime(testArn, testUtr.value, "ITSA")
         givenCitizenIsDeceased(testSaUtr)
         givenAgentUtrCheckWithRefusalToDealWithTrue(testUtr)
         givenEmailSent(emailInformation(
@@ -186,16 +191,16 @@ with EmailStub {
 
     }
 
-    "return OK when DES returns agent record with no UTR" in {
+    "return OK when HIP returns agent record with no UTR" in {
       stubInternalAuthorised()
-      givenDESGetAgentRecordSuspendedAgent(testArn, None)
+      givenHipGetAgentRecord(testArn, None)
 
       val response = get(clientUrl(testArn))
 
       response.status shouldBe OK
       response.json shouldBe expectedAgentRecordJson(
         None,
-        suspensionStatus = true,
+        suspensionStatus = false,
         isAnIndividual = true
       )
 
@@ -207,9 +212,9 @@ with EmailStub {
       response.status shouldBe UNAUTHORIZED
     }
 
-    "return 404 when DES fails" in {
+    "return 404 when HIP fails" in {
       stubInternalAuthorised()
-      givenAgentIsUnknown404(testArn)
+      givenHipAgentIsUnknown404(testArn)
 
       val response = get(clientUrl(testArn))
 
@@ -221,7 +226,7 @@ with EmailStub {
     "return agentRecord and DO NOT send out email when isRefusalToDealWith is false" in {
       givenAutoMappingCallSucceeds(testArn2)
       isLoggedInAsASAgent(testArn2)
-      givenDESGetAgentRecord(testArn2, Some(testUtr1))
+      givenHipGetAgentRecord(testArn2, Some(testUtr1))
       givenCitizenIsAlive(testSaUtr1)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr1)
 
@@ -231,7 +236,7 @@ with EmailStub {
       response.json shouldBe expectedAgentRecordJson(
         Some(testUtr1),
         suspensionStatus = false,
-        isAnIndividual = false
+        isAnIndividual = true
       )
 
       verifyEmailRequestWasSent(0)
@@ -240,7 +245,7 @@ with EmailStub {
     "NOT trigger auto-mapping again within lock TTL even if multiple requests are made" in {
       retry(5) {
         isLoggedInAsASAgent(testArn2)
-        givenDESGetAgentRecord(testArn2, Some(testUtr1))
+        givenHipGetAgentRecord(testArn2, Some(testUtr1))
         givenCitizenIsAlive(testSaUtr1)
         givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr1)
         givenAutoMappingCallSucceeds(testArn2)
@@ -255,7 +260,7 @@ with EmailStub {
     "trigger auto-mapping again after lock TTL expires" in {
       retry(5) {
         isLoggedInAsASAgent(testArn2)
-        givenDESGetAgentRecord(testArn2, Some(testUtr1))
+        givenHipGetAgentRecord(testArn2, Some(testUtr1))
         givenCitizenIsAlive(testSaUtr1)
         givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr1)
         givenAutoMappingCallSucceeds(testArn2)
@@ -271,7 +276,7 @@ with EmailStub {
     "after lock expire return agent record and and send out email if agent is on refusalToDealWith" in {
       retry(5) {
         isLoggedInAsASAgent(testArn2)
-        givenDESGetAgentRecord(testArn2, Some(testUtr1))
+        givenHipGetAgentRecord(testArn2, Some(testUtr1))
         givenCitizenIsAlive(testSaUtr1)
         givenAgentUtrCheckWithRefusalToDealWithTrue(testUtr1)
         givenEmailSent(emailInformation(
@@ -287,7 +292,7 @@ with EmailStub {
         response.json shouldBe expectedAgentRecordJson(
           Some(testUtr1),
           suspensionStatus = false,
-          isAnIndividual = false
+          isAnIndividual = true
         )
 
         verifyEmailRequestWasSent(1)
@@ -327,7 +332,7 @@ with EmailStub {
     val url = "/agent-record-update"
     "return OK status when the update was successful" in {
       isLoggedInAsASAgent(testArn)
-      givenDESGetAgentRecord(testArn, Some(testUtr))
+      givenHipGetAgentRecord(testArn, Some(testUtr))
       givenCitizenIsAlive(testSaUtr)
       givenAgentUtrCheckWithRefusalToDealWithFalse(testUtr)
       givenAutoMappingCallSucceeds(testArn)
@@ -344,12 +349,14 @@ with EmailStub {
       println(response.body)
       response.status shouldBe OK
     }
+
     "return bad request when the request body is invalid" in {
       isLoggedInAsASAgent(testArn)
 
       val response = put(url)("""{"invalid":"data"}""")
       response.status shouldBe BAD_REQUEST
     }
+
     "return bad request when the request body is not json" in {
       isLoggedInAsASAgent(testArn)
 

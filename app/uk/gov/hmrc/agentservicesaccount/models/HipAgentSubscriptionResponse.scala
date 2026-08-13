@@ -18,6 +18,8 @@ package uk.gov.hmrc.agentservicesaccount.models
 
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
+import uk.gov.hmrc.agentmtdidentifiers.model.{SuspensionDetails, Utr}
+import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 
 case class HipAgentSubscriptionResponse(
   success: HipAgentSubscriptionSuccess
@@ -45,7 +47,51 @@ case class HipAgentSubscriptionSuccess(
   directorPartnerUpdateStatus: Option[UpdateStatus],
   acceptNewTermsStatus: Option[UpdateStatus],
   reriskStatus: Option[UpdateStatus]
-)
+) {
+  def toAgentDetailsResponse: AgentDetailsResponse = {
+    val suspension = SuspensionDetails(
+      suspensionStatus = suspensionStatus == "T",
+      regimes = regime.filter(_.nonEmpty).map(_.toSet)
+    )
+    val amlsDetails =
+      for {
+        sb <- supervisoryBody
+        mn <- membershipNumber
+      } yield AmlsDetails(
+        SupervisoryBody(sb),
+        MembershipNumber(mn),
+        evidenceObjectReference.map(EvidenceObjectReference(_))
+      )
+    AgentDetailsResponse(
+      uniqueTaxReference = utr.map(Utr(_)),
+      agencyDetails = Some(
+        AgencyDetails(
+          agencyName = Some(name),
+          agencyEmail = Some(email),
+          agencyTelephone = phone,
+          agencyAddress = Some(
+            BusinessAddress(
+              addressLine1 = addr1,
+              addressLine2 = addr2,
+              addressLine3 = addr3,
+              addressLine4 = addr4,
+              postalCode = postcode,
+              countryCode = country
+            )
+          )
+        )
+      ),
+      suspensionDetails = Some(suspension),
+      isAnIndividual = Some(true),
+      amlsDetails = amlsDetails,
+      updateDetailsStatus = updateDetailsStatus,
+      amlSupervisionUpdateStatus = amlSupervisionUpdateStatus,
+      directorPartnerUpdateStatus = directorPartnerUpdateStatus,
+      acceptNewTermsStatus = acceptNewTermsStatus,
+      reriskStatus = reriskStatus
+    )
+  }
+}
 
 object HipAgentSubscriptionResponse {
 

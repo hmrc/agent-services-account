@@ -22,7 +22,7 @@ import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import play.api.Configuration
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.agentmtdidentifiers.model.{SuspensionDetails, Utr}
-import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsDesResponse, BusinessAddress, UpdateStatus}
+import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsResponse, BusinessAddress, UpdateStatus}
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
 import uk.gov.hmrc.crypto.{Crypted, Decrypter, Encrypter, PlainText}
@@ -84,7 +84,7 @@ class AgentDetailsCacheRepositoryISpec
     regimes = Some(Set("ALL"))
   )
 
-  val agencyDetailsResponse: AgentDetailsDesResponse = AgentDetailsDesResponse(
+  val agencyDetailsResponse: AgentDetailsResponse = AgentDetailsResponse(
     uniqueTaxReference = Some(Utr("aa123456789")),
     agencyDetails = Some(agencyDetails),
     suspensionDetails = Some(suspensionDetails),
@@ -159,7 +159,7 @@ class AgentDetailsCacheRepositoryISpec
       "return the cached data" in {
         agencyDetailsCacheRepository.putCache(cacheId = encryptedCacheId("agent-1"))(agencyDetailsResponse).futureValue
 
-        val result: AgentDetailsDesResponse =
+        val result: AgentDetailsResponse =
           agencyDetailsCacheRepository("agent-1")(Future.failed(throw new RuntimeException("Should not be called"))).futureValue
 
         result shouldBe agencyDetailsResponse

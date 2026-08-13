@@ -32,7 +32,7 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 class EntityCheckResultSpec
 extends UnitSpec:
 
-  val testAgentRecord = AgentDetailsDesResponse(
+  val testAgentRecord = AgentDetailsResponse(
     uniqueTaxReference = Some(Utr("1234567890")),
     agencyDetails = Some(AgencyDetails(
       Some("Test Agency"),

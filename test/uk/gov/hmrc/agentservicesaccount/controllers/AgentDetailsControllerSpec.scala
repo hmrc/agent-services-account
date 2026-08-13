@@ -42,7 +42,6 @@ with GuiceOneAppPerTest
 with MockAppConfig
 with MockAuthConnector
 with MockAgentEntityService
-with MockDesConnector
 with MockHipConnector
 with MockInternalAuth
 with MockDmsService
@@ -71,7 +70,7 @@ with MockFactory {
       "not suspended and a GET request to /agent-record-with-checks" in {
 
         mockAuth()(Right(enrolmentsWithNoIrSAAgent))
-        mockVerifyEntitySuccess(testArn)(EntityCheckResult(testAgentDetailsDesResponse, Seq.empty[EntityCheckException]))
+        mockVerifyEntitySuccess(testArn)(EntityCheckResult(testAgentDetailsResponse, Seq.empty[EntityCheckException]))
 
         val result = controller
           .agentGetWithChecks
@@ -81,13 +80,13 @@ with MockFactory {
           )
 
         status(result) shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(testAgentDetailsDesResponse)
+        contentAsJson(result) shouldBe Json.toJson(testAgentDetailsResponse)
 
       }
     }
 
     "suspended and a GET request to /agent-record-with-checks" in {
-      val agentDetailsDesResponse = testAgentDetailsDesResponse.copy(suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))))
+      val agentDetailsDesResponse = testAgentDetailsResponse.copy(suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))))
 
       mockAuth()(Right(enrolmentsWithNoIrSAAgent))
 
@@ -116,7 +115,7 @@ with MockFactory {
     "return OK" when {
       "not suspended and a GET request to /agent-record-with-checks/arn/:arn" in {
         mockInternalAuthSuccess()
-        mockVerifyEntitySuccess(testArn)(EntityCheckResult(testAgentDetailsDesResponse, Seq.empty[EntityCheckException]))
+        mockVerifyEntitySuccess(testArn)(EntityCheckResult(testAgentDetailsResponse, Seq.empty[EntityCheckException]))
 
         val result = controller
           .clientGetWithChecks(testArn)
@@ -126,12 +125,12 @@ with MockFactory {
           )
 
         status(result) shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(testAgentDetailsDesResponse)
+        contentAsJson(result) shouldBe Json.toJson(testAgentDetailsResponse)
 
       }
 
       "suspended and a GET request to/agent-record-with-checks/arn/:arn" in {
-        val agentDetailsDesResponse = testAgentDetailsDesResponse.copy(suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))))
+        val agentDetailsDesResponse = testAgentDetailsResponse.copy(suspensionDetails = Some(SuspensionDetails(suspensionStatus = true, Some(Set("ITSA")))))
 
         mockInternalAuthSuccess()
         mockVerifyEntitySuccess(testArn)(EntityCheckResult(agentDetailsDesResponse, Seq.empty[EntityCheckException]))

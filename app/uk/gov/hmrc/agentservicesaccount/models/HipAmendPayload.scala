@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentservicesaccount.models
 
-import play.api.Logger
 import play.api.libs.json.*
 
 case class HipAmendPayload(
@@ -72,64 +71,7 @@ object HipAmendPayload:
   given Writes[HipAmendPayload] = Json.writes[HipAmendPayload]
 
   extension (request: AgentRecordUpdateRequest)
-    def toHipAmendPayload(
-      oldRecord: AgentDetailsDesResponse,
-      useUpdatedHipPutAgentRecord: Boolean
-    )(logger: Logger): HipAmendPayload =
-      def addressLineWithFallback(
-        newLine: Option[String],
-        oldLine: Option[String],
-        fallback: String
-      ): Option[String] = {
-        if newLine.nonEmpty then newLine
-        else if oldLine.exists(_.nonEmpty) then // If it's an empty string in the record we don't want to touch it.
-          logger.warn(s"[HipAmendPayload] old record has optional field defined but update request is not overriding it. Using fallback '$fallback' to force override.")
-          Some(fallback)
-        else None
-      }
-
-      (request, useUpdatedHipPutAgentRecord) match
-        case (AmlsUpdateRequest(update), true) => oldRecord.toInitHipAmendPayload.withAmlsDetailsUpdate(update)
-        case (AgencyDetailsUpdateRequest(update), true) => oldRecord.toInitHipAmendPayload.withAgencyDetailsUpdate(update)
-        case (AmlsUpdateRequest(update), false) =>
-          HipAmendPayload(
-            supervisoryBody = Some(update.supervisoryBody.value),
-            membershipNumber = Some(update.membershipNumber.value),
-            evidenceObjectReference = update.evidenceObjectReference.map(_.value)
-          )
-        case (AgencyDetailsUpdateRequest(update), false) =>
-          HipAmendPayload(
-            name = update.agencyName,
-            addr1 = update.agencyAddress.map(_.addressLine1),
-            addr2 = update.agencyAddress.flatMap(newAddr =>
-              addressLineWithFallback(
-                newAddr.addressLine2,
-                oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine2)),
-                "Address Line 2"
-              )
-            ),
-            addr3 = update.agencyAddress.flatMap(newAddr =>
-              addressLineWithFallback(
-                newAddr.addressLine3,
-                oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine3)),
-                "Address Line 3"
-              )
-            ),
-            addr4 = update.agencyAddress.flatMap(newAddr =>
-              addressLineWithFallback(
-                newAddr.addressLine4,
-                oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.addressLine4)),
-                "Address Line 4"
-              )
-            ),
-            postcode = update.agencyAddress.flatMap(newAddr =>
-              addressLineWithFallback(
-                newAddr.postalCode,
-                oldRecord.agencyDetails.flatMap(_.agencyAddress.flatMap(_.postalCode)),
-                "Postcode"
-              )
-            ),
-            country = update.agencyAddress.map(_.countryCode),
-            phone = update.agencyTelephone,
-            email = update.agencyEmail
-          )
+    def toHipAmendPayload(oldRecord: AgentDetailsResponse): HipAmendPayload =
+      request match
+        case AmlsUpdateRequest(update) => oldRecord.toInitHipAmendPayload.withAmlsDetailsUpdate(update)
+        case AgencyDetailsUpdateRequest(update) => oldRecord.toInitHipAmendPayload.withAgencyDetailsUpdate(update)

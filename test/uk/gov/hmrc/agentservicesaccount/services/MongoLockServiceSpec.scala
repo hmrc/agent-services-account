@@ -51,7 +51,7 @@ with MockAppConfig {
   def retry[T](n: Int)(block: => T): T = {
     Try(block) match {
       case Success(result) => result
-      case Failure(e) if n > 1 =>
+      case Failure(_) if n > 1 =>
         Thread.sleep(500)
         retry(n - 1)(block)
       case Failure(e) => throw e

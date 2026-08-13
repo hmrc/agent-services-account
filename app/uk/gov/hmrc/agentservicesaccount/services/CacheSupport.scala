@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import play.api.Configuration
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
 import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
 
 trait Cache[T] {
@@ -51,12 +51,12 @@ class CacheProvider @Inject() (
 
   val cacheEnabled = configuration.underlying.getBoolean("agent.entity.cache.enabled")
 
-  val agentDetailsCache: Cache[AgentDetailsDesResponse] =
+  val agentDetailsCache: Cache[AgentDetailsResponse] =
     if (cacheEnabled) {
       agencyDetailsCache
     }
     else {
-      DoNotCache[AgentDetailsDesResponse]()
+      DoNotCache[AgentDetailsResponse]()
     }
 
 }

@@ -38,7 +38,7 @@ class ChangeOfDetailsRequestControllerISpec extends ComponentSpecHelper:
         val response = get(s"/change-of-details-request/AARN1234567")
 
         response.status shouldBe 200
-        Json.fromJson[ChangeOfDetailsRequest](response.json)(ChangeOfDetailsRequest.format).get shouldBe testChangeOfDetailsRequest
+        Json.fromJson[ChangeOfDetailsRequest](response.json)(using ChangeOfDetailsRequest.format).get shouldBe testChangeOfDetailsRequest
 
     "return 404" when :
       "no matching record is available in the DB" in :

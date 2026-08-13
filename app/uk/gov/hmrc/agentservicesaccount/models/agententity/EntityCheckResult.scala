@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.agentservicesaccount.models.agententity
 
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsDesResponse
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
 
 case class EntityCheckResult(
-  agentRecord: AgentDetailsDesResponse,
+  agentRecord: AgentDetailsResponse,
   entityCheckExceptions: Seq[EntityCheckException]
 )
