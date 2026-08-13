@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentservicesaccount.services
 
 import org.apache.pekko.Done
 import org.bson.types.ObjectId
-import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as eqTo
 import org.mockito.Mockito.*
@@ -47,7 +46,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem
-import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext

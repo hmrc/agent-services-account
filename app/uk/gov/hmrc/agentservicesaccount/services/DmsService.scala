@@ -137,7 +137,7 @@ class DmsService @Inject() (
     .sendPdf(body)
     .map(_ => DmsResponse(now, ""))
     .recover {
-      case error @ UpstreamErrorResponse(
+      case _ @ UpstreamErrorResponse(
             message,
             code,
             _,

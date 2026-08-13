@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.agentservicesaccount.models
 
-import play.api.Logger
 import play.api.libs.json.*
 
 case class HipAmendPayload(

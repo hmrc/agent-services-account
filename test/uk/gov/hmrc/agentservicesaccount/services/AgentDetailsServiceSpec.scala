@@ -16,9 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import org.mockito.Mockito.never
 import org.mockito.Mockito.reset
-import org.mockito.Mockito.verify
 import org.scalatest.concurrent.IntegrationPatience
 import play.api.mvc.Request
 import play.api.test.FakeRequest

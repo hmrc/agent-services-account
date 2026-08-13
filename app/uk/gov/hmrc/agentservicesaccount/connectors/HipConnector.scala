@@ -80,7 +80,7 @@ with Logging {
     }
   }
 
-  private def hipHeaders(using RequestHeader): Seq[(String, String)] = {
+  private def hipHeaders: Seq[(String, String)] = {
     Seq(
       "Authorization" -> s"Basic $authToken",
       "correlationid" -> UUID.randomUUID().toString,
