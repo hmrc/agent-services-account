@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.RequestI
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.http.Authorization
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.RequestId as HttpRequestId
 import uk.gov.hmrc.http.SessionId
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
@@ -149,11 +150,12 @@ extends Logging:
         // Local stubs expect auth/session headers.
         HeaderCarrier(
           authorization = workItem.item.bearerToken.map(Authorization.apply),
-          sessionId = workItem.item.sessionId.map(SessionId.apply)
+          sessionId = workItem.item.sessionId.map(SessionId.apply),
+          requestId = Some(HttpRequestId(workItem.item.requestId))
         )
       else
         // QA/Prod path does not replay end-user auth/session on robotics invoke.
-        HeaderCarrier()
+        HeaderCarrier(requestId = Some(HttpRequestId(workItem.item.requestId)))
     val requestId = RequestId(workItem.item.requestId)
     val correlationId = CorrelationId.fromRequestId(requestId)
 

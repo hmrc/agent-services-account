@@ -22,6 +22,7 @@ import play.api.Logging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.connectors.helpers.CommonHeaders
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
 import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
@@ -80,8 +81,8 @@ with Logging {
     }
   }
 
-  private def hipHeaders: Seq[(String, String)] = {
-    Seq(
+  private def hipHeaders(using request: RequestHeader): Seq[(String, String)] = {
+    CommonHeaders() ++ Seq(
       "Authorization" -> s"Basic $authToken",
       "correlationid" -> UUID.randomUUID().toString,
       "X-Originating-System" -> originatingSystem,

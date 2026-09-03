@@ -21,6 +21,7 @@ import play.api.libs.json.JsObject
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import play.api.Logging
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.agentservicesaccount.connectors.helpers.CommonHeaders
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpErrorFunctions
@@ -51,7 +52,7 @@ with HttpErrorFunctions:
   def invoke(
     payload: JsObject,
     correlationId: CorrelationId
-  )(using HeaderCarrier): Future[Done] = {
+  )(using headerCarrier: HeaderCarrier): Future[Done] = {
     val roboticsURL =
       if appConfig.stubsCompatibilityMode then
         s"$baseUrl/RTServer/rest/nice/rti/ra/invocation"
@@ -61,8 +62,12 @@ with HttpErrorFunctions:
 
     http
       .post(url"$roboticsURL")
-      .setHeader("correlationId" -> correlationId.value)
-      .setHeader("Authorization" -> s"Basic $authToken")
+      .setHeader(
+        (CommonHeaders.fromHeaderCarrier(headerCarrier) ++ Seq(
+          "correlationId" -> correlationId.value,
+          "Authorization" -> s"Basic $authToken"
+        ))*
+      )
       .withBody(payload)
       .execute[HttpResponse]
       .map { response =>
