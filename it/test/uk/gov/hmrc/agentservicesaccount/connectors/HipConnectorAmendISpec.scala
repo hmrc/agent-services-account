@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
 import play.api.Configuration
@@ -96,6 +97,22 @@ with HipStubs {
   )
 
   "HipConnector putAgentRecord" should {
+
+    "send request and session identifiers to HIP" in {
+      given Request[AnyContentAsEmpty.type] = FakeRequest().withHeaders(
+        "X-Request-ID" -> "request-id",
+        "X-Session-ID" -> "session-id"
+      )
+      givenHipAmendAgentRecordSuccess(arn)
+
+      hipConnector.putAgentRecord(arn, amlsPayload).futureValue.success.processingDate shouldBe "2024-07-15T09:30:47Z"
+
+      verify(
+        putRequestedFor(urlEqualTo(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
+          .withHeader("X-Request-ID", equalTo("request-id"))
+          .withHeader("X-Session-ID", equalTo("session-id"))
+      )
+    }
 
     "return HipAmendResponse for AMLS update" in {
       givenHipAmendAgentRecordSuccess(arn)

@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, stubFor, urlEqualTo, post as wmPost}
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, postRequestedFor, stubFor, urlEqualTo, verify, post as wmPost}
 import org.apache.pekko.Done
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.RequestId
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.http.client.HttpClientV2
 
@@ -45,6 +46,32 @@ class RoboticsInvocationConnectorISpec extends ComponentSpecHelper {
   private val otherEnvironmentsInvocationPath = "/customer-management-and-engagement/automation/invocations"
 
   "invoke" should {
+
+    "send request and session identifiers to HIP" in {
+      given HeaderCarrier = HeaderCarrier(
+        requestId = Some(RequestId("request-id")),
+        sessionId = Some(uk.gov.hmrc.http.SessionId("session-id"))
+      )
+      val payload = Json.obj("postcode" -> "A11 11A")
+      val correlationId = CorrelationId("corr-id-headers")
+
+      stubFor(
+        wmPost(urlEqualTo(stubsInvocationPath))
+          .willReturn(aResponse().withStatus(200))
+      )
+      stubFor(
+        wmPost(urlEqualTo(otherEnvironmentsInvocationPath))
+          .willReturn(aResponse().withStatus(200))
+      )
+
+      connector.invoke(payload, correlationId).futureValue shouldBe Done
+
+      verify(
+        postRequestedFor(urlEqualTo(otherEnvironmentsInvocationPath))
+          .withHeader("X-Request-ID", equalTo("request-id"))
+          .withHeader("X-Session-ID", equalTo("session-id"))
+      )
+    }
 
     "treat non-200 2xx responses as success (guards against HIP/proxy variations)" in {
       val payload = Json.obj("postcode" -> "A11 11A")
