@@ -17,19 +17,21 @@
 package uk.gov.hmrc.agentservicesaccount.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.{get as wmGet}
+import com.github.tomakehurst.wiremock.client.WireMock.get as wmGet
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import org.scalatest.exceptions.TestFailedException
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 import uk.gov.hmrc.http.HeaderCarrier
 
 class UsersGroupsSearchConnectorISpec
 extends ComponentSpecHelper:
 
-  private given HeaderCarrier = HeaderCarrier()
+  private given RequestHeader = NoRequest
 
   private lazy val connector: UsersGroupsSearchConnector = app.injector.instanceOf[UsersGroupsSearchConnector]
 

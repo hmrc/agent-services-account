@@ -36,6 +36,7 @@ import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
@@ -54,6 +55,8 @@ with CleanMongoCollectionSupport
 with MockAuditService
 with MockLegacySubscriptionEmailService
 with BeforeAndAfterEach {
+  
+  private given RequestHeader = NoRequest
 
   given Encrypter & Decrypter = SymmetricCryptoFactory.aesCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
 
@@ -191,7 +194,7 @@ with BeforeAndAfterEach {
           case None => false
         }
       )(using any[RequestHeader])
-      verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])
+      verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
     }
 
     "skip already permanently failed work items" in {

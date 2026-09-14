@@ -17,10 +17,12 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import org.apache.pekko.Done
-import play.api.Logging
+import play.api.mvc.Request
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
 import java.time.Instant
@@ -36,7 +38,8 @@ class OrphanedWorkItemCleanupService @Inject() (
   legacySubscriptionEmailService: LegacySubscriptionEmailService,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
-extends Logging {
+extends RequestAwareLogging {
+  private given Request[?] = NoRequest
 
   def cleanup(): Future[Done] = {
 

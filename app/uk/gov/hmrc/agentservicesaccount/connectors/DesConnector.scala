@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 import play.api.libs.ws.writeableOf_JsValue
@@ -50,7 +50,7 @@ class DesConnector @Inject() (
   override val actorSystem: ActorSystem
 )(using ec: ExecutionContext)
 extends BaseConnector
-with Logging {
+with RequestAwareLogging {
 
   private val baseUrl = appConfig.desBaseUrl
   private val authorizationToken = appConfig.desAuthToken

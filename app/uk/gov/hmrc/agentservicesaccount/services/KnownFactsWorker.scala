@@ -17,13 +17,14 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import org.apache.pekko.Done
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.UsersGroupsSearchConnector
 import uk.gov.hmrc.agentservicesaccount.models.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.mongo.workitem.WorkItem
@@ -42,7 +43,8 @@ class KnownFactsWorker @Inject() (
   legacySubscriptionAuditService: LegacySubscriptionAuditService,
   legacySubscriptionEmailService: LegacySubscriptionEmailService
 )(using ec: ExecutionContext)
-extends Logging:
+extends RequestAwareLogging:
+  given RequestHeader = NoRequest
 
   def runOnce(using
     jobConfig: WorkItemJobConfig,
@@ -150,7 +152,6 @@ extends Logging:
     hc: HeaderCarrier,
     regime: LegacyRegime
   ): Future[AllocationOutcome] =
-    given RequestHeader = RequestSupport.thereIsNoRequest
     enrolmentStoreProxyConnector
       .queryEnrolmentsAllocatedToGroup(workItem.item.groupId)
       .flatMap { enrolments =>

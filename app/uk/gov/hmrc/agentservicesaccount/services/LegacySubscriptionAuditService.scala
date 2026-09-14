@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
@@ -32,7 +32,7 @@ import scala.util.control.NonFatal
 class LegacySubscriptionAuditService @Inject() (
   auditService: AuditService
 )(using ExecutionContext)
-extends Logging {
+extends RequestAwareLogging {
 
   given RequestHeader = RequestSupport.thereIsNoRequest
 

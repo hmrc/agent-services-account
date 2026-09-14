@@ -28,6 +28,7 @@ import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 import scala.concurrent.ExecutionContext
@@ -36,6 +37,8 @@ import scala.concurrent.Future
 class LegacySubscriptionEmailServiceSpec
 extends UnitSpec
 with BeforeAndAfterEach {
+  
+  private given RequestHeader = NoRequest
 
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.controllers
 
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.libs.json.*
 import play.api.mvc.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
@@ -51,7 +51,7 @@ class AgentDetailsController @Inject() (
   appConfig: AppConfig
 )
 extends BackendController(cc)
-with Logging {
+with RequestAwareLogging {
 
   // for agents
   def agentGetWithChecks: Action[AnyContent] = authActions.authorisedWithArn { implicit request => arn =>

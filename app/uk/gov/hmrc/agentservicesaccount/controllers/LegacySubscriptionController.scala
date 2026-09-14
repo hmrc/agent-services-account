@@ -25,11 +25,8 @@ import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
 import play.api.libs.json.JsonValidationError
-import play.api.mvc.Action
-import play.api.mvc.AnyContent
-import play.api.mvc.ControllerComponents
-import play.api.mvc.RequestHeader
-import play.api.Logging
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Request, RequestHeader}
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import uk.gov.hmrc.agentservicesaccount.auth.AuthActions
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
@@ -44,7 +41,7 @@ class LegacySubscriptionController @Inject() (
   authActions: AuthActions
 )(using ec: ExecutionContext)
 extends BackendController(cc)
-with Logging:
+with RequestAwareLogging:
 
   def startSubscription(regime: LegacyRegime): Action[AnyContent] = authActions.authorisedWithArnAndCredId {
     request => arn => adminCredId => groupId =>
@@ -82,6 +79,7 @@ with Logging:
 
   def roboticsCallback(): Action[SubscriptionCallback] =
     Action.async(parse.json[SubscriptionCallback]) { request =>
+      given Request[?] = request
       if request.body.agentId.isEmpty && request.body.status == CallbackSuccess then
         val msg = "Missing agentId in 'success' callback payload"
         logger.error(s"[roboticsCallback] $msg")

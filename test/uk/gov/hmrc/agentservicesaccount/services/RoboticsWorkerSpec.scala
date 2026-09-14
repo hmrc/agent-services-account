@@ -25,6 +25,7 @@ import org.mockito.ArgumentCaptor
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
@@ -37,6 +38,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
 import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
@@ -52,6 +54,8 @@ extends UnitSpec
 with BeforeAndAfterEach
 with MockLegacySubscriptionAuditService
 with MockLegacySubscriptionEmailService:
+  
+  private given RequestHeader = NoRequest
 
   private val workItemService = mock[RoboticsWorkItemService]
   private val connector = mock[RoboticsInvocationConnector]

@@ -23,10 +23,12 @@ import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Updates
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
+import play.api.mvc.Request
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
@@ -47,6 +49,7 @@ with IntegrationPatience
 with CleanMongoCollectionSupport
 with BeforeAndAfterEach:
 
+  private given Request[?] = NoRequest
   given Encrypter & Decrypter = SymmetricCryptoFactory.aesCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 

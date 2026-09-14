@@ -20,6 +20,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.agentservicesaccount.services.LegacySubscriptionEmailService
 
@@ -32,13 +33,13 @@ extends MockitoSugar { this: TestSuite =>
 
   def mockSendCompletionEmailIgnoreErrors(): Unit = {
     when(
-      mockLegacySubscriptionEmailService.sendCompletionEmailIgnoreErrors(any[SubscriptionWorkItem])
+      mockLegacySubscriptionEmailService.sendCompletionEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
     ).thenReturn(Future.successful(()))
   }
 
   def mockSendFailureEmailIgnoreErrors(): Unit = {
     when(
-      mockLegacySubscriptionEmailService.sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])
+      mockLegacySubscriptionEmailService.sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
     ).thenReturn(Future.successful(()))
 
   }

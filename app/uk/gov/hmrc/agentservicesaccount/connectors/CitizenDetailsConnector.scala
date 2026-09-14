@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.http.Status
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
@@ -48,7 +48,7 @@ class CitizenDetailsConnector @Inject() (
   appConfig: AppConfig,
   http: HttpClientV2
 )(implicit ec: ExecutionContext)
-extends Logging {
+extends RequestAwareLogging {
 
   private val baseUrl = appConfig.citizenDetailsBaseUrl
 

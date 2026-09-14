@@ -46,6 +46,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.WorkItem
+import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
@@ -59,7 +61,7 @@ with MockAppConfig
 with MockLegacySubscriptionAuditService
 with MockLegacySubscriptionEmailService:
 
-  given HeaderCarrier = HeaderCarrier()
+  private given RequestHeader = NoRequest
 
   private val jobConfig = WorkItemJobConfig(
     enabled = true,
@@ -277,14 +279,14 @@ with MockLegacySubscriptionEmailService:
             Future.successful(())
           )
 
-        when(usersGroupsSearchConnector.getFirstAdminCredId(any[GroupId])(using any[HeaderCarrier]))
+        when(usersGroupsSearchConnector.getFirstAdminCredId(any[GroupId])(using any[RequestHeader]))
           .thenReturn(Future.successful(Some(replacementAdminCredId)))
 
         when(workItemService.complete(workItem)).thenReturn(Future.successful(Done))
 
         worker.runOnce(using jobConfig, regime).futureValue
 
-        verify(usersGroupsSearchConnector).getFirstAdminCredId(any[GroupId])(using any[HeaderCarrier])
+        verify(usersGroupsSearchConnector).getFirstAdminCredId(any[GroupId])(using any[RequestHeader])
         verify(connector, times(2)).allocateAgentEnrolment(
           any[LegacyRegime],
           any[GroupId],
@@ -321,14 +323,14 @@ with MockLegacySubscriptionEmailService:
         )(using any[HeaderCarrier]))
           .thenReturn(Future.failed(multipleErrorsWithInvalidCredentialId))
 
-        when(usersGroupsSearchConnector.getFirstAdminCredId(any[GroupId])(using any[HeaderCarrier]))
+        when(usersGroupsSearchConnector.getFirstAdminCredId(any[GroupId])(using any[RequestHeader]))
           .thenReturn(Future.successful(None))
 
         when(workItemService.markFailed(workItem)).thenReturn(Future.successful(Done))
 
         worker.runOnce(using jobConfig, regime).futureValue
 
-        verify(usersGroupsSearchConnector).getFirstAdminCredId(any[GroupId])(using any[HeaderCarrier])
+        verify(usersGroupsSearchConnector).getFirstAdminCredId(any[GroupId])(using any[RequestHeader])
         verify(workItemService).markFailed(workItem)
         verify(workItemService, never()).complete(workItem)
       }

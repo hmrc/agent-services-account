@@ -17,15 +17,17 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import org.apache.pekko.Done
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+import play.api.mvc.Request
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.RoboticsInvocationConnector
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.RequestId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.http.Authorization
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.RequestId as HttpRequestId
@@ -48,7 +50,8 @@ class RoboticsWorker @Inject() (
 )(using
   ec: ExecutionContext
 )
-extends Logging:
+extends RequestAwareLogging:
+  private given Request[?] = NoRequest
 
   def runOnce(using
     jobConfig: WorkItemJobConfig,

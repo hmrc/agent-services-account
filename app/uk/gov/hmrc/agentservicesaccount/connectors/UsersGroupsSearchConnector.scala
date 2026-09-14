@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.http.Status.*
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
@@ -34,6 +35,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.hc
 
 final case class UserDetails(
   userId: Option[String] = None,
@@ -48,11 +51,11 @@ class UsersGroupsSearchConnector @Inject() (
   appConfig: AppConfig,
   http: HttpClientV2
 )(using ec: ExecutionContext)
-extends Logging:
+extends RequestAwareLogging:
 
   private val baseUrl: String = appConfig.usersGroupsSearchBaseUrl
 
-  def getFirstAdminCredId(groupId: GroupId)(using HeaderCarrier): Future[Option[CredId]] = http
+  def getFirstAdminCredId(groupId: GroupId)(using RequestHeader): Future[Option[CredId]] = http
     .get(url"$baseUrl/users-groups-search/groups/${groupId.value}/users")
     .execute[HttpResponse]
     .map { response =>

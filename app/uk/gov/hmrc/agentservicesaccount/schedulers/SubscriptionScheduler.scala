@@ -17,8 +17,9 @@
 package uk.gov.hmrc.agentservicesaccount.schedulers
 
 import org.apache.pekko.actor.ActorSystem
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.inject.ApplicationLifecycle
+import play.api.mvc.Request
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
@@ -28,6 +29,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.UsesRobotics
 import uk.gov.hmrc.agentservicesaccount.services.KnownFactsWorker
 import uk.gov.hmrc.agentservicesaccount.services.RoboticsWorker
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -44,7 +46,8 @@ class SubscriptionScheduler @Inject() (
 )(using
   ec: ExecutionContext
 )
-extends Logging:
+extends RequestAwareLogging:
+  private given Request[?] = NoRequest
 
   private val knownFactsWorkerConfigs: Map[LegacyRegime, WorkItemJobConfig] = Map(
     PAYE -> appConfig.payeKnownFactsJobConfig,
