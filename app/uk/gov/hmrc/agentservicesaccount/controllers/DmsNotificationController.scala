@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.controllers
 
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.libs.json.JsError
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsValue
@@ -38,7 +38,7 @@ class DmsNotificationController @Inject() (
   appConfig: AppConfig
 )
 extends BackendController(cc)
-with Logging {
+with RequestAwareLogging {
 
   private val predicate = Predicate.Permission(
     resource = Resource(

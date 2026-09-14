@@ -18,18 +18,19 @@ package uk.gov.hmrc.agentservicesaccount.support
 
 import java.net.ServerSocket
 import java.net.URL
-
 import scala.annotation.tailrec
-
 import com.github.tomakehurst.wiremock.client.WireMock.configureFor
 import com.github.tomakehurst.wiremock.client.WireMock.reset
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.WireMockServer
+import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Suite
-import play.api.Logging
+import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 
 case class WireMockBaseUrl(value: URL)
 
@@ -76,7 +77,9 @@ with BeforeAndAfterEach {
 
 // This class was copy-pasted from the hmrctest project, which is now deprecated.
 object Port
-extends Logging {
+extends RequestAwareLogging {
+
+  private given RequestHeader = NoRequest
 
   val rnd = new scala.util.Random
   val range = 8000 to 39999

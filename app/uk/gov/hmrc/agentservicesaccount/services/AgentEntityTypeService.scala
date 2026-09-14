@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
@@ -35,7 +35,7 @@ class AgentEntityTypeService @Inject() (
   desConnector: DesConnector,
   hipConnector: HipConnector
 )(using ec: ExecutionContext)
-extends Logging:
+extends RequestAwareLogging:
 
   def resolve(arn: Arn)(using request: RequestHeader): Future[String] =
     hipConnector.getAgentRecord(arn)

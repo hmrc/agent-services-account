@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.auth
 
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.controllers.ErrorResults.NoPermission
@@ -44,7 +44,7 @@ class AuthActions @Inject() (
 )(implicit ec: ExecutionContext)
 extends BackendController(cc)
 with AuthorisedFunctions
-with Logging {
+with RequestAwareLogging {
 
   private def getEnrolmentInfo(
     enrolment: Set[Enrolment],

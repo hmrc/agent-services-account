@@ -17,8 +17,10 @@
 package uk.gov.hmrc.agentservicesaccount.schedulers
 
 import org.apache.pekko.actor.Actor
-import play.api.Logging
+import play.api.mvc.Request
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import uk.gov.hmrc.agentservicesaccount.services.OrphanedWorkItemCleanupService
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 
 import scala.concurrent.ExecutionContext
 
@@ -26,7 +28,8 @@ class OrphanedWorkItemCleanupActor(
   cleanupService: OrphanedWorkItemCleanupService
 )(using ec: ExecutionContext)
 extends Actor
-with Logging {
+with RequestAwareLogging {
+  private given Request[?] = NoRequest
 
   override def receive: Receive = {
     case _ =>

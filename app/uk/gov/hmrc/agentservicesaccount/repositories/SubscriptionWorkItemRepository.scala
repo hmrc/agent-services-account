@@ -21,7 +21,8 @@ import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
-import play.api.Logging
+import play.api.mvc.RequestHeader
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
@@ -76,7 +77,7 @@ extends WorkItemRepository[SubscriptionWorkItem](
     )
   )
 )
-with Logging:
+with RequestAwareLogging:
 
   // Unique per (arn, regime) to prevent multiple concurrent subscription attempts for the same regime.
   // Retries after PermanentlyFailed are supported by deleting the old work item and inserting a fresh attempt.
@@ -228,7 +229,7 @@ with Logging:
     agentReference: AgentReference,
     requestId: String,
     availableAt: Instant
-  ): Future[Boolean] =
+  )(using RequestHeader): Future[Boolean] =
     // Callback success puts the work item into a state that can be picked up by the KnownFacts worker
     // Reset failure count so the robotics and known facts workers have separate retry limits
     coll.updateOne(

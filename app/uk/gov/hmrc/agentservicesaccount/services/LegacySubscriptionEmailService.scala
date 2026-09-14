@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.connectors.EmailConnector
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
@@ -34,11 +34,11 @@ import scala.util.control.NonFatal
 class LegacySubscriptionEmailService @Inject() (
   emailConnector: EmailConnector
 )(using ec: ExecutionContext)
-extends Logging {
+extends RequestAwareLogging {
 
   def sendFailureEmailIgnoreErrors(
     workItem: SubscriptionWorkItem
-  ): Future[Unit] = sendFailureEmail(workItem)
+  )(using RequestHeader): Future[Unit] = sendFailureEmail(workItem)
     .recover { case NonFatal(error) =>
       logger.warn(
         s"[LegacySubscriptionEmailService] Failed to send failure email for request ${workItem.requestId}",
@@ -48,7 +48,7 @@ extends Logging {
 
   def sendCompletionEmailIgnoreErrors(
     workItem: SubscriptionWorkItem
-  ): Future[Unit] = sendCompletionEmail(workItem)
+  )(using RequestHeader): Future[Unit] = sendCompletionEmail(workItem)
     .recover { case NonFatal(error) =>
       logger.warn(s"[LegacySubscriptionEmailService] Failed to send completion email for request ${workItem.requestId}", error)
     }

@@ -42,6 +42,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
+import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
@@ -62,6 +63,8 @@ with CleanMongoCollectionSupport
 with MockLegacySubscriptionAuditService
 with MockLegacySubscriptionEmailService
 with BeforeAndAfterEach {
+  
+  private given RequestHeader = NoRequest
 
   private val testArn = Arn("AARN0000001")
   private val testGroupId = GroupId("test-group-id")

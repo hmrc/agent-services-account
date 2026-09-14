@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.libs.json.Json
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
@@ -41,7 +41,7 @@ class EmailConnector @Inject() (
   httpClient: HttpClientV2
 )(using val ec: ExecutionContext)
 extends HttpErrorFunctions
-with Logging {
+with RequestAwareLogging {
 
   def sendEmail(emailInformation: EmailInformation)(using request: RequestHeader): Future[Unit] = {
     httpClient

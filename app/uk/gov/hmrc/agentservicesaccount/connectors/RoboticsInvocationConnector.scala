@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 import org.apache.pekko.Done
 import play.api.libs.json.JsObject
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.helpers.CommonHeaders
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
@@ -43,7 +43,7 @@ class RoboticsInvocationConnector @Inject() (
 )(using
   ec: ExecutionContext
 )
-extends Logging
+extends RequestAwareLogging
 with HttpErrorFunctions:
 
   private val baseUrl = appConfig.hipBaseUrl

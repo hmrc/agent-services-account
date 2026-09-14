@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import org.apache.pekko.Done
 import org.mongodb.scala.MongoException
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.http.Status.CONFLICT
 import play.api.http.Status.TOO_MANY_REQUESTS
 import play.api.mvc.RequestHeader
@@ -58,7 +58,7 @@ class SubscriptionService @Inject() (
   appConfig: AppConfig,
   agentEntityTypeService: AgentEntityTypeService
 )(using ec: ExecutionContext)
-extends Logging:
+extends RequestAwareLogging:
 
   private def maybeCaptureStubHeaders()(using request: RequestHeader): (Option[String], Option[String]) =
     if (appConfig.stubsCompatibilityMode)
@@ -200,7 +200,7 @@ extends Logging:
 
   def handleRoboticsCallback(
     callback: SubscriptionCallback
-  ): Future[SubscriptionService.CallbackHandling] =
+  )(using RequestHeader): Future[SubscriptionService.CallbackHandling] =
     callback.status match {
       case CallbackSuccess =>
         // Callback success does not mean subscription is complete; it unblocks the next workflow stage.

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.connectors
 
-import play.api.Logging
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.http.Status
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
@@ -47,7 +47,7 @@ class AgentMappingConnector @Inject() (
 )(implicit
   val ec: ExecutionContext
 )
-extends Logging:
+extends RequestAwareLogging:
 
   private val baseUrl = s"${appConfig.agentMappingBaseUrl}/agent-mapping"
 
