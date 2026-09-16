@@ -66,8 +66,8 @@ with MockLegacySubscriptionEmailService:
     new RoboticsWorker(
       workItemService,
       connector,
-      mockLegacySubscriptionAuditService,
-      mockLegacySubscriptionEmailService,
+      mockSubscriptionAuditService,
+      mockSubscriptionEmailService,
       appConfig
     )
 
@@ -357,12 +357,12 @@ with MockLegacySubscriptionEmailService:
         worker.runOnce(using jobConfig, regime).futureValue
 
         verify(workItemService).markPermanentlyFailed(workItem)
-        verify(mockLegacySubscriptionAuditService).auditFailure(
+        verify(mockSubscriptionAuditService).auditFailure(
           arn = workItem.item.arn,
           regime = regime,
           failureReason = "Max retry attempts reached in RoboticsWorker"
         )
-        verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
+        verify(mockSubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
       }
     }
   }
@@ -373,5 +373,5 @@ with MockLegacySubscriptionEmailService:
       workItemService,
       connector,
       appConfig,
-      mockLegacySubscriptionAuditService
+      mockSubscriptionAuditService
     )

@@ -36,11 +36,11 @@ import scala.util.control.NonFatal
 
 @Singleton
 class KnownFactsWorker @Inject() (
-  workItemService: KnownFactsWorkItemService,
-  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
-  usersGroupsSearchConnector: UsersGroupsSearchConnector,
-  legacySubscriptionAuditService: LegacySubscriptionAuditService,
-  legacySubscriptionEmailService: LegacySubscriptionEmailService
+                                   workItemService: KnownFactsWorkItemService,
+                                   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
+                                   usersGroupsSearchConnector: UsersGroupsSearchConnector,
+                                   subscriptionAuditService: SubscriptionAuditService,
+                                   subscriptionEmailService: SubscriptionEmailService
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
@@ -99,12 +99,12 @@ extends RequestAwareLogging:
     case AllocationOutcome.Success |
         AllocationOutcome.RetriedAfterConflict =>
       for {
-        _ <- legacySubscriptionAuditService.auditSuccess(
+        _ <- subscriptionAuditService.auditSuccess(
           arn = workItem.item.arn,
           regime = regime,
           legacyAgentCode = Some(agentReference.value)
         )
-        _ <- legacySubscriptionEmailService.sendCompletionEmailIgnoreErrors(workItem.item)
+        _ <- subscriptionEmailService.sendCompletionEmailIgnoreErrors(workItem.item)
         done <- workItemService.complete(workItem)
       } yield done
     case AllocationOutcome.MissingEnrolment => Future.failed(new RuntimeException("Could not find enrolment while dealing with MultipleEnrolmentsConflict"))
@@ -186,7 +186,7 @@ extends RequestAwareLogging:
       s"[KnownFactsWorker] $regime active enrolment already exists for group ${workItem.item.groupId.value}"
     )
     for {
-      _ <- legacySubscriptionAuditService.auditFailure(
+      _ <- subscriptionAuditService.auditFailure(
         arn = workItem.item.arn,
         regime = regime,
         failureReason = s"Agent already subscribed to $regime"
@@ -199,12 +199,12 @@ extends RequestAwareLogging:
   ): Future[Done] =
     if workItem.failureCount + 1 >= jobConfig.maxAttempts then
       for {
-        _ <- legacySubscriptionAuditService.auditFailure(
+        _ <- subscriptionAuditService.auditFailure(
           arn = workItem.item.arn,
           regime = workItem.item.regime,
           failureReason = "Max retry attempts reached in KnownFactsWorker"
         )
-        _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
+        _ <- subscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
         done <- workItemService.markPermanentlyFailed(workItem)
       } yield done
     else

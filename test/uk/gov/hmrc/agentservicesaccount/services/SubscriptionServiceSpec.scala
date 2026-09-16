@@ -161,8 +161,8 @@ with BeforeAndAfterEach {
       repository,
       espConnector,
       agentMappingConnector,
-      mockLegacySubscriptionAuditService,
-      mockLegacySubscriptionEmailService,
+      mockSubscriptionAuditService,
+      mockSubscriptionEmailService,
       appConfig,
       agentEntityTypeService
     )
@@ -173,8 +173,8 @@ with BeforeAndAfterEach {
       raceRepository,
       espConnector,
       agentMappingConnector,
-      mockLegacySubscriptionAuditService,
-      mockLegacySubscriptionEmailService,
+      mockSubscriptionAuditService,
+      mockSubscriptionEmailService,
       appConfig,
       agentEntityTypeService
     )
@@ -606,12 +606,12 @@ with BeforeAndAfterEach {
 
       callbackResult shouldBe SubscriptionService.CallbackHandling.Handled
 
-      verify(mockLegacySubscriptionAuditService).auditFailure(
+      verify(mockSubscriptionAuditService).auditFailure(
         arn = workItem.item.arn,
         regime = workItem.item.regime,
         failureReason = "Robotics callback failure: boom"
       )
-      verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
+      verify(mockSubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
     }
   }
 

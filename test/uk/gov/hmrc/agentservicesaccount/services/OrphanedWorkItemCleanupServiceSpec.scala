@@ -75,13 +75,13 @@ with BeforeAndAfterEach {
 
   private val appConfig = mock[AppConfig]
 
-  private val auditService = new LegacySubscriptionAuditService(mockAuditService)
+  private val auditService = new SubscriptionAuditService(mockAuditService)
 
   private val service =
     new OrphanedWorkItemCleanupService(
       repository,
       auditService,
-      mockLegacySubscriptionEmailService,
+      mockSubscriptionEmailService,
       appConfig
     )
 
@@ -109,7 +109,7 @@ with BeforeAndAfterEach {
     repository.coll.drop().toFuture().futureValue
     repository.ensureIndexes().futureValue
 
-    reset(mockAuditService, mockLegacySubscriptionEmailService)
+    reset(mockAuditService, mockSubscriptionEmailService)
 
     mockAuditLegacySubscription()
 
@@ -194,7 +194,7 @@ with BeforeAndAfterEach {
           case None => false
         }
       )(using any[RequestHeader])
-      verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
+      verify(mockSubscriptionEmailService).sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
     }
 
     "skip already permanently failed work items" in {

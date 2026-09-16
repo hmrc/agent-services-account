@@ -29,7 +29,7 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 @Singleton
-class LegacySubscriptionAuditService @Inject() (
+class SubscriptionAuditService @Inject()(
   auditService: AuditService
 )(using ExecutionContext)
 extends RequestAwareLogging {
