@@ -20,18 +20,18 @@ import play.api.libs.json.Json
 import play.api.libs.json.OWrites
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 
-final case class LegacySubscriptionAuditEvent(
+final case class SubscriptionAuditEvent(
   agentReferenceNumber: Arn,
-  legacyAgentService: String,
+  agentService: String,
   isSuccessful: Boolean,
-  legacyAgentCode: Option[String] = None,
+  agentCode: Option[String] = None,
   failureReason: Option[String] = None
 )
 extends AuditDetail {
 
-  override val auditType: String = "LegacySubscription"
+  override val auditType: String = "Subscription"
 }
 
-object LegacySubscriptionAuditEvent {
-  given writes: OWrites[LegacySubscriptionAuditEvent] = Json.writes
+object SubscriptionAuditEvent {
+  given writes: OWrites[SubscriptionAuditEvent] = Json.writes
 }
