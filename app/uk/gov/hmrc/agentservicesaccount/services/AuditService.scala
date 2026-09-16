@@ -26,7 +26,7 @@ import uk.gov.hmrc.agentservicesaccount.models.audit.AgentCheckAuditEvent
 import uk.gov.hmrc.agentservicesaccount.models.audit.AgentCheckFailureNotificationAuditEvent
 import uk.gov.hmrc.agentservicesaccount.models.audit.AuditDetail
 import uk.gov.hmrc.agentservicesaccount.models.audit.EmailData
-import uk.gov.hmrc.agentservicesaccount.models.audit.LegacySubscriptionAuditEvent
+import uk.gov.hmrc.agentservicesaccount.models.audit.SubscriptionAuditEvent
 import uk.gov.hmrc.agentservicesaccount.models.AgentCheckOutcome
 import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
 import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
@@ -84,11 +84,11 @@ class AuditService @Inject() (
   )(using request: RequestHeader): Future[AuditResult] = {
 
     audit(
-      LegacySubscriptionAuditEvent(
+      SubscriptionAuditEvent(
         agentReferenceNumber = arn,
-        legacyAgentService = regime.enrolmentKey,
+        agentService = regime.enrolmentKey,
         isSuccessful = isSuccessful,
-        legacyAgentCode = legacyAgentCode.filter(_ => isSuccessful || legacyAgentCode.isDefined),
+        agentCode = legacyAgentCode.filter(_ => isSuccessful || legacyAgentCode.isDefined),
         failureReason =
           if (!isSuccessful)
             failureReason
