@@ -41,7 +41,7 @@ extends RequestAwareLogging {
   )(using RequestHeader): Future[Unit] = sendFailureEmail(workItem)
     .recover { case NonFatal(error) =>
       logger.warn(
-        s"[LegacySubscriptionEmailService] Failed to send failure email for request ${workItem.requestId}",
+        s"[SubscriptionEmailService] Failed to send failure email for request ${workItem.requestId}",
         error
       )
     }
@@ -50,7 +50,7 @@ extends RequestAwareLogging {
     workItem: SubscriptionWorkItem
   )(using RequestHeader): Future[Unit] = sendCompletionEmail(workItem)
     .recover { case NonFatal(error) =>
-      logger.warn(s"[LegacySubscriptionEmailService] Failed to send completion email for request ${workItem.requestId}", error)
+      logger.warn(s"[SubscriptionEmailService] Failed to send completion email for request ${workItem.requestId}", error)
     }
 
   private def sendFailureEmail(

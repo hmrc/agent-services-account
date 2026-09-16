@@ -102,7 +102,7 @@ extends RequestAwareLogging:
         _ <- subscriptionAuditService.auditSuccess(
           arn = workItem.item.arn,
           regime = regime,
-          legacyAgentCode = Some(agentReference.value)
+          agentCode = Some(agentReference.value)
         )
         _ <- subscriptionEmailService.sendCompletionEmailIgnoreErrors(workItem.item)
         done <- workItemService.complete(workItem)

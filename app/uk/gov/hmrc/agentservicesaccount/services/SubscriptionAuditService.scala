@@ -39,18 +39,18 @@ extends RequestAwareLogging {
   def auditSuccess(
                     arn: Arn,
                     regime: AgentRegime,
-                    legacyAgentCode: Option[String]
-  ): Future[Unit] = auditService.auditLegacySubscription(
+                    agentCode: Option[String]
+  ): Future[Unit] = auditService.auditSubscription(
     arn = arn,
     regime = regime,
     isSuccessful = true,
-    legacyAgentCode = legacyAgentCode,
+    agentCode = agentCode,
     failureReason = None
   )
     .map(_ => ())
     .recover { case NonFatal(error) =>
       logger.warn(
-        s"[LegacySubscriptionAuditService] Failed to audit successful legacy subscription for arn ${arn.value}",
+        s"[SubscriptionAuditService] Failed to audit successful subscription for arn ${arn.value}",
         error
       )
     }
@@ -59,17 +59,17 @@ extends RequestAwareLogging {
                     arn: Arn,
                     regime: AgentRegime,
                     failureReason: String
-  ): Future[Unit] = auditService.auditLegacySubscription(
+  ): Future[Unit] = auditService.auditSubscription(
     arn = arn,
     regime = regime,
     isSuccessful = false,
-    legacyAgentCode = None,
+    agentCode = None,
     failureReason = Some(failureReason)
   )
     .map(_ => ())
     .recover { case NonFatal(error) =>
       logger.warn(
-        s"[LegacySubscriptionAuditService] Failed to audit failed legacy subscription for arn ${arn.value}",
+        s"[SubscriptionAuditService] Failed to audit failed subscription for arn ${arn.value}",
         error
       )
     }

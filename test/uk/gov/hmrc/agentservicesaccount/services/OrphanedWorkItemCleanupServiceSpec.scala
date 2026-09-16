@@ -179,7 +179,7 @@ with BeforeAndAfterEach {
 
       service.cleanup().futureValue
 
-      verify(mockAuditService).auditLegacySubscription(
+      verify(mockAuditService).auditSubscription(
         arn = eqTo(testArn),
         regime = eqTo(AgentRegime.SA),
         isSuccessful = eqTo(false),
@@ -223,7 +223,7 @@ with BeforeAndAfterEach {
 
       service.cleanup().futureValue
 
-      verify(mockAuditService, never()).auditLegacySubscription(
+      verify(mockAuditService, never()).auditSubscription(
         any[Arn],
         any[AgentRegime],
         any[Boolean],
@@ -236,7 +236,7 @@ with BeforeAndAfterEach {
       service.cleanup().futureValue
 
       repository.coll.countDocuments().toFuture().futureValue shouldBe 0L
-      verify(mockAuditService, never()).auditLegacySubscription(
+      verify(mockAuditService, never()).auditSubscription(
         any[Arn],
         any[AgentRegime],
         any[Boolean],
