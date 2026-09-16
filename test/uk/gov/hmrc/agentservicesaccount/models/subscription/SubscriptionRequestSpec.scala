@@ -195,7 +195,7 @@ extends UnitSpec:
       result shouldBe JsSuccess(testCtSubscriptionRequest)
     }
 
-    "fail deserialization when postcode is missing for legacy UK subscription" in:
+    "fail deserialization when postcode is missing for UK subscription" in:
       val invalidSaJson = Json.obj(
         "agentName" -> testAgentName,
         "contactName" -> testContactName,
@@ -213,7 +213,7 @@ extends UnitSpec:
 
       val result = Json.fromJson[SubscriptionRequest](invalidSaJson)(using SubscriptionRequest.reads(SA))
 
-      result shouldBe JsError("Postcode is required for legacy subscriptions in UK")
+      result shouldBe JsError("Postcode is required for subscription requests in UK")
 
     "allow deserialization when postcode is blank for PAYE to preserve persisted work items" in:
       val payeJsonWithBlankPostcode = testPayeJson.deepMerge(Json.obj(
@@ -235,9 +235,9 @@ extends UnitSpec:
 
       val result = Json.fromJson[SubscriptionRequest](payeJsonWithBlankPostcode)(using SubscriptionRequest.requestReads(PAYE))
 
-      result shouldBe JsError("Postcode is required for legacy subscriptions in UK")
+      result shouldBe JsError("Postcode is required for subscription requests in UK")
 
-    "fail inbound request deserialization when postcode is blank for legacy UK subscription" in:
+    "fail inbound request deserialization when postcode is blank for UK subscription" in:
       val saJsonWithBlankPostcode = testSaJson.deepMerge(Json.obj(
         "address" -> Json.obj(
           "postCode" -> "   "
@@ -246,4 +246,4 @@ extends UnitSpec:
 
       val result = Json.fromJson[SubscriptionRequest](saJsonWithBlankPostcode)(using SubscriptionRequest.requestReads(SA))
 
-      result shouldBe JsError("Postcode is required for legacy subscriptions in UK")
+      result shouldBe JsError("Postcode is required for subscription requests in UK")
