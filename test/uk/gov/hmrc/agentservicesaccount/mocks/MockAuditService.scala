@@ -56,7 +56,7 @@ extends MockitoSugar { this: TestSuite =>
 
   def mockAuditLegacySubscription(): Unit = {
     when(
-      mockAuditService.auditLegacySubscription(
+      mockAuditService.auditSubscription(
         any[Arn],
         any[AgentRegime],
         any[Boolean],

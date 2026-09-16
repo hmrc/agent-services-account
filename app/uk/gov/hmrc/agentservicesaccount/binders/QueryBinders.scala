@@ -21,7 +21,7 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 
 object QueryBinders {
 
-  implicit def legacyRegimeBinder(implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[AgentRegime] =
+  implicit def agentRegimeBinder(implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[AgentRegime] =
     new QueryStringBindable[AgentRegime] {
       override def bind(
         key: String,

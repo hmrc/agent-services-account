@@ -75,11 +75,11 @@ class AuditService @Inject() (
     )
   )
 
-  def auditLegacySubscription(
+  def auditSubscription(
                                arn: Arn,
                                regime: AgentRegime,
                                isSuccessful: Boolean,
-                               legacyAgentCode: Option[String],
+                               agentCode: Option[String],
                                failureReason: Option[String]
   )(using request: RequestHeader): Future[AuditResult] = {
 
@@ -88,7 +88,7 @@ class AuditService @Inject() (
         agentReferenceNumber = arn,
         agentService = regime.enrolmentKey,
         isSuccessful = isSuccessful,
-        agentCode = legacyAgentCode.filter(_ => isSuccessful || legacyAgentCode.isDefined),
+        agentCode = agentCode.filter(_ => isSuccessful || agentCode.isDefined),
         failureReason =
           if (!isSuccessful)
             failureReason
