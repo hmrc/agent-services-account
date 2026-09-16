@@ -34,9 +34,9 @@ import uk.gov.hmrc.agentservicesaccount.models.Es20Response
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.Identifier
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.CT
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.PAYE
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.SA
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
@@ -78,12 +78,12 @@ with MockLegacySubscriptionEmailService:
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private def buildWorkItem(
-    regime: LegacyRegime,
-    failureCount: Int,
-    agentReference: Option[AgentReference] = Some(AgentReference("A12345")),
-    groupId: GroupId = GroupId("ITEM-GROUP"),
-    adminCredId: CredId = CredId("ITEM-ADMIN"),
-    subscriptionRequest: SubscriptionRequest
+                             regime: AgentRegime,
+                             failureCount: Int,
+                             agentReference: Option[AgentReference] = Some(AgentReference("A12345")),
+                             groupId: GroupId = GroupId("ITEM-GROUP"),
+                             adminCredId: CredId = CredId("ITEM-ADMIN"),
+                             subscriptionRequest: SubscriptionRequest
   ) = WorkItem(
     id = new ObjectId(),
     receivedAt = Instant.now(),
@@ -101,7 +101,7 @@ with MockLegacySubscriptionEmailService:
     )
   )
 
-  val testData: Map[LegacyRegime, SubscriptionRequest] = Map(
+  val testData: Map[AgentRegime, SubscriptionRequest] = Map(
     PAYE -> PayeSubscriptionRequest(
       agentName = "Agent Name",
       contactName = "Contact Name",
@@ -225,7 +225,7 @@ with MockLegacySubscriptionEmailService:
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -269,7 +269,7 @@ with MockLegacySubscriptionEmailService:
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -288,7 +288,7 @@ with MockLegacySubscriptionEmailService:
 
         verify(usersGroupsSearchConnector).getFirstAdminCredId(any[GroupId])(using any[RequestHeader])
         verify(connector, times(2)).allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -316,7 +316,7 @@ with MockLegacySubscriptionEmailService:
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -354,7 +354,7 @@ with MockLegacySubscriptionEmailService:
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -402,7 +402,7 @@ with MockLegacySubscriptionEmailService:
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -445,7 +445,7 @@ with MockLegacySubscriptionEmailService:
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -519,7 +519,7 @@ with MockLegacySubscriptionEmailService:
 
         // ES8 first attempt fails with MULTIPLE_ENROLMENTS_INVALID
         when(connector.allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -540,7 +540,7 @@ with MockLegacySubscriptionEmailService:
 
         when(connector.deallocateAgentEnrolment(
           any[GroupId],
-          any[LegacyRegime],
+          any[AgentRegime],
           any[String]
         )(using any[HeaderCarrier]))
           .thenReturn(Future.successful(()))
@@ -552,7 +552,7 @@ with MockLegacySubscriptionEmailService:
 
         verify(connector).deallocateAgentEnrolment(
           any[GroupId],
-          any[LegacyRegime],
+          any[AgentRegime],
           any[String]
         )(using any[HeaderCarrier])
 
@@ -583,7 +583,7 @@ with MockLegacySubscriptionEmailService:
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -630,7 +630,7 @@ with MockLegacySubscriptionEmailService:
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -669,7 +669,7 @@ with MockLegacySubscriptionEmailService:
           .thenReturn(Future.successful(Some(response)))
 
         when(connector.allocateAgentEnrolment(
-          any[LegacyRegime],
+          any[AgentRegime],
           any[GroupId],
           any[String],
           any[CredId]
@@ -696,7 +696,7 @@ with MockLegacySubscriptionEmailService:
 
         verify(connector, never()).deallocateAgentEnrolment(
           any[GroupId],
-          any[LegacyRegime],
+          any[AgentRegime],
           any[String]
         )(using any[HeaderCarrier])
 
@@ -728,13 +728,13 @@ with MockLegacySubscriptionEmailService:
     }
   }
 
-  private def expectedPostcode(regime: LegacyRegime): Option[String] =
+  private def expectedPostcode(regime: AgentRegime): Option[String] =
     regime match {
       case PAYE => Some("AA1 1AA")
       case _ => None
     }
 
-  private def expectedValidatedPostcode(regime: LegacyRegime): Option[PayePostcode.Valid] = PayePostcode.from(expectedPostcode(regime))
+  private def expectedValidatedPostcode(regime: AgentRegime): Option[PayePostcode.Valid] = PayePostcode.from(expectedPostcode(regime))
 
   private def invalidCredentialIdError: UpstreamErrorResponse = UpstreamErrorResponse(
     """{"code":"INVALID_CREDENTIAL_ID","message":"Credential id is invalid"}""",

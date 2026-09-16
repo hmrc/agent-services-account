@@ -42,7 +42,7 @@ with AgentMappingStubs {
   val testAgentReference2 = AgentReference("CD5678")
 
   "getMappings" should {
-    LegacyRegime.values.foreach { regime =>
+    AgentRegime.values.foreach { regime =>
       s"return agent reference on a successful 200 response for $regime and $testArn" in {
         givenGetMappingsCallSucceeds(testArn, regime)(testAgentReference, testAgentReference2)
 

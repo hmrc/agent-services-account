@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentservicesaccount.models.subscription
 
 import play.api.libs.json.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.*
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
 class SubscriptionRequestSpec

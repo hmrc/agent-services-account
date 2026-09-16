@@ -25,7 +25,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.models.AgentCheckOutcome
 import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.services.AuditService
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
@@ -58,7 +58,7 @@ extends MockitoSugar { this: TestSuite =>
     when(
       mockAuditService.auditLegacySubscription(
         any[Arn],
-        any[LegacyRegime],
+        any[AgentRegime],
         any[Boolean],
         any[Option[String]],
         any[Option[String]]

@@ -69,7 +69,7 @@ with BeforeAndAfterEach:
     item = SubscriptionWorkItem(
       arn = Arn("TARN0000001"),
       subscriptionRequest = subscriptionRequest,
-      regime = LegacyRegime.PAYE,
+      regime = AgentRegime.PAYE,
       agentReference = Some(AgentReference("A12345")),
       groupId = GroupId("ITEM-GROUP"),
       adminCredId = CredId("ITEM-ADMIN")
@@ -79,16 +79,16 @@ with BeforeAndAfterEach:
   "KnownFactsWorkItemService" should {
     "pull outstanding items for PAYE" in {
       when(repository.pullAwaitingKnownFacts(
-        any[LegacyRegime],
+        any[AgentRegime],
         any[Instant],
         any[Instant]
       ))
         .thenReturn(Future.successful(None))
 
-      service.pullOutstanding(LegacyRegime.PAYE, 10.seconds).futureValue
+      service.pullOutstanding(AgentRegime.PAYE, 10.seconds).futureValue
 
       verify(repository).pullAwaitingKnownFacts(
-        any[LegacyRegime],
+        any[AgentRegime],
         any[Instant],
         any[Instant]
       )
@@ -96,16 +96,16 @@ with BeforeAndAfterEach:
 
     "pull outstanding items for SA" in {
       when(repository.pullAwaitingKnownFacts(
-        any[LegacyRegime],
+        any[AgentRegime],
         any[Instant],
         any[Instant]
       ))
         .thenReturn(Future.successful(None))
 
-      service.pullOutstanding(LegacyRegime.SA, 10.seconds).futureValue
+      service.pullOutstanding(AgentRegime.SA, 10.seconds).futureValue
 
       verify(repository).pullAwaitingKnownFacts(
-        any[LegacyRegime],
+        any[AgentRegime],
         any[Instant],
         any[Instant]
       )

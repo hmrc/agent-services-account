@@ -48,7 +48,7 @@ extends RequestAwareLogging:
 
   def runOnce(using
     jobConfig: WorkItemJobConfig,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[Done] = workItemService.pullOutstanding(regime, jobConfig.retryInterval).flatMap {
     case None => Future.successful(Done)
     case Some(workItem) =>
@@ -61,14 +61,14 @@ extends RequestAwareLogging:
 
   private def process(workItem: WorkItem[SubscriptionWorkItem])(using
     jobConfig: WorkItemJobConfig,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[Done] =
     (regime, workItem.item.agentReference, postcodeFor(workItem.item)) match
       case (_, None, _) =>
         logger.error(s"[KnownFactsWorker] $regime work item missing agent reference: ${workItem.item.requestId}" +
           s"(this should not be possible as the mongo query requires an agent reference to be present)")
         handleFailure(workItem)
-      case (LegacyRegime.PAYE, Some(_), None) =>
+      case (AgentRegime.PAYE, Some(_), None) =>
         logger.warn(s"[KnownFactsWorker] PAYE work item missing usable postcode for ES20 lookup: ${workItem.item.requestId}")
         workItemService.markPermanentlyFailed(workItem)
       case (_, Some(agentReference), postcode) =>
@@ -94,7 +94,7 @@ extends RequestAwareLogging:
     agentReference: AgentReference
   )(using
     hc: HeaderCarrier,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[Done] = allocateAgentEnrolment(workItem, agentReference.value).flatMap {
     case AllocationOutcome.Success |
         AllocationOutcome.RetriedAfterConflict =>
@@ -118,7 +118,7 @@ extends RequestAwareLogging:
     agentReference: String
   )(using
     hc: HeaderCarrier,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[AllocationOutcome] = enrolmentStoreProxyConnector
     .allocateAgentEnrolment(
       regime = regime,
@@ -150,7 +150,7 @@ extends RequestAwareLogging:
     agentReference: String
   )(using
     hc: HeaderCarrier,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[AllocationOutcome] =
     enrolmentStoreProxyConnector
       .queryEnrolmentsAllocatedToGroup(workItem.item.groupId)
@@ -181,7 +181,7 @@ extends RequestAwareLogging:
 
   private def failAsAlreadySubscribed(
     workItem: WorkItem[SubscriptionWorkItem],
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[AllocationOutcome] =
     logger.warn(
       s"[KnownFactsWorker] $regime active enrolment already exists for group ${workItem.item.groupId.value}"

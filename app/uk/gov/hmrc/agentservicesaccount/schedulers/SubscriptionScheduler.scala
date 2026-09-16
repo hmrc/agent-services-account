@@ -22,10 +22,10 @@ import play.api.inject.ApplicationLifecycle
 import play.api.mvc.Request
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.config.WorkItemJobConfig
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.CT
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.PAYE
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.SA
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.UsesRobotics
 import uk.gov.hmrc.agentservicesaccount.services.KnownFactsWorker
 import uk.gov.hmrc.agentservicesaccount.services.RoboticsWorker
@@ -49,13 +49,13 @@ class SubscriptionScheduler @Inject() (
 extends RequestAwareLogging:
   private given Request[?] = NoRequest
 
-  private val knownFactsWorkerConfigs: Map[LegacyRegime, WorkItemJobConfig] = Map(
+  private val knownFactsWorkerConfigs: Map[AgentRegime, WorkItemJobConfig] = Map(
     PAYE -> appConfig.payeKnownFactsJobConfig,
     SA -> appConfig.saKnownFactsJobConfig,
     CT -> appConfig.ctKnownFactsJobConfig
   )
 
-  private val roboticsWorkerConfigs: Map[LegacyRegime & UsesRobotics, WorkItemJobConfig] = Map(
+  private val roboticsWorkerConfigs: Map[AgentRegime & UsesRobotics, WorkItemJobConfig] = Map(
     SA -> appConfig.saRoboticsJobConfig,
     CT -> appConfig.ctRoboticsJobConfig
   )

@@ -43,7 +43,7 @@ class SubscriptionController @Inject()(
 extends BackendController(cc)
 with RequestAwareLogging:
 
-  def startSubscription(regime: LegacyRegime): Action[AnyContent] = authActions.authorisedWithArnAndCredId {
+  def startSubscription(regime: AgentRegime): Action[AnyContent] = authActions.authorisedWithArnAndCredId {
     request => arn => adminCredId => groupId =>
       given RequestHeader = request
 
@@ -67,7 +67,7 @@ with RequestAwareLogging:
     .distinct
     .mkString(", ")
 
-  def subscriptionInfo(regimes: Seq[LegacyRegime]): Action[AnyContent] = authActions.authorisedWithArnAndGroupId {
+  def subscriptionInfo(regimes: Seq[AgentRegime]): Action[AnyContent] = authActions.authorisedWithArnAndGroupId {
     request => (arn, groupId) =>
       given RequestHeader = request
       subscriptionService.getSubscriptionInfo(

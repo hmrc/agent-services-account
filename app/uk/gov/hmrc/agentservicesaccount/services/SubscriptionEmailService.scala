@@ -20,7 +20,7 @@ import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.connectors.EmailConnector
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 
@@ -112,17 +112,17 @@ extends RequestAwareLogging {
   private def serviceName(workItem: SubscriptionWorkItem): String =
     val isWelsh = workItem.subscriptionRequest.isWelsh
     workItem.regime match
-      case LegacyRegime.PAYE =>
+      case AgentRegime.PAYE =>
         if (isWelsh)
           "TWE/CIS"
         else
           "PAYE/CIS"
-      case LegacyRegime.SA =>
+      case AgentRegime.SA =>
         if (isWelsh)
           "Hunanasesiad"
         else
           "Self Assessment"
-      case LegacyRegime.CT =>
+      case AgentRegime.CT =>
         if (isWelsh)
           "Treth Gorfforaeth"
         else
@@ -131,17 +131,17 @@ extends RequestAwareLogging {
   private def serviceSectionName(workItem: SubscriptionWorkItem): String =
     val isWelsh = workItem.subscriptionRequest.isWelsh
     workItem.regime match
-      case LegacyRegime.PAYE =>
+      case AgentRegime.PAYE =>
         if (isWelsh)
           "Talu wrth ennill (TWE)/Cynllun y Diwydiant Adeiladu (CIS)"
         else
           "Pay as you earn (PAYE)/Construction Industry Scheme (CIS)"
-      case LegacyRegime.SA =>
+      case AgentRegime.SA =>
         if (isWelsh)
           "Hunanasesiad"
         else
           "Self Assessment"
-      case LegacyRegime.CT =>
+      case AgentRegime.CT =>
         if (isWelsh)
           "Treth Gorfforaeth"
         else
