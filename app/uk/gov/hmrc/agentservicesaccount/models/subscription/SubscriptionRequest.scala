@@ -40,13 +40,13 @@ object SubscriptionRequest:
       case CT => json.validate[CtSubscriptionRequest]
     } match {
       case JsSuccess(request: SubscriptionRequest, _) if !request.isAbroad && request.address.postCode.isEmpty =>
-        JsError("Postcode is required for legacy subscriptions in UK")
+        JsError("Postcode is required for subscription requests in UK")
       case other => other
     }
   }
 
   def requestReads(regime: AgentRegime): Reads[SubscriptionRequest] =
-    reads(regime).filter(JsonValidationError("Postcode is required for legacy subscriptions in UK")) { request =>
+    reads(regime).filter(JsonValidationError("Postcode is required for subscription requests in UK")) { request =>
       request.isAbroad || request.address.postCode.forall(_.trim.nonEmpty)
     }
 

@@ -50,7 +50,7 @@ object PathBinders {
       ): Either[String, AgentRegime] = AgentRegime.values
         .find(_.toString == value)
         .map(Right(_))
-        .getOrElse(Left(s"Invalid legacy regime: $value"))
+        .getOrElse(Left(s"Invalid agent regime: $value"))
 
       override def unbind(
                            key: String,
