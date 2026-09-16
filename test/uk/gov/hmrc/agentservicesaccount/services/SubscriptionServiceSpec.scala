@@ -163,8 +163,8 @@ with BeforeAndAfterEach {
       agentMappingConnector,
       mockSubscriptionAuditService,
       mockSubscriptionEmailService,
-      appConfig,
-      agentEntityTypeService
+      agentEntityTypeService,
+      appConfig
     )
 
   val raceService =
@@ -175,8 +175,8 @@ with BeforeAndAfterEach {
       agentMappingConnector,
       mockSubscriptionAuditService,
       mockSubscriptionEmailService,
-      appConfig,
-      agentEntityTypeService
+      agentEntityTypeService,
+      appConfig
     )
   override protected def beforeEach(): Unit = {
     super.beforeEach()
