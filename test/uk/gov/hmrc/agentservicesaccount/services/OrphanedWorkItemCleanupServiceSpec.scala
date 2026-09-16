@@ -183,7 +183,7 @@ with BeforeAndAfterEach {
         arn = eqTo(testArn),
         regime = eqTo(AgentRegime.SA),
         isSuccessful = eqTo(false),
-        legacyAgentCode = eqTo(None),
+        agentCode = eqTo(None),
         failureReason = argThat[Option[String]] {
           case Some(reason) =>
             reason.contains("Orphaned work-item cleanup") &&
