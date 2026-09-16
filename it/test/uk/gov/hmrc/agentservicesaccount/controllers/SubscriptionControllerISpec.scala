@@ -42,7 +42,7 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 import java.util.UUID
 import org.scalatest.OptionValues.*
 
-class LegacySubscriptionControllerISpec
+class SubscriptionControllerISpec
 extends ComponentSpecHelper
 with AgentEpayeRegistrationStubs
 with AgentMappingStubs

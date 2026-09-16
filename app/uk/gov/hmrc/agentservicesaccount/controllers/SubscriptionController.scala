@@ -35,8 +35,8 @@ import uk.gov.hmrc.agentservicesaccount.services.SubscriptionService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 @Singleton
-class LegacySubscriptionController @Inject() (
-  legacySubscriptionService: SubscriptionService,
+class SubscriptionController @Inject()(
+  subscriptionService: SubscriptionService,
   cc: ControllerComponents,
   authActions: AuthActions
 )(using ec: ExecutionContext)
@@ -49,7 +49,7 @@ with RequestAwareLogging:
 
       request.body.asJson.map(_.validate[SubscriptionRequest](using SubscriptionRequest.requestReads(regime))) match {
         case Some(JsSuccess(request: SubscriptionRequest, _)) =>
-          legacySubscriptionService.startSubscriptionProcess(
+          subscriptionService.startSubscriptionProcess(
             arn,
             request,
             regime,
@@ -70,7 +70,7 @@ with RequestAwareLogging:
   def subscriptionInfo(regimes: Seq[LegacyRegime]): Action[AnyContent] = authActions.authorisedWithArnAndGroupId {
     request => (arn, groupId) =>
       given RequestHeader = request
-      legacySubscriptionService.getSubscriptionInfo(
+      subscriptionService.getSubscriptionInfo(
         arn = arn,
         groupId = groupId,
         regimes = regimes
@@ -85,7 +85,7 @@ with RequestAwareLogging:
         logger.error(s"[roboticsCallback] $msg")
         Future.successful(BadRequest(msg))
       else
-        legacySubscriptionService.handleRoboticsCallback(request.body).map {
+        subscriptionService.handleRoboticsCallback(request.body).map {
           case SubscriptionService.CallbackHandling.Handled =>
             val msg = s"Processed callback for requestId: ${request.body.requestId}, success: ${request.body.status}"
             logger.warn(s"[roboticsCallback] $msg")
