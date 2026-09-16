@@ -31,7 +31,7 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 @Singleton
-class LegacySubscriptionEmailService @Inject() (
+class SubscriptionEmailService @Inject()(
   emailConnector: EmailConnector
 )(using ec: ExecutionContext)
 extends RequestAwareLogging {

@@ -53,10 +53,10 @@ class SubscriptionService @Inject() (
   subscriptionWorkItemRepository: SubscriptionWorkItemRepository,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   agentMappingConnector: AgentMappingConnector,
-  legacySubscriptionAuditService: LegacySubscriptionAuditService,
-  legacySubscriptionEmailService: LegacySubscriptionEmailService,
-  appConfig: AppConfig,
-  agentEntityTypeService: AgentEntityTypeService
+  subscriptionAuditService: SubscriptionAuditService,
+  subscriptionEmailService: SubscriptionEmailService,
+  agentEntityTypeService: AgentEntityTypeService,
+  appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
@@ -219,12 +219,12 @@ extends RequestAwareLogging:
           case SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed(workItem) =>
             logger.warn(s"[handleRoboticsCallback] Robotics failed to process request for ${callback.requestId}, work item marked as permanently failed")
             for {
-              _ <- legacySubscriptionAuditService.auditFailure(
+              _ <- subscriptionAuditService.auditFailure(
                 arn = workItem.item.arn,
                 regime = workItem.item.regime,
                 failureReason = s"Robotics callback failure: ${callback.requestMessage}"
               )
-              _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
+              _ <- subscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
             } yield SubscriptionService.CallbackHandling.Handled
           case AlreadyPermanentlyFailed | IgnoredAlreadySucceeded => Future.successful(SubscriptionService.CallbackHandling.Handled)
           case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound => Future.successful(SubscriptionService.CallbackHandling.NotFound)

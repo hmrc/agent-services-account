@@ -42,11 +42,11 @@ import scala.util.control.NonFatal
 
 @Singleton
 class RoboticsWorker @Inject() (
-  workItemService: RoboticsWorkItemService,
-  roboticsInvocationConnector: RoboticsInvocationConnector,
-  legacySubscriptionAuditService: LegacySubscriptionAuditService,
-  legacySubscriptionEmailService: LegacySubscriptionEmailService,
-  appConfig: AppConfig
+                                 workItemService: RoboticsWorkItemService,
+                                 roboticsInvocationConnector: RoboticsInvocationConnector,
+                                 subscriptionAuditService: SubscriptionAuditService,
+                                 subscriptionEmailService: SubscriptionEmailService,
+                                 appConfig: AppConfig
 )(using
   ec: ExecutionContext
 )
@@ -173,12 +173,12 @@ extends RequestAwareLogging:
   def handleFailure(workItem: WorkItem[SubscriptionWorkItem])(using jobConfig: WorkItemJobConfig): Future[Done] =
     if workItem.failureCount + 1 >= jobConfig.maxAttempts then {
       for {
-        _ <- legacySubscriptionAuditService.auditFailure(
+        _ <- subscriptionAuditService.auditFailure(
           arn = workItem.item.arn,
           regime = workItem.item.regime,
           failureReason = "Max retry attempts reached in RoboticsWorker"
         ).recover { case _ => () }
-        _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
+        _ <- subscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
         result <- workItemService.markPermanentlyFailed(workItem)
       } yield result
     }

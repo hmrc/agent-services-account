@@ -154,8 +154,8 @@ with MockLegacySubscriptionEmailService:
       workItemService,
       connector,
       usersGroupsSearchConnector,
-      mockLegacySubscriptionAuditService,
-      mockLegacySubscriptionEmailService
+      mockSubscriptionAuditService,
+      mockSubscriptionEmailService
     )
 
   private val worker =
@@ -163,8 +163,8 @@ with MockLegacySubscriptionEmailService:
       workItemService = workItemService,
       enrolmentStoreProxyConnector = connector,
       usersGroupsSearchConnector = usersGroupsSearchConnector,
-      legacySubscriptionAuditService = mockLegacySubscriptionAuditService,
-      legacySubscriptionEmailService = mockLegacySubscriptionEmailService
+      subscriptionAuditService = mockSubscriptionAuditService,
+      subscriptionEmailService = mockSubscriptionEmailService
     )
 
   testData.foreach { case (regime, subscriptionRequest) =>
@@ -239,7 +239,7 @@ with MockLegacySubscriptionEmailService:
         verify(workItemService).complete(workItem)
         verify(workItemService, never()).markFailed(workItem)
 
-        verify(mockLegacySubscriptionAuditService).auditSuccess(
+        verify(mockSubscriptionAuditService).auditSuccess(
           arn = workItem.item.arn,
           regime = regime,
           legacyAgentCode = Some("A12345")
@@ -413,7 +413,7 @@ with MockLegacySubscriptionEmailService:
 
         worker.runOnce(using jobConfig, regime).futureValue
 
-        verify(mockLegacySubscriptionEmailService).sendCompletionEmailIgnoreErrors(workItem.item)
+        verify(mockSubscriptionEmailService).sendCompletionEmailIgnoreErrors(workItem.item)
         verify(workItemService).complete(workItem)
       }
 
@@ -456,7 +456,7 @@ with MockLegacySubscriptionEmailService:
 
         worker.runOnce(using jobConfig, regime).futureValue
 
-        verify(mockLegacySubscriptionEmailService).sendCompletionEmailIgnoreErrors(workItem.item)
+        verify(mockSubscriptionEmailService).sendCompletionEmailIgnoreErrors(workItem.item)
         verify(workItemService).complete(workItem)
         verify(workItemService, never()).markFailed(workItem)
       }
@@ -488,12 +488,12 @@ with MockLegacySubscriptionEmailService:
         verify(workItemService).markPermanentlyFailed(workItem)
         verify(workItemService, never()).markFailed(workItem)
 
-        verify(mockLegacySubscriptionAuditService).auditFailure(
+        verify(mockSubscriptionAuditService).auditFailure(
           arn = workItem.item.arn,
           regime = regime,
           failureReason = "Max retry attempts reached in KnownFactsWorker"
         )
-        verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
+        verify(mockSubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
       }
 
       "recover from MULTIPLE_ENROLMENTS_INVALID by deallocating and retrying ES8" in {
@@ -601,7 +601,7 @@ with MockLegacySubscriptionEmailService:
 
         worker.runOnce(using jobConfig, regime).futureValue
 
-        verify(mockLegacySubscriptionAuditService).auditFailure(
+        verify(mockSubscriptionAuditService).auditFailure(
           arn = workItem.item.arn,
           regime = regime,
           failureReason = s"Agent already subscribed to $regime"

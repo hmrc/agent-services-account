@@ -34,7 +34,7 @@ import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class LegacySubscriptionEmailServiceSpec
+class SubscriptionEmailServiceSpec
 extends UnitSpec
 with BeforeAndAfterEach {
   
@@ -44,7 +44,7 @@ with BeforeAndAfterEach {
 
   private val emailConnector = mock[EmailConnector]
 
-  private val service = new LegacySubscriptionEmailService(emailConnector)
+  private val service = new SubscriptionEmailService(emailConnector)
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
