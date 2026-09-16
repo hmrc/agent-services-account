@@ -30,22 +30,22 @@ import java.time.Instant
 import java.util.UUID
 
 case class SubscriptionWorkItem(
-  arn: Arn,
-  subscriptionRequest: SubscriptionRequest,
-  regime: LegacyRegime,
-  agentReference: Option[AgentReference],
-  groupId: GroupId,
-  adminCredId: CredId,
-  requestId: String = UUID.randomUUID().toString,
-  roboticsInvokedAt: Option[Instant] = None,
-  sessionId: Option[String] = None, // Local stub-only: ESP stubs require X-Session-ID; keep None for QA/Prod.
-  bearerToken: Option[String] = None, // Local stub-only: ESP stubs require Authorization; never persist in QA/Prod.
-  entityType: String = AgentEntityType.Unknown
+                                 arn: Arn,
+                                 subscriptionRequest: SubscriptionRequest,
+                                 regime: AgentRegime,
+                                 agentReference: Option[AgentReference],
+                                 groupId: GroupId,
+                                 adminCredId: CredId,
+                                 requestId: String = UUID.randomUUID().toString,
+                                 roboticsInvokedAt: Option[Instant] = None,
+                                 sessionId: Option[String] = None, // Local stub-only: ESP stubs require X-Session-ID; keep None for QA/Prod.
+                                 bearerToken: Option[String] = None, // Local stub-only: ESP stubs require Authorization; never persist in QA/Prod.
+                                 entityType: String = AgentEntityType.Unknown
 )
 
 object SubscriptionWorkItem:
 
-  private def mongoReads(using crypto: Encrypter & Decrypter) = (__ \ "regime").read[LegacyRegime].flatMap { regime =>
+  private def mongoReads(using crypto: Encrypter & Decrypter) = (__ \ "regime").read[AgentRegime].flatMap { regime =>
     (
       (__ \ "arn").read[Arn] and
         (__ \ "subscriptionRequest").read[String](using stringEncrypterDecrypter).map[SubscriptionRequest](string =>
@@ -69,7 +69,7 @@ object SubscriptionWorkItem:
         (__ \ "subscriptionRequest").write[String](using stringEncrypterDecrypter).contramap[SubscriptionRequest](subscriptionRequest =>
           Json.toJson(subscriptionRequest).toString
         ) and
-        (__ \ "regime").write[LegacyRegime] and
+        (__ \ "regime").write[AgentRegime] and
         (__ \ "agentReference").writeNullable[AgentReference] and
         (__ \ "groupId").write[GroupId] and
         (__ \ "adminCredId").write[CredId] and

@@ -17,18 +17,18 @@
 package uk.gov.hmrc.agentservicesaccount.binders
 
 import play.api.mvc.QueryStringBindable
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 
 object QueryBinders {
 
-  implicit def legacyRegimeBinder(implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[LegacyRegime] =
-    new QueryStringBindable[LegacyRegime] {
+  implicit def legacyRegimeBinder(implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[AgentRegime] =
+    new QueryStringBindable[AgentRegime] {
       override def bind(
         key: String,
         params: Map[String, Seq[String]]
-      ): Option[Either[String, LegacyRegime]] = stringBinder.bind(key, params).map {
+      ): Option[Either[String, AgentRegime]] = stringBinder.bind(key, params).map {
         case Right(value) =>
-          LegacyRegime.values
+          AgentRegime.values
             .find(_.toString == value)
             .map(Right(_))
             .getOrElse(Left(s"Invalid legacy regime: $value"))
@@ -36,8 +36,8 @@ object QueryBinders {
       }
 
       override def unbind(
-        key: String,
-        legacyRegime: LegacyRegime
-      ): String = stringBinder.unbind(key, legacyRegime.toString)
+                           key: String,
+                           agentRegime: AgentRegime
+      ): String = stringBinder.unbind(key, agentRegime.toString)
     }
 }

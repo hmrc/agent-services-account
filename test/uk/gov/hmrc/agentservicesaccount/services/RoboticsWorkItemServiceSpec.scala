@@ -92,7 +92,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = subscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = Some(AgentReference("ABC1234")),
             roboticsInvokedAt = Some(Instant.now()),
             groupId = GroupId("group-1"),
@@ -117,7 +117,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = subscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = Some(AgentReference("ABC1234")),
             roboticsInvokedAt = Some(Instant.now()),
             groupId = GroupId("group-1"),
@@ -142,7 +142,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = subscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = Some(AgentReference("ABC1234")),
             roboticsInvokedAt = Some(Instant.now()),
             groupId = GroupId("group-1"),

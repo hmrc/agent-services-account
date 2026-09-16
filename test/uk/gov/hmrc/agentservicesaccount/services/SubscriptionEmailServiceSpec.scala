@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.EmailInformation
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.*
 import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
@@ -52,10 +52,10 @@ with BeforeAndAfterEach {
   }
 
   private def buildWorkItem(
-    regime: LegacyRegime,
-    isWelsh: Boolean = false,
-    email: Option[String] = Some("agent@example.com"),
-    agentReference: Option[AgentReference] = Some(AgentReference("A12345"))
+                             regime: AgentRegime,
+                             isWelsh: Boolean = false,
+                             email: Option[String] = Some("agent@example.com"),
+                             agentReference: Option[AgentReference] = Some(AgentReference("A12345"))
   ): SubscriptionWorkItem = SubscriptionWorkItem(
     arn = Arn("TARN0000001"),
     subscriptionRequest =
@@ -116,27 +116,27 @@ with BeforeAndAfterEach {
     adminCredId = CredId("cred")
   )
 
-  private def expectedServiceName(regime: LegacyRegime): String =
+  private def expectedServiceName(regime: AgentRegime): String =
     regime match {
       case PAYE => "PAYE/CIS"
       case SA => "Self Assessment"
       case CT => "Corporation Tax"
     }
 
-  private def expectedServiceSectionName(regime: LegacyRegime): String =
+  private def expectedServiceSectionName(regime: AgentRegime): String =
     regime match {
       case PAYE => "Pay as you earn (PAYE)/Construction Industry Scheme (CIS)"
       case SA => "Self Assessment"
       case CT => "Corporation Tax"
     }
 
-  private def expectedWelshServiceName(regime: LegacyRegime): String =
+  private def expectedWelshServiceName(regime: AgentRegime): String =
     regime match
       case PAYE => "TWE/CIS"
       case SA => "Hunanasesiad"
       case CT => "Treth Gorfforaeth"
 
-  private def expectedWelshServiceSectionName(regime: LegacyRegime): String =
+  private def expectedWelshServiceSectionName(regime: AgentRegime): String =
     regime match
       case PAYE => "Talu wrth ennill (TWE)/Cynllun y Diwydiant Adeiladu (CIS)"
       case SA => "Hunanasesiad"

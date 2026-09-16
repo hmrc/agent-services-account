@@ -38,9 +38,9 @@ import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.Enrolment
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.PAYE
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.CT
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.PAYE
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.SA
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
@@ -146,7 +146,7 @@ with BeforeAndAfterEach {
   ):
     override def findByArnAndRegime(
       arn: Arn,
-      regime: LegacyRegime
+      regime: AgentRegime
     ): Future[Option[uk.gov.hmrc.mongo.workitem.WorkItem[SubscriptionWorkItem]]] = Future.successful(None)
 
   val connector = mock[AgentEpayeRegistrationConnector]
@@ -256,14 +256,14 @@ with BeforeAndAfterEach {
 
         item.sessionId shouldBe Some("session-123")
         item.bearerToken shouldBe Some("Bearer test-token")
-        item.regime shouldBe LegacyRegime.SA
+        item.regime shouldBe AgentRegime.SA
       }
 
       "fail when SA enrolment already exists on the group" in {
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(
           Future.successful(List(Enrolment(
-            service = LegacyRegime.SA.enrolmentKey,
+            service = AgentRegime.SA.enrolmentKey,
             state = "Activated",
             identifiers = Seq.empty
           )))
@@ -291,7 +291,7 @@ with BeforeAndAfterEach {
             SubscriptionWorkItem(
               arn = testArn,
               subscriptionRequest = saSubscriptionRequest,
-              regime = LegacyRegime.SA,
+              regime = AgentRegime.SA,
               agentReference = None,
               groupId = testGroupId,
               adminCredId = testAdminCredId
@@ -313,7 +313,7 @@ with BeforeAndAfterEach {
         items.size.shouldBe(1)
         items.head.id.should(not(be(failedItem.id)))
         items.head.status.shouldBe(ToDo)
-        items.head.item.regime.shouldBe(LegacyRegime.SA)
+        items.head.item.regime.shouldBe(AgentRegime.SA)
       }
 
       "return 429 when a concurrent SA start hits the unique (arn, regime) index" in {
@@ -325,7 +325,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = saSubscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             groupId = testGroupId,
             adminCredId = testAdminCredId
@@ -363,14 +363,14 @@ with BeforeAndAfterEach {
 
         item.sessionId shouldBe Some("session-123")
         item.bearerToken shouldBe Some("Bearer test-token")
-        item.regime shouldBe LegacyRegime.CT
+        item.regime shouldBe AgentRegime.CT
       }
 
       "fail when SA enrolment already exists on the group" in {
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(
           Future.successful(List(Enrolment(
-            service = LegacyRegime.CT.enrolmentKey,
+            service = AgentRegime.CT.enrolmentKey,
             state = "Activated",
             identifiers = Seq.empty
           )))
@@ -398,7 +398,7 @@ with BeforeAndAfterEach {
             SubscriptionWorkItem(
               arn = testArn,
               subscriptionRequest = saSubscriptionRequest,
-              regime = LegacyRegime.CT,
+              regime = AgentRegime.CT,
               agentReference = None,
               groupId = testGroupId,
               adminCredId = testAdminCredId
@@ -420,7 +420,7 @@ with BeforeAndAfterEach {
         items.size.shouldBe(1)
         items.head.id.should(not(be(failedItem.id)))
         items.head.status.shouldBe(ToDo)
-        items.head.item.regime.shouldBe(LegacyRegime.CT)
+        items.head.item.regime.shouldBe(AgentRegime.CT)
       }
 
       "return 429 when a concurrent SA start hits the unique (arn, regime) index" in {
@@ -433,7 +433,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = saSubscriptionRequest,
-            regime = LegacyRegime.CT,
+            regime = AgentRegime.CT,
             agentReference = None,
             groupId = testGroupId,
             adminCredId = testAdminCredId
@@ -464,7 +464,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = saSubscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             requestId = requestId,
             groupId = testGroupId,
@@ -498,7 +498,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = saSubscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             requestId = requestId,
             groupId = testGroupId,
@@ -533,7 +533,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = saSubscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             requestId = requestId,
             groupId = testGroupId,

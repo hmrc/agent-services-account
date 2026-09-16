@@ -126,7 +126,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = subscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             groupId = GroupId("group-1"),
             adminCredId = CredId("cred-1")
@@ -156,7 +156,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = subscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = Some(AgentReference("ABC1234")),
             roboticsInvokedAt = Some(Instant.now()),
             groupId = GroupId("group-1"),
@@ -181,7 +181,7 @@ with BeforeAndAfterEach {
 
       verify(mockAuditService).auditLegacySubscription(
         arn = eqTo(testArn),
-        regime = eqTo(LegacyRegime.SA),
+        regime = eqTo(AgentRegime.SA),
         isSuccessful = eqTo(false),
         legacyAgentCode = eqTo(None),
         failureReason = argThat[Option[String]] {
@@ -204,7 +204,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = subscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             groupId = GroupId("group-1"),
             adminCredId = CredId("cred-1")
@@ -225,7 +225,7 @@ with BeforeAndAfterEach {
 
       verify(mockAuditService, never()).auditLegacySubscription(
         any[Arn],
-        any[LegacyRegime],
+        any[AgentRegime],
         any[Boolean],
         any[Option[String]],
         any[Option[String]]
@@ -238,7 +238,7 @@ with BeforeAndAfterEach {
       repository.coll.countDocuments().toFuture().futureValue shouldBe 0L
       verify(mockAuditService, never()).auditLegacySubscription(
         any[Arn],
-        any[LegacyRegime],
+        any[AgentRegime],
         any[Boolean],
         any[Option[String]],
         any[Option[String]]

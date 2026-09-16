@@ -24,7 +24,7 @@ import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.Operation.CREATE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.CESA
 import uk.gov.hmrc.agentservicesaccount.models.subscription.TargetSystem.COTAX

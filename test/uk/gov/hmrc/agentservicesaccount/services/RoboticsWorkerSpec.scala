@@ -34,8 +34,8 @@ import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.CT
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.SA
 import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
 import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.support.NoRequest
@@ -75,11 +75,11 @@ with MockLegacySubscriptionEmailService:
   val testAdminCredId = CredId("test-cred-id")
 
   private def buildWorkItem(
-    regime: LegacyRegime,
-    request: SubscriptionRequest,
-    requestId: String,
-    failureCount: Int = 0,
-    entityType: String = AgentEntityType.SoleTrader
+                             regime: AgentRegime,
+                             request: SubscriptionRequest,
+                             requestId: String,
+                             failureCount: Int = 0,
+                             entityType: String = AgentEntityType.SoleTrader
   ): WorkItem[SubscriptionWorkItem] = WorkItem(
     id = new ObjectId(),
     receivedAt = Instant.now(),
@@ -109,7 +109,7 @@ with MockLegacySubscriptionEmailService:
     maxAttempts = 3
   )
 
-  val testData: Map[LegacyRegime & UsesRobotics, SubscriptionRequest] = Map(
+  val testData: Map[AgentRegime & UsesRobotics, SubscriptionRequest] = Map(
     SA -> SaSubscriptionRequest(
       agentName = "Agent Name",
       contactName = "Contact Name",

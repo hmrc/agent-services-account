@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentservicesaccount.services
 import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 
 import javax.inject.Inject
@@ -37,9 +37,9 @@ extends RequestAwareLogging {
   given RequestHeader = RequestSupport.thereIsNoRequest
 
   def auditSuccess(
-    arn: Arn,
-    regime: LegacyRegime,
-    legacyAgentCode: Option[String]
+                    arn: Arn,
+                    regime: AgentRegime,
+                    legacyAgentCode: Option[String]
   ): Future[Unit] = auditService.auditLegacySubscription(
     arn = arn,
     regime = regime,
@@ -56,9 +56,9 @@ extends RequestAwareLogging {
     }
 
   def auditFailure(
-    arn: Arn,
-    regime: LegacyRegime,
-    failureReason: String
+                    arn: Arn,
+                    regime: AgentRegime,
+                    failureReason: String
   ): Future[Unit] = auditService.auditLegacySubscription(
     arn = arn,
     regime = regime,

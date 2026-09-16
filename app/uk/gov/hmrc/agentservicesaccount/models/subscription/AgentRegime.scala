@@ -20,14 +20,14 @@ import play.api.libs.json.Format
 import uk.gov.hmrc.agentservicesaccount.utils.EnumFormat
 
 sealed trait UsesRobotics
-enum LegacyRegime:
+enum AgentRegime:
 
   case PAYE
   case SA
-  extends LegacyRegime
+  extends AgentRegime
   with UsesRobotics
   case CT
-  extends LegacyRegime
+  extends AgentRegime
   with UsesRobotics
 
   def enrolmentKey: String =
@@ -51,5 +51,5 @@ enum LegacyRegime:
       case CT => "ct"
     }
 
-object LegacyRegime:
-  given Format[LegacyRegime] = EnumFormat.enumFormat
+object AgentRegime:
+  given Format[AgentRegime] = EnumFormat.enumFormat

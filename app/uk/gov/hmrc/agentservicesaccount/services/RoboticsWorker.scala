@@ -56,7 +56,7 @@ extends RequestAwareLogging:
 
   def runOnce(using
     jobConfig: WorkItemJobConfig,
-    regime: LegacyRegime & UsesRobotics
+    regime: AgentRegime & UsesRobotics
   ): Future[Done] = workItemService.pullOutstanding(
     regime,
     jobConfig.retryInterval
@@ -132,13 +132,13 @@ extends RequestAwareLogging:
   private def process(
     workItem: WorkItem[SubscriptionWorkItem]
   )(using
-    regime: LegacyRegime & UsesRobotics
+    regime: AgentRegime & UsesRobotics
   ): Future[Done] = {
     val request = workItem.item.subscriptionRequest
     val targetSystem =
       regime match {
-        case LegacyRegime.SA => TargetSystem.CESA
-        case LegacyRegime.CT => TargetSystem.COTAX
+        case AgentRegime.SA => TargetSystem.CESA
+        case AgentRegime.CT => TargetSystem.COTAX
       }
 
     val operationData: JsObject = createRoboticsRequestBodyForAllEnvironments(
