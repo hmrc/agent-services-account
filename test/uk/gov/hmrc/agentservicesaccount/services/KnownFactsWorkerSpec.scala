@@ -242,7 +242,7 @@ with MockLegacySubscriptionEmailService:
         verify(mockSubscriptionAuditService).auditSuccess(
           arn = workItem.item.arn,
           regime = regime,
-          legacyAgentCode = Some("A12345")
+          agentCode = Some("A12345")
         )
       }
 
