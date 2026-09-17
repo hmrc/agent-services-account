@@ -26,7 +26,7 @@ import uk.gov.hmrc.agentservicesaccount.services.SubscriptionEmailService
 
 import scala.concurrent.Future
 
-trait MockLegacySubscriptionEmailService
+trait MockSubscriptionEmailService
 extends MockitoSugar { this: TestSuite =>
 
   val mockSubscriptionEmailService: SubscriptionEmailService = mock[SubscriptionEmailService]

@@ -32,8 +32,8 @@ import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentMappingConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentEpayeRegistrationConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockSubscriptionAuditService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockSubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.Enrolment
@@ -60,8 +60,8 @@ class SubscriptionServiceSpec
 extends UnitSpec
 with IntegrationPatience
 with CleanMongoCollectionSupport
-with MockLegacySubscriptionAuditService
-with MockLegacySubscriptionEmailService
+with MockSubscriptionAuditService
+with MockSubscriptionEmailService
 with BeforeAndAfterEach {
 
   private given RequestHeader = NoRequest
@@ -202,7 +202,7 @@ with BeforeAndAfterEach {
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
         when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
 
         service.startSubscriptionProcess(
           testArn,
@@ -222,7 +222,7 @@ with BeforeAndAfterEach {
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(connector.register(subscriptionRequest)(using testRequest)).thenReturn(Future.successful(testAgentRef))
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
 
         service.startSubscriptionProcess(
           testArn,
@@ -242,7 +242,7 @@ with BeforeAndAfterEach {
       "capture session and bearer when stubs compatibility mode is enabled" in {
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
 
         service.startSubscriptionProcess(
           testArn,
@@ -284,7 +284,7 @@ with BeforeAndAfterEach {
       "replace a permanently failed work item when SA subscription is retried" in {
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
 
         val failedItem =
           repository.pushNew(
@@ -349,7 +349,7 @@ with BeforeAndAfterEach {
       "capture session and bearer when stubs compatibility mode is enabled" in {
         when(appConfig.stubsCompatibilityMode).thenReturn(true)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
 
         service.startSubscriptionProcess(
           testArn,
@@ -391,7 +391,7 @@ with BeforeAndAfterEach {
       "replace a permanently failed work item when SA subscription is retried" in {
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
 
         val failedItem =
           repository.pushNew(
@@ -426,7 +426,7 @@ with BeforeAndAfterEach {
       "return 429 when a concurrent SA start hits the unique (arn, regime) index" in {
         when(appConfig.stubsCompatibilityMode).thenReturn(false)
         when(espConnector.queryEnrolmentsAllocatedToGroup(testGroupId)(using testRequest)).thenReturn(Future.successful(Nil))
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
 
         // Seed an existing SA work item so the insert below will hit the unique index.
         raceRepository.pushNew(
@@ -589,7 +589,7 @@ with BeforeAndAfterEach {
 
       repository.markAs(workItem.id, InProgress).futureValue
 
-      mockLegacySubscriptionAuditFailure()
+      mockSubscriptionAuditFailure()
       mockSendFailureEmailIgnoreErrors()
 
       val callbackResult =

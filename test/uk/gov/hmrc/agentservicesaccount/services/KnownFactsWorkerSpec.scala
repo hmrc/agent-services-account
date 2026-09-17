@@ -39,8 +39,8 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.PAYE
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.SA
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAppConfig
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockSubscriptionAuditService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockSubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.UpstreamErrorResponse
@@ -58,8 +58,8 @@ class KnownFactsWorkerSpec
 extends UnitSpec
 with BeforeAndAfterEach
 with MockAppConfig
-with MockLegacySubscriptionAuditService
-with MockLegacySubscriptionEmailService:
+with MockSubscriptionAuditService
+with MockSubscriptionEmailService:
 
   private given RequestHeader = NoRequest
 
@@ -211,7 +211,7 @@ with MockLegacySubscriptionEmailService:
         )
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
         mockSendCompletionEmailIgnoreErrors()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
@@ -255,7 +255,7 @@ with MockLegacySubscriptionEmailService:
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
         val replacementAdminCredId = CredId("REPLACEMENT-ADMIN")
 
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
         mockSendCompletionEmailIgnoreErrors()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
@@ -388,7 +388,7 @@ with MockLegacySubscriptionEmailService:
         )
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
         mockSendCompletionEmailIgnoreErrors()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
@@ -431,7 +431,7 @@ with MockLegacySubscriptionEmailService:
         )
         val response = Es20Response(regime.enrolmentKey, Seq(Es20Enrolment(Nil, Nil)))
 
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
         mockSendCompletionEmailIgnoreErrors()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
@@ -468,7 +468,7 @@ with MockLegacySubscriptionEmailService:
           subscriptionRequest = subscriptionRequest
         )
 
-        mockLegacySubscriptionAuditFailure()
+        mockSubscriptionAuditFailure()
         mockSendFailureEmailIgnoreErrors()
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
@@ -507,7 +507,7 @@ with MockLegacySubscriptionEmailService:
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
-        mockLegacySubscriptionAuditSuccess()
+        mockSubscriptionAuditSuccess()
         mockSendCompletionEmailIgnoreErrors()
 
         when(connector.queryKnownFactsForAgent(
@@ -571,7 +571,7 @@ with MockLegacySubscriptionEmailService:
 
         when(workItemService.pullOutstanding(regime, jobConfig.retryInterval))
           .thenReturn(Future.successful(Some(workItem)))
-        mockLegacySubscriptionAuditFailure()
+        mockSubscriptionAuditFailure()
         when(workItemService.markPermanentlyFailed(any[WorkItem[SubscriptionWorkItem]]))
           .thenReturn(Future.successful(Done))
 
