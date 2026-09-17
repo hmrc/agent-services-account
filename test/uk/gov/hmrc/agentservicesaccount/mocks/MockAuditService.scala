@@ -54,7 +54,7 @@ extends MockitoSugar { this: TestSuite =>
     ).thenReturn(Future.successful(AuditResult.Success))
   }
 
-  def mockAuditLegacySubscription(): Unit = {
+  def mockAuditSubscription(): Unit = {
     when(
       mockAuditService.auditSubscription(
         any[Arn],

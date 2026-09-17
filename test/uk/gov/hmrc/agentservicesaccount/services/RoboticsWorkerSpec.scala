@@ -36,8 +36,8 @@ import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.Correlat
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.CT
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.SA
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockSubscriptionAuditService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockSubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
@@ -52,8 +52,8 @@ import scala.concurrent.duration.*
 class RoboticsWorkerSpec
 extends UnitSpec
 with BeforeAndAfterEach
-with MockLegacySubscriptionAuditService
-with MockLegacySubscriptionEmailService:
+with MockSubscriptionAuditService
+with MockSubscriptionEmailService:
   
   private given RequestHeader = NoRequest
 
@@ -352,7 +352,7 @@ with MockLegacySubscriptionEmailService:
         when(connector.invoke(any[JsObject], any[CorrelationId])(using any[HeaderCarrier]))
           .thenReturn(Future.failed(new RuntimeException("boom")))
         when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
-        mockLegacySubscriptionAuditFailure()
+        mockSubscriptionAuditFailure()
         mockSendFailureEmailIgnoreErrors()
         worker.runOnce(using jobConfig, regime).futureValue
 

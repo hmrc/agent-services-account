@@ -26,12 +26,12 @@ import uk.gov.hmrc.agentservicesaccount.services.SubscriptionAuditService
 
 import scala.concurrent.Future
 
-trait MockLegacySubscriptionAuditService
+trait MockSubscriptionAuditService
 extends MockitoSugar { this: TestSuite =>
 
   val mockSubscriptionAuditService: SubscriptionAuditService = mock[SubscriptionAuditService]
 
-  def mockLegacySubscriptionAuditSuccess(): Unit = {
+  def mockSubscriptionAuditSuccess(): Unit = {
     when(
       mockSubscriptionAuditService.auditSuccess(
         any[Arn],
@@ -41,7 +41,7 @@ extends MockitoSugar { this: TestSuite =>
     ).thenReturn(Future.successful(()))
   }
 
-  def mockLegacySubscriptionAuditFailure(): Unit = {
+  def mockSubscriptionAuditFailure(): Unit = {
     when(
       mockSubscriptionAuditService.auditFailure(
         any[Arn],

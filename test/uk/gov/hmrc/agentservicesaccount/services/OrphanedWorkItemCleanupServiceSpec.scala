@@ -31,7 +31,7 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAuditService
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockSubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
@@ -53,7 +53,7 @@ extends UnitSpec
 with IntegrationPatience
 with CleanMongoCollectionSupport
 with MockAuditService
-with MockLegacySubscriptionEmailService
+with MockSubscriptionEmailService
 with BeforeAndAfterEach {
   
   private given RequestHeader = NoRequest
@@ -111,7 +111,7 @@ with BeforeAndAfterEach {
 
     reset(mockAuditService, mockSubscriptionEmailService)
 
-    mockAuditLegacySubscription()
+    mockAuditSubscription()
 
     when(appConfig.orphanedWorkItemMaxAge)
       .thenReturn(14.days)
