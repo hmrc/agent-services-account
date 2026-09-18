@@ -20,13 +20,13 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 
 trait AgentMappingStubs:
 
   def givenGetMappingsCallSucceeds(
     arn: Arn,
-    regime: LegacyRegime
+    regime: AgentRegime
   )(agentReferences: AgentReference*): Unit = stubFor(
     get(urlEqualTo(s"/agent-mapping/mappings/key/${regime.mappingKey}/arn/${arn.value}"))
       .willReturn(
@@ -47,7 +47,7 @@ trait AgentMappingStubs:
 
   def givenGetMappingsCallFails(
     arn: Arn,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Unit = stubFor(
     get(urlEqualTo(s"/agent-mapping/mappings/key/${regime.mappingKey}/arn/${arn.value}"))
       .willReturn(

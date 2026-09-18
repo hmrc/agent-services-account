@@ -33,7 +33,7 @@ import uk.gov.hmrc.agentservicesaccount.models.Es20Response
 import uk.gov.hmrc.agentservicesaccount.models.Es8Request
 import uk.gov.hmrc.agentservicesaccount.models.EspKnownFact
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.hc
 import uk.gov.hmrc.http.client.HttpClientV2
@@ -77,9 +77,9 @@ class EnrolmentStoreProxyConnector @Inject() (
       }
 
   def queryKnownFactsForAgent(
-    regime: LegacyRegime,
-    agentReference: String,
-    postcode: Option[PayePostcode.Valid]
+                               regime: AgentRegime,
+                               agentReference: String,
+                               postcode: Option[PayePostcode.Valid]
   )(using HeaderCarrier): Future[Option[Es20Response]] =
     es20RequestFor(
       regime,
@@ -90,12 +90,12 @@ class EnrolmentStoreProxyConnector @Inject() (
       case Some(request) => executeEs20Lookup(request)
 
   private def es20RequestFor(
-    regime: LegacyRegime,
-    agentReference: String,
-    postcode: Option[PayePostcode.Valid]
+                              regime: AgentRegime,
+                              agentReference: String,
+                              postcode: Option[PayePostcode.Valid]
   ): Option[Es20Request] =
     (regime, postcode) match
-      case (LegacyRegime.PAYE, Some(pc)) =>
+      case (AgentRegime.PAYE, Some(pc)) =>
         Some(Es20Request(
           service = regime.enrolmentKey,
           knownFacts = Seq(
@@ -103,7 +103,7 @@ class EnrolmentStoreProxyConnector @Inject() (
             EspKnownFact("IRAgentPostcode", pc.value)
           )
         ))
-      case (LegacyRegime.PAYE, None) => None
+      case (AgentRegime.PAYE, None) => None
       case (_, _) =>
         Some(Es20Request(
           service = regime.enrolmentKey,
@@ -128,10 +128,10 @@ class EnrolmentStoreProxyConnector @Inject() (
 
   // ES8
   def allocateAgentEnrolment(
-    regime: LegacyRegime,
-    groupId: GroupId,
-    agentReference: String,
-    adminCredId: CredId
+                              regime: AgentRegime,
+                              groupId: GroupId,
+                              agentReference: String,
+                              adminCredId: CredId
   )(using HeaderCarrier): Future[Unit] = {
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
 
@@ -158,9 +158,9 @@ class EnrolmentStoreProxyConnector @Inject() (
 
   // ES9
   def deallocateAgentEnrolment(
-    groupId: GroupId,
-    regime: LegacyRegime,
-    agentReference: String
+                                groupId: GroupId,
+                                regime: AgentRegime,
+                                agentReference: String
   )(using HeaderCarrier): Future[Unit] = {
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
 

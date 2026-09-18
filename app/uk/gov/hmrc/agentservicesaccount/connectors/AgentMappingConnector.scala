@@ -27,7 +27,7 @@ import uk.gov.hmrc.agentservicesaccount.connectors.MappingConnector.Mapping.read
 import uk.gov.hmrc.agentservicesaccount.connectors.MappingConnector.Mapping
 import uk.gov.hmrc.agentservicesaccount.connectors.MappingConnector.Mappings
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.hc
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.StringContextOps
@@ -53,7 +53,7 @@ extends RequestAwareLogging:
 
   def getMappings(
     arn: Arn,
-    regime: LegacyRegime
+    regime: AgentRegime
   )(implicit rh: RequestHeader): Future[Seq[Mapping]] = httpClient
     .get(url"$baseUrl/mappings/key/${regime.mappingKey}/arn/${arn.value}")
     .execute[HttpResponse]

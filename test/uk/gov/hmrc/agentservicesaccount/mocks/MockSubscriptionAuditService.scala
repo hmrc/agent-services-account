@@ -21,31 +21,31 @@ import org.mockito.Mockito.*
 import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
-import uk.gov.hmrc.agentservicesaccount.services.LegacySubscriptionAuditService
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
+import uk.gov.hmrc.agentservicesaccount.services.SubscriptionAuditService
 
 import scala.concurrent.Future
 
-trait MockLegacySubscriptionAuditService
+trait MockSubscriptionAuditService
 extends MockitoSugar { this: TestSuite =>
 
-  val mockLegacySubscriptionAuditService: LegacySubscriptionAuditService = mock[LegacySubscriptionAuditService]
+  val mockSubscriptionAuditService: SubscriptionAuditService = mock[SubscriptionAuditService]
 
-  def mockLegacySubscriptionAuditSuccess(): Unit = {
+  def mockSubscriptionAuditSuccess(): Unit = {
     when(
-      mockLegacySubscriptionAuditService.auditSuccess(
+      mockSubscriptionAuditService.auditSuccess(
         any[Arn],
-        any[LegacyRegime],
+        any[AgentRegime],
         any[Option[String]]
       )
     ).thenReturn(Future.successful(()))
   }
 
-  def mockLegacySubscriptionAuditFailure(): Unit = {
+  def mockSubscriptionAuditFailure(): Unit = {
     when(
-      mockLegacySubscriptionAuditService.auditFailure(
+      mockSubscriptionAuditService.auditFailure(
         any[Arn],
-        any[LegacyRegime],
+        any[AgentRegime],
         any[String]()
       )
     ).thenReturn(Future.successful(()))

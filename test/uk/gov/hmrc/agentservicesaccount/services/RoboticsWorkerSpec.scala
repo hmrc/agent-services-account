@@ -34,10 +34,10 @@ import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.RoboticsIds.CorrelationId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.CT
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.SA
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionAuditService
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.CT
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.SA
+import uk.gov.hmrc.agentservicesaccount.mocks.MockSubscriptionAuditService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockSubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.support.NoRequest
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
@@ -52,8 +52,8 @@ import scala.concurrent.duration.*
 class RoboticsWorkerSpec
 extends UnitSpec
 with BeforeAndAfterEach
-with MockLegacySubscriptionAuditService
-with MockLegacySubscriptionEmailService:
+with MockSubscriptionAuditService
+with MockSubscriptionEmailService:
   
   private given RequestHeader = NoRequest
 
@@ -66,8 +66,8 @@ with MockLegacySubscriptionEmailService:
     new RoboticsWorker(
       workItemService,
       connector,
-      mockLegacySubscriptionAuditService,
-      mockLegacySubscriptionEmailService,
+      mockSubscriptionAuditService,
+      mockSubscriptionEmailService,
       appConfig
     )
 
@@ -75,11 +75,11 @@ with MockLegacySubscriptionEmailService:
   val testAdminCredId = CredId("test-cred-id")
 
   private def buildWorkItem(
-    regime: LegacyRegime,
-    request: SubscriptionRequest,
-    requestId: String,
-    failureCount: Int = 0,
-    entityType: String = AgentEntityType.SoleTrader
+                             regime: AgentRegime,
+                             request: SubscriptionRequest,
+                             requestId: String,
+                             failureCount: Int = 0,
+                             entityType: String = AgentEntityType.SoleTrader
   ): WorkItem[SubscriptionWorkItem] = WorkItem(
     id = new ObjectId(),
     receivedAt = Instant.now(),
@@ -109,7 +109,7 @@ with MockLegacySubscriptionEmailService:
     maxAttempts = 3
   )
 
-  val testData: Map[LegacyRegime & UsesRobotics, SubscriptionRequest] = Map(
+  val testData: Map[AgentRegime & UsesRobotics, SubscriptionRequest] = Map(
     SA -> SaSubscriptionRequest(
       agentName = "Agent Name",
       contactName = "Contact Name",
@@ -352,17 +352,17 @@ with MockLegacySubscriptionEmailService:
         when(connector.invoke(any[JsObject], any[CorrelationId])(using any[HeaderCarrier]))
           .thenReturn(Future.failed(new RuntimeException("boom")))
         when(workItemService.markPermanentlyFailed(workItem)).thenReturn(Future.successful(Done))
-        mockLegacySubscriptionAuditFailure()
+        mockSubscriptionAuditFailure()
         mockSendFailureEmailIgnoreErrors()
         worker.runOnce(using jobConfig, regime).futureValue
 
         verify(workItemService).markPermanentlyFailed(workItem)
-        verify(mockLegacySubscriptionAuditService).auditFailure(
+        verify(mockSubscriptionAuditService).auditFailure(
           arn = workItem.item.arn,
           regime = regime,
           failureReason = "Max retry attempts reached in RoboticsWorker"
         )
-        verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
+        verify(mockSubscriptionEmailService).sendFailureEmailIgnoreErrors(workItem.item)
       }
     }
   }
@@ -373,5 +373,5 @@ with MockLegacySubscriptionEmailService:
       workItemService,
       connector,
       appConfig,
-      mockLegacySubscriptionAuditService
+      mockSubscriptionAuditService
     )

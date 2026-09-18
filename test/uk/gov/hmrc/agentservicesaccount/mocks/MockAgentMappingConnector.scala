@@ -25,7 +25,7 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.connectors.AgentMappingConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.MappingConnector.Mapping
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 
 import scala.concurrent.Future
 
@@ -36,7 +36,7 @@ extends MockitoSugar { this: TestSuite =>
 
   def mockGetMappings(
     arn: Arn,
-    regime: LegacyRegime
+    regime: AgentRegime
   )(response: Seq[Mapping]): Unit = {
     when(mockAgentMappingConnector.getMappings(meq(arn), meq(regime))(using any[RequestHeader]))
       .thenReturn(Future.successful(response))

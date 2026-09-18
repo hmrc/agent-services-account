@@ -19,7 +19,7 @@ package uk.gov.hmrc.agentservicesaccount.services
 import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 
 import javax.inject.Inject
@@ -29,7 +29,7 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 @Singleton
-class LegacySubscriptionAuditService @Inject() (
+class SubscriptionAuditService @Inject()(
   auditService: AuditService
 )(using ExecutionContext)
 extends RequestAwareLogging {
@@ -37,39 +37,39 @@ extends RequestAwareLogging {
   given RequestHeader = RequestSupport.thereIsNoRequest
 
   def auditSuccess(
-    arn: Arn,
-    regime: LegacyRegime,
-    legacyAgentCode: Option[String]
-  ): Future[Unit] = auditService.auditLegacySubscription(
+                    arn: Arn,
+                    regime: AgentRegime,
+                    agentCode: Option[String]
+  ): Future[Unit] = auditService.auditSubscription(
     arn = arn,
     regime = regime,
     isSuccessful = true,
-    legacyAgentCode = legacyAgentCode,
+    agentCode = agentCode,
     failureReason = None
   )
     .map(_ => ())
     .recover { case NonFatal(error) =>
       logger.warn(
-        s"[LegacySubscriptionAuditService] Failed to audit successful legacy subscription for arn ${arn.value}",
+        s"[SubscriptionAuditService] Failed to audit successful subscription for arn ${arn.value}",
         error
       )
     }
 
   def auditFailure(
-    arn: Arn,
-    regime: LegacyRegime,
-    failureReason: String
-  ): Future[Unit] = auditService.auditLegacySubscription(
+                    arn: Arn,
+                    regime: AgentRegime,
+                    failureReason: String
+  ): Future[Unit] = auditService.auditSubscription(
     arn = arn,
     regime = regime,
     isSuccessful = false,
-    legacyAgentCode = None,
+    agentCode = None,
     failureReason = Some(failureReason)
   )
     .map(_ => ())
     .recover { case NonFatal(error) =>
       logger.warn(
-        s"[LegacySubscriptionAuditService] Failed to audit failed legacy subscription for arn ${arn.value}",
+        s"[SubscriptionAuditService] Failed to audit failed subscription for arn ${arn.value}",
         error
       )
     }

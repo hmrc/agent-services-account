@@ -36,7 +36,7 @@ import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackFailure
 import uk.gov.hmrc.agentservicesaccount.models.subscription.CallbackStatus.CallbackSuccess
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.NotSubscribed
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.SubscriptionMapped
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionStatus.SubscriptionOnAgency
@@ -53,10 +53,10 @@ class SubscriptionService @Inject() (
   subscriptionWorkItemRepository: SubscriptionWorkItemRepository,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   agentMappingConnector: AgentMappingConnector,
-  legacySubscriptionAuditService: LegacySubscriptionAuditService,
-  legacySubscriptionEmailService: LegacySubscriptionEmailService,
-  appConfig: AppConfig,
-  agentEntityTypeService: AgentEntityTypeService
+  subscriptionAuditService: SubscriptionAuditService,
+  subscriptionEmailService: SubscriptionEmailService,
+  agentEntityTypeService: AgentEntityTypeService,
+  appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
@@ -67,8 +67,8 @@ extends RequestAwareLogging:
       (None, None)
 
   private def checkExistingEnrolments(
-    regime: LegacyRegime,
-    groupId: GroupId
+                                       regime: AgentRegime,
+                                       groupId: GroupId
   )(using request: RequestHeader): Future[Done] = enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).map { enrolments =>
     if enrolments.exists(e => e.service == regime.enrolmentKey && e.state == "Activated") then
       throw UpstreamErrorResponse(
@@ -81,7 +81,7 @@ extends RequestAwareLogging:
 
   private def checkExistingWorkItem(
     arn: Arn,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[Done] = subscriptionWorkItemRepository.findByArnAndRegime(arn, regime).flatMap {
     case Some(existing) if existing.status != PermanentlyFailed =>
       Future.failed(UpstreamErrorResponse(
@@ -106,11 +106,11 @@ extends RequestAwareLogging:
   }
 
   def startSubscriptionProcess(
-    arn: Arn,
-    subscriptionRequest: SubscriptionRequest,
-    regime: LegacyRegime,
-    adminCredId: CredId,
-    groupId: GroupId
+                                arn: Arn,
+                                subscriptionRequest: SubscriptionRequest,
+                                regime: AgentRegime,
+                                adminCredId: CredId,
+                                groupId: GroupId
   )(using request: RequestHeader): Future[Done] =
     for {
       _ <- checkExistingEnrolments(
@@ -175,11 +175,11 @@ extends RequestAwareLogging:
     }
 
   private def createWorkItem(
-    arn: Arn,
-    subscriptionRequest: SaSubscriptionRequest | CtSubscriptionRequest,
-    regime: LegacyRegime,
-    adminCredId: CredId,
-    groupId: GroupId
+                              arn: Arn,
+                              subscriptionRequest: SaSubscriptionRequest | CtSubscriptionRequest,
+                              regime: AgentRegime,
+                              adminCredId: CredId,
+                              groupId: GroupId
   )(using request: RequestHeader): Future[SubscriptionWorkItem] =
     // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
     val (optSessionId, optBearerToken) = maybeCaptureStubHeaders()
@@ -219,12 +219,12 @@ extends RequestAwareLogging:
           case SubscriptionWorkItemRepository.FailureCallbackHandling.MarkedPermanentlyFailed(workItem) =>
             logger.warn(s"[handleRoboticsCallback] Robotics failed to process request for ${callback.requestId}, work item marked as permanently failed")
             for {
-              _ <- legacySubscriptionAuditService.auditFailure(
+              _ <- subscriptionAuditService.auditFailure(
                 arn = workItem.item.arn,
                 regime = workItem.item.regime,
                 failureReason = s"Robotics callback failure: ${callback.requestMessage}"
               )
-              _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
+              _ <- subscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
             } yield SubscriptionService.CallbackHandling.Handled
           case AlreadyPermanentlyFailed | IgnoredAlreadySucceeded => Future.successful(SubscriptionService.CallbackHandling.Handled)
           case SubscriptionWorkItemRepository.FailureCallbackHandling.NotFound => Future.successful(SubscriptionService.CallbackHandling.NotFound)
@@ -234,7 +234,7 @@ extends RequestAwareLogging:
   def getSubscriptionInfo(
     arn: Arn,
     groupId: GroupId,
-    regimes: Seq[LegacyRegime]
+    regimes: Seq[AgentRegime]
   )(using requestHeader: RequestHeader): Future[Seq[SubscriptionInfo]] = Future.sequence(regimes.map { regime =>
     subscriptionWorkItemRepository.findByArnAndRegime(arn, regime).flatMap {
       case Some(workItem) if workItem.status != PermanentlyFailed =>

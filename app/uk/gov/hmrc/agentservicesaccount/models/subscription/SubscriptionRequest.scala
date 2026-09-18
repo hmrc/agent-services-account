@@ -18,7 +18,7 @@ package uk.gov.hmrc.agentservicesaccount.models.subscription
 
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.*
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.*
 
 // TODO since the models are the same they can be merged
 sealed trait SubscriptionRequest:
@@ -33,20 +33,20 @@ sealed trait SubscriptionRequest:
 
 object SubscriptionRequest:
 
-  def reads(regime: LegacyRegime): Reads[SubscriptionRequest] = Reads { json =>
+  def reads(regime: AgentRegime): Reads[SubscriptionRequest] = Reads { json =>
     regime match {
       case PAYE => json.validate[PayeSubscriptionRequest]
       case SA => json.validate[SaSubscriptionRequest]
       case CT => json.validate[CtSubscriptionRequest]
     } match {
       case JsSuccess(request: SubscriptionRequest, _) if !request.isAbroad && request.address.postCode.isEmpty =>
-        JsError("Postcode is required for legacy subscriptions in UK")
+        JsError("Postcode is required for subscription requests in UK")
       case other => other
     }
   }
 
-  def requestReads(regime: LegacyRegime): Reads[SubscriptionRequest] =
-    reads(regime).filter(JsonValidationError("Postcode is required for legacy subscriptions in UK")) { request =>
+  def requestReads(regime: AgentRegime): Reads[SubscriptionRequest] =
+    reads(regime).filter(JsonValidationError("Postcode is required for subscription requests in UK")) { request =>
       request.isAbroad || request.address.postCode.forall(_.trim.nonEmpty)
     }
 

@@ -31,7 +31,7 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.mocks.MockAuditService
-import uk.gov.hmrc.agentservicesaccount.mocks.MockLegacySubscriptionEmailService
+import uk.gov.hmrc.agentservicesaccount.mocks.MockSubscriptionEmailService
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
@@ -53,7 +53,7 @@ extends UnitSpec
 with IntegrationPatience
 with CleanMongoCollectionSupport
 with MockAuditService
-with MockLegacySubscriptionEmailService
+with MockSubscriptionEmailService
 with BeforeAndAfterEach {
   
   private given RequestHeader = NoRequest
@@ -75,13 +75,13 @@ with BeforeAndAfterEach {
 
   private val appConfig = mock[AppConfig]
 
-  private val auditService = new LegacySubscriptionAuditService(mockAuditService)
+  private val auditService = new SubscriptionAuditService(mockAuditService)
 
   private val service =
     new OrphanedWorkItemCleanupService(
       repository,
       auditService,
-      mockLegacySubscriptionEmailService,
+      mockSubscriptionEmailService,
       appConfig
     )
 
@@ -109,9 +109,9 @@ with BeforeAndAfterEach {
     repository.coll.drop().toFuture().futureValue
     repository.ensureIndexes().futureValue
 
-    reset(mockAuditService, mockLegacySubscriptionEmailService)
+    reset(mockAuditService, mockSubscriptionEmailService)
 
-    mockAuditLegacySubscription()
+    mockAuditSubscription()
 
     when(appConfig.orphanedWorkItemMaxAge)
       .thenReturn(14.days)
@@ -126,7 +126,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = subscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             groupId = GroupId("group-1"),
             adminCredId = CredId("cred-1")
@@ -156,7 +156,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = subscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = Some(AgentReference("ABC1234")),
             roboticsInvokedAt = Some(Instant.now()),
             groupId = GroupId("group-1"),
@@ -179,11 +179,11 @@ with BeforeAndAfterEach {
 
       service.cleanup().futureValue
 
-      verify(mockAuditService).auditLegacySubscription(
+      verify(mockAuditService).auditSubscription(
         arn = eqTo(testArn),
-        regime = eqTo(LegacyRegime.SA),
+        regime = eqTo(AgentRegime.SA),
         isSuccessful = eqTo(false),
-        legacyAgentCode = eqTo(None),
+        agentCode = eqTo(None),
         failureReason = argThat[Option[String]] {
           case Some(reason) =>
             reason.contains("Orphaned work-item cleanup") &&
@@ -194,7 +194,7 @@ with BeforeAndAfterEach {
           case None => false
         }
       )(using any[RequestHeader])
-      verify(mockLegacySubscriptionEmailService).sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
+      verify(mockSubscriptionEmailService).sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
     }
 
     "skip already permanently failed work items" in {
@@ -204,7 +204,7 @@ with BeforeAndAfterEach {
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = subscriptionRequest,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             groupId = GroupId("group-1"),
             adminCredId = CredId("cred-1")
@@ -223,9 +223,9 @@ with BeforeAndAfterEach {
 
       service.cleanup().futureValue
 
-      verify(mockAuditService, never()).auditLegacySubscription(
+      verify(mockAuditService, never()).auditSubscription(
         any[Arn],
-        any[LegacyRegime],
+        any[AgentRegime],
         any[Boolean],
         any[Option[String]],
         any[Option[String]]
@@ -236,9 +236,9 @@ with BeforeAndAfterEach {
       service.cleanup().futureValue
 
       repository.coll.countDocuments().toFuture().futureValue shouldBe 0L
-      verify(mockAuditService, never()).auditLegacySubscription(
+      verify(mockAuditService, never()).auditSubscription(
         any[Arn],
-        any[LegacyRegime],
+        any[AgentRegime],
         any[Boolean],
         any[Option[String]],
         any[Option[String]]

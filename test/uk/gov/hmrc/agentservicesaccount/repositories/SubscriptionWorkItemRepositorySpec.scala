@@ -94,7 +94,7 @@ with BeforeAndAfterEach:
             SubscriptionWorkItem(
               arn = testArn,
               subscriptionRequest = request,
-              regime = LegacyRegime.SA,
+              regime = AgentRegime.SA,
               agentReference = None,
               groupId = testGroupId,
               adminCredId = testAdminCredId
@@ -117,7 +117,7 @@ with BeforeAndAfterEach:
 
       val pulled =
         repository.pullAwaitingRobotics(
-          LegacyRegime.SA,
+          AgentRegime.SA,
           availableBefore = Instant.now(),
           failedBefore = Instant.now()
         ).futureValue
@@ -131,7 +131,7 @@ with BeforeAndAfterEach:
             SubscriptionWorkItem(
               arn = testArn,
               subscriptionRequest = request,
-              regime = LegacyRegime.SA,
+              regime = AgentRegime.SA,
               agentReference = None,
               groupId = testGroupId,
               adminCredId = testAdminCredId
@@ -143,7 +143,7 @@ with BeforeAndAfterEach:
 
       val pulled =
         repository.pullAwaitingRobotics(
-          LegacyRegime.SA,
+          AgentRegime.SA,
           availableBefore = Instant.now(),
           failedBefore = Instant.now()
         ).futureValue
@@ -158,7 +158,7 @@ with BeforeAndAfterEach:
             SubscriptionWorkItem(
               arn = testArn,
               subscriptionRequest = request,
-              regime = LegacyRegime.SA,
+              regime = AgentRegime.SA,
               agentReference = None,
               groupId = testGroupId,
               adminCredId = testAdminCredId
@@ -182,7 +182,7 @@ with BeforeAndAfterEach:
 
       val pulled =
         repository.pullAwaitingRobotics(
-          LegacyRegime.SA,
+          AgentRegime.SA,
           availableBefore = Instant.now(),
           failedBefore = Instant.now()
         ).futureValue
@@ -200,7 +200,7 @@ with BeforeAndAfterEach:
             SubscriptionWorkItem(
               arn = testArn,
               subscriptionRequest = request,
-              regime = LegacyRegime.SA,
+              regime = AgentRegime.SA,
               agentReference = None,
               requestId = requestId,
               groupId = testGroupId,
@@ -241,7 +241,7 @@ with BeforeAndAfterEach:
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = request,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             groupId = testGroupId,
             adminCredId = testAdminCredId
@@ -255,7 +255,7 @@ with BeforeAndAfterEach:
           SubscriptionWorkItem(
             arn = Arn("AARN0000002"),
             subscriptionRequest = request,
-            regime = LegacyRegime.CT,
+            regime = AgentRegime.CT,
             agentReference = None,
             groupId = testGroupId,
             adminCredId = testAdminCredId
@@ -282,7 +282,7 @@ with BeforeAndAfterEach:
         SubscriptionWorkItem(
           arn = testArn,
           subscriptionRequest = request,
-          regime = LegacyRegime.SA,
+          regime = AgentRegime.SA,
           agentReference = None,
           groupId = testGroupId,
           adminCredId = testAdminCredId
@@ -309,7 +309,7 @@ with BeforeAndAfterEach:
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = request,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             groupId = testGroupId,
             adminCredId = testAdminCredId
@@ -332,7 +332,7 @@ with BeforeAndAfterEach:
           SubscriptionWorkItem(
             arn = testArn,
             subscriptionRequest = request,
-            regime = LegacyRegime.SA,
+            regime = AgentRegime.SA,
             agentReference = None,
             groupId = testGroupId,
             adminCredId = testAdminCredId
