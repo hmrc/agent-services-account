@@ -10,6 +10,6 @@ POST          /agent/agency-details/arn/:arn              uk.gov.hmrc.agentservi
 PUT           /agent-record-update                        uk.gov.hmrc.agentservicesaccount.controllers.AgentDetailsController.agentRecordUpdate()
 POST          /dms-agent-callback                         uk.gov.hmrc.agentservicesaccount.controllers.DmsNotificationController.dmsCallback()
 
-POST          /legacy-subscription-request/:regime        uk.gov.hmrc.agentservicesaccount.controllers.SubscriptionController.startSubscription(regime: AgentRegime)
-GET           /legacy-subscription-info                   uk.gov.hmrc.agentservicesaccount.controllers.SubscriptionController.subscriptionInfo(regimes: Seq[AgentRegime])
+POST          /subscription-request/:regime        uk.gov.hmrc.agentservicesaccount.controllers.SubscriptionController.startSubscription(regime: AgentRegime)
+GET           /subscription-info                   uk.gov.hmrc.agentservicesaccount.controllers.SubscriptionController.subscriptionInfo(regimes: Seq[AgentRegime])
 POST          /robotics/callback                          uk.gov.hmrc.agentservicesaccount.controllers.SubscriptionController.roboticsCallback()

@@ -101,14 +101,14 @@ with AgentAuthStubs:
     isAbroad = false,
     isWelsh = false
   )
-  "POST /legacy-subscription-request/:regime" should:
+  "POST /subscription-request/:regime" should:
     "return 200 after successfully calling OPRA and creating a new work item for PAYE regime" in:
       isLoggedInAsASAgent(testArn)
 
       givenEs3CallSucceeds(testGroupId)()
       givenEpayeRegisterCallSucceeds(testPayeSubscriptionRequest)(testAgentReference)
 
-      val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testPayeSubscriptionRequest)
+      val response = post[SubscriptionRequest](s"/subscription-request/$PAYE")(testPayeSubscriptionRequest)
 
       response.status shouldBe 200
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(PAYE)
@@ -120,7 +120,7 @@ with AgentAuthStubs:
       givenEs3CallSucceeds(testGroupId)()
       givenEpayeRegisterCallFails(testPayeSubscriptionRequest)
 
-      val response = post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(testPayeSubscriptionRequest)
+      val response = post[SubscriptionRequest](s"/subscription-request/$PAYE")(testPayeSubscriptionRequest)
 
       response.status shouldBe 400
       repository.coll.find().headOption().futureValue shouldBe None
@@ -131,7 +131,7 @@ with AgentAuthStubs:
       givenEs3CallSucceeds(testGroupId)()
 
       val response =
-        post[SubscriptionRequest](s"/legacy-subscription-request/$PAYE")(
+        post[SubscriptionRequest](s"/subscription-request/$PAYE")(
           testPayeSubscriptionRequest.copy(address = testAddress.copy(postCode = Some("   ")))
         )
 
@@ -145,7 +145,7 @@ with AgentAuthStubs:
       givenEs3CallSucceeds(testGroupId)()
       givenHIPGetAgentRecordSuspendedAgent(testArn, s""""${testUtr.value}"""")
       givenDESGetRegistrationData(testUtr, isIndividual = true)
-      val response = post(s"/legacy-subscription-request/$SA")(testSaSubscriptionRequest)
+      val response = post(s"/subscription-request/$SA")(testSaSubscriptionRequest)
 
       response.status shouldBe 200
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(SA)
@@ -157,13 +157,13 @@ with AgentAuthStubs:
       givenEs3CallSucceeds(testGroupId)()
       givenHIPGetAgentRecordSuspendedAgent(testArn, s""""${testUtr.value}"""")
       givenDESGetRegistrationData(testUtr, isIndividual = false)
-      val response = post(s"/legacy-subscription-request/$CT")(testCtSubscriptionRequest)
+      val response = post(s"/subscription-request/$CT")(testCtSubscriptionRequest)
 
       response.status shouldBe 200
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(CT)
       repository.coll.find().headOption().futureValue.map(_.item.entityType) shouldBe Some(AgentEntityType.Unknown)
 
-  "GET /legacy-subscription-info" should:
+  "GET /subscription-info" should:
     "return 200 with the correct information for an in progress work item" in:
       isLoggedInAsASAgent(testArn)
 
@@ -176,7 +176,7 @@ with AgentAuthStubs:
         testCredId
       )).futureValue
 
-      val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
+      val response = get(s"/subscription-info?regimes=${SA.toString}")
 
       response.status shouldBe 200
       val result = response.json.as[Seq[SubscriptionInfo]]
@@ -205,7 +205,7 @@ with AgentAuthStubs:
 
       repository.markAs(model.id, PermanentlyFailed).futureValue
 
-      val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
+      val response = get(s"/subscription-info?regimes=${SA.toString}")
 
       response.status shouldBe 200
       val result = response.json.as[Seq[SubscriptionInfo]]
@@ -232,7 +232,7 @@ with AgentAuthStubs:
 
       repository.markAs(model.id, Deferred).futureValue
 
-      val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
+      val response = get(s"/subscription-info?regimes=${SA.toString}")
 
       response.status shouldBe 200
       val result = response.json.as[Seq[SubscriptionInfo]]
@@ -248,7 +248,7 @@ with AgentAuthStubs:
       isLoggedInAsASAgent(testArn)
       givenEs3CallSucceeds(testGroupId)(PAYE)
 
-      val response = get(s"/legacy-subscription-info?regimes=${PAYE.toString}")
+      val response = get(s"/subscription-info?regimes=${PAYE.toString}")
 
       response.status shouldBe 200
       response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
@@ -262,7 +262,7 @@ with AgentAuthStubs:
       givenEs3CallSucceeds(testGroupId)()
       givenGetMappingsCallSucceeds(testArn, CT)(testAgentReference)
 
-      val response = get(s"/legacy-subscription-info?regimes=${CT.toString}")
+      val response = get(s"/subscription-info?regimes=${CT.toString}")
 
       response.status shouldBe 200
       response.json.as[Seq[SubscriptionInfo]] shouldBe Seq(
@@ -276,7 +276,7 @@ with AgentAuthStubs:
       givenEs3CallSucceeds(testGroupId)()
       givenGetMappingsCallSucceeds(testArn, SA)()
 
-      val response = get(s"/legacy-subscription-info?regimes=${SA.toString}")
+      val response = get(s"/subscription-info?regimes=${SA.toString}")
 
       response.status shouldBe 200
       val result = response.json.as[Seq[SubscriptionInfo]]
@@ -300,7 +300,7 @@ with AgentAuthStubs:
       givenEs3CallSucceeds(testGroupId)(CT)
       givenGetMappingsCallSucceeds(testArn, PAYE)(testAgentReference)
 
-      val response = get(s"/legacy-subscription-info?regimes=${SA.toString}&regimes=${CT.toString}&regimes=${PAYE.toString}")
+      val response = get(s"/subscription-info?regimes=${SA.toString}&regimes=${CT.toString}&regimes=${PAYE.toString}")
 
       response.status shouldBe 200
       val result = response.json.as[Seq[SubscriptionInfo]]
