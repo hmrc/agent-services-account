@@ -63,7 +63,7 @@ with CleanMongoCollectionSupport
 with MockLegacySubscriptionAuditService
 with MockLegacySubscriptionEmailService
 with BeforeAndAfterEach {
-  
+
   private given RequestHeader = NoRequest
 
   private val testArn = Arn("AARN0000001")

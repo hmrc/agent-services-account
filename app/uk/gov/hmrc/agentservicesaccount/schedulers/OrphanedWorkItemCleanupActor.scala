@@ -29,6 +29,7 @@ class OrphanedWorkItemCleanupActor(
 )(using ec: ExecutionContext)
 extends Actor
 with RequestAwareLogging {
+
   private given Request[?] = NoRequest
 
   override def receive: Receive = {
@@ -45,4 +46,5 @@ with RequestAwareLogging {
 
       ()
   }
+
 }

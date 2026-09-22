@@ -54,7 +54,7 @@ extends UnitSpec
 with BeforeAndAfterEach
 with MockLegacySubscriptionAuditService
 with MockLegacySubscriptionEmailService:
-  
+
   private given RequestHeader = NoRequest
 
   private val workItemService = mock[RoboticsWorkItemService]

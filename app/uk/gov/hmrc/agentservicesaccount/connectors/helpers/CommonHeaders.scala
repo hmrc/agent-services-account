@@ -22,21 +22,23 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 object CommonHeaders {
 
-  def apply()(using request: RequestHeader): Seq[(String, String)] =
-    from(
-      request.headers.get(HeaderNames.xRequestId),
-      request.headers.get(HeaderNames.xSessionId)
-    )
+  def apply()(using request: RequestHeader): Seq[(String, String)] = from(
+    request.headers.get(HeaderNames.xRequestId),
+    request.headers.get(HeaderNames.xSessionId)
+  )
 
-  def fromHeaderCarrier(headerCarrier: HeaderCarrier): Seq[(String, String)] =
-    from(
-      headerCarrier.requestId.map(_.value),
-      headerCarrier.sessionId.map(_.value)
-    )
+  def fromHeaderCarrier(headerCarrier: HeaderCarrier): Seq[(String, String)] = from(
+    headerCarrier.requestId.map(_.value),
+    headerCarrier.sessionId.map(_.value)
+  )
 
-  private def from(requestId: Option[String], sessionId: Option[String]): Seq[(String, String)] =
+  private def from(
+    requestId: Option[String],
+    sessionId: Option[String]
+  ): Seq[(String, String)] =
     Seq(
       requestId.map(HeaderNames.xRequestId -> _),
       sessionId.map(HeaderNames.xSessionId -> _)
     ).flatten
+
 }

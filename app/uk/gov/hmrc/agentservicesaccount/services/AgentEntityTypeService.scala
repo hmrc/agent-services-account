@@ -37,20 +37,19 @@ class AgentEntityTypeService @Inject() (
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
-  def resolve(arn: Arn)(using request: RequestHeader): Future[String] =
-    hipConnector.getAgentRecord(arn)
-      .flatMap { record =>
-        record.uniqueTaxReference match
-          case None => Future.successful(AgentEntityType.Overseas)
-          case Some(utr) =>
-            desConnector
-              .getRegistration(utr)
-              .map(_.map(toEntityType).getOrElse(AgentEntityType.Unknown))
-      }
-      .recover { case NonFatal(error) =>
-        logger.warn(s"[AgentEntityTypeService] Failed to resolve entity type for ARN ${arn.value}", error)
-        AgentEntityType.Unknown
-      }
+  def resolve(arn: Arn)(using request: RequestHeader): Future[String] = hipConnector.getAgentRecord(arn)
+    .flatMap { record =>
+      record.uniqueTaxReference match
+        case None => Future.successful(AgentEntityType.Overseas)
+        case Some(utr) =>
+          desConnector
+            .getRegistration(utr)
+            .map(_.map(toEntityType).getOrElse(AgentEntityType.Unknown))
+    }
+    .recover { case NonFatal(error) =>
+      logger.warn(s"[AgentEntityTypeService] Failed to resolve entity type for ARN ${arn.value}", error)
+      AgentEntityType.Unknown
+    }
 
   private def toEntityType(response: DesRegistrationResponse): String =
     if response.isAnIndividual then

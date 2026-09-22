@@ -39,6 +39,7 @@ class OrphanedWorkItemCleanupService @Inject() (
   appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends RequestAwareLogging {
+
   private given Request[?] = NoRequest
 
   def cleanup(): Future[Done] = {
@@ -77,7 +78,9 @@ extends RequestAwareLogging {
             regime = item.regime,
             failureReason = reason
           )
-          _ = logger.warn(s"[OrphanedWorkItemCleanupService] Marked work item permanently failed as it did not receive a callback for too long: ${workItem.item.requestId}")
+          _ = logger.warn(
+            s"[OrphanedWorkItemCleanupService] Marked work item permanently failed as it did not receive a callback for too long: ${workItem.item.requestId}"
+          )
           _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(item)
         } yield Done
       case false =>

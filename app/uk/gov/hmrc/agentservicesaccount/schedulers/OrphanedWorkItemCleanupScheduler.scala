@@ -38,6 +38,7 @@ class OrphanedWorkItemCleanupScheduler @Inject() (
   appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends RequestAwareLogging {
+
   private given Request[?] = NoRequest
 
   if (appConfig.orphanedWorkItemCleanupEnabled) {
@@ -61,4 +62,5 @@ extends RequestAwareLogging {
       msg = "<start>"
     )
   }
+
 }
