@@ -55,7 +55,7 @@ with CleanMongoCollectionSupport
 with MockAuditService
 with MockLegacySubscriptionEmailService
 with BeforeAndAfterEach {
-  
+
   private given RequestHeader = NoRequest
 
   given Encrypter & Decrypter = SymmetricCryptoFactory.aesCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")

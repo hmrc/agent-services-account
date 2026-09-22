@@ -20,7 +20,7 @@ import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.Props
 import org.apache.pekko.extension.quartz.QuartzSchedulerExtension
-import play.api.mvc.{Request, RequestHeader}
+import play.api.mvc.Request
 import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.services.OrphanedWorkItemCleanupService
@@ -38,6 +38,7 @@ class OrphanedWorkItemCleanupScheduler @Inject() (
   appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends RequestAwareLogging {
+
   private given Request[?] = NoRequest
 
   if (appConfig.orphanedWorkItemCleanupEnabled) {
@@ -61,4 +62,5 @@ extends RequestAwareLogging {
       msg = "<start>"
     )
   }
+
 }

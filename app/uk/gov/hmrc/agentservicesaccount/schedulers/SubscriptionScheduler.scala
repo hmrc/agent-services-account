@@ -47,6 +47,7 @@ class SubscriptionScheduler @Inject() (
   ec: ExecutionContext
 )
 extends RequestAwareLogging:
+
   private given Request[?] = NoRequest
 
   private val knownFactsWorkerConfigs: Map[LegacyRegime, WorkItemJobConfig] = Map(

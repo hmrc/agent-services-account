@@ -18,7 +18,8 @@ package uk.gov.hmrc.agentservicesaccount.models
 
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
-import uk.gov.hmrc.agentmtdidentifiers.model.{SuspensionDetails, Utr}
+import uk.gov.hmrc.agentmtdidentifiers.model.SuspensionDetails
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.models.AmlsDetails.*
 
 case class HipAgentSubscriptionResponse(
