@@ -103,7 +103,7 @@ with RequestAwareLogging {
         .setHeader(hipHeaders*)
         .executeAndDeserialise[HipAmendResponse]
     }.flatMap { response =>
-      agentCacheProvider.agentDetailsCache.delete(arn.value)
+      agentCacheProvider.agentDetailsCache.delete(key = arn.value)
         .recover { case e => logger.warn(s"Failed to invalidate agent details cache: ${e.getMessage}") }
         .map(_ => response)
     }

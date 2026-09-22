@@ -20,11 +20,9 @@ import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.http.Status.*
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.models.CredId
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.StringContextOps
 import uk.gov.hmrc.http.UpstreamErrorResponse

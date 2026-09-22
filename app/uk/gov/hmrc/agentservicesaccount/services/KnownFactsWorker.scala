@@ -25,7 +25,6 @@ import uk.gov.hmrc.agentservicesaccount.connectors.UsersGroupsSearchConnector
 import uk.gov.hmrc.agentservicesaccount.models.*
 import uk.gov.hmrc.agentservicesaccount.models.subscription.*
 import uk.gov.hmrc.agentservicesaccount.support.NoRequest
-import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
