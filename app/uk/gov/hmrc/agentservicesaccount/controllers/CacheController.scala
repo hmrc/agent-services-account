@@ -37,4 +37,3 @@ extends BackendController(cc):
 
   def cacheRefresh(arn: Arn): Action[AnyContent] = Action.async:
     cacheProvider.agentDetailsCache.delete(arn.value).map(_ => NoContent)
-

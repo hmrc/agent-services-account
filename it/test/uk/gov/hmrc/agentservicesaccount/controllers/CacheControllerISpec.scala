@@ -20,21 +20,20 @@ import play.api.http.Status.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
 
-class CacheControllerISpec extends ComponentSpecHelper:
+class CacheControllerISpec
+extends ComponentSpecHelper:
 
   private def url(arn: String): String = s"/cache-refresh/$arn"
 
-  "POST /cache-refresh/:arn" should :
-    "return 204" when :
-      "the ARN is valid" in :
+  "POST /cache-refresh/:arn" should:
+    "return 204" when:
+      "the ARN is valid" in:
         val response = post(url("AARN0000002"))(Json.obj())
 
         response.status shouldBe NO_CONTENT
 
-    "return 400" when :
-      "the ARN is invalid" in :
+    "return 400" when:
+      "the ARN is invalid" in:
         val response = post(url("invalid-arn"))(Json.obj())
 
         response.status shouldBe BAD_REQUEST
-
-
