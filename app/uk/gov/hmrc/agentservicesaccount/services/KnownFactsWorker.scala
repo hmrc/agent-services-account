@@ -36,11 +36,11 @@ import scala.util.control.NonFatal
 
 @Singleton
 class KnownFactsWorker @Inject() (
-                                   workItemService: KnownFactsWorkItemService,
-                                   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
-                                   usersGroupsSearchConnector: UsersGroupsSearchConnector,
-                                   subscriptionAuditService: SubscriptionAuditService,
-                                   subscriptionEmailService: SubscriptionEmailService
+  workItemService: KnownFactsWorkItemService,
+  enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
+  usersGroupsSearchConnector: UsersGroupsSearchConnector,
+  subscriptionAuditService: SubscriptionAuditService,
+  subscriptionEmailService: SubscriptionEmailService
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 

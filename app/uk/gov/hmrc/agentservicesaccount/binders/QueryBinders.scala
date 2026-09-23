@@ -36,8 +36,8 @@ object QueryBinders {
       }
 
       override def unbind(
-                           key: String,
-                           agentRegime: AgentRegime
+        key: String,
+        agentRegime: AgentRegime
       ): String = stringBinder.unbind(key, agentRegime.toString)
     }
 }

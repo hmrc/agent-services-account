@@ -22,9 +22,9 @@ import play.api.libs.json.Json
 import java.time.Instant
 
 case class SubscriptionInfo(
-                             regime: AgentRegime,
-                             subscriptionStatus: SubscriptionStatus,
-                             creationDate: Option[Instant] = None
+  regime: AgentRegime,
+  subscriptionStatus: SubscriptionStatus,
+  creationDate: Option[Instant] = None
 )
 
 object SubscriptionInfo:

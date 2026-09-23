@@ -37,8 +37,8 @@ class RoboticsWorkItemService @Inject() (
 )(using ExecutionContext):
 
   def pullOutstanding(
-                       regime: AgentRegime,
-                       retryInterval: FiniteDuration
+    regime: AgentRegime,
+    retryInterval: FiniteDuration
   ): Future[Option[WorkItem[SubscriptionWorkItem]]] =
     val now = Instant.now()
     repository.pullAwaitingRobotics(

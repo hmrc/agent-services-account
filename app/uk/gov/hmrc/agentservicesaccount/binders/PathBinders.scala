@@ -53,8 +53,8 @@ object PathBinders {
         .getOrElse(Left(s"Invalid agent regime: $value"))
 
       override def unbind(
-                           key: String,
-                           agentRegime: AgentRegime
+        key: String,
+        agentRegime: AgentRegime
       ): String = agentRegime.toString
     }
 

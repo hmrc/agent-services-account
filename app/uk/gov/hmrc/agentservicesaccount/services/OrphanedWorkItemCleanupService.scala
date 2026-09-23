@@ -33,10 +33,10 @@ import scala.concurrent.Future
 
 @Singleton
 class OrphanedWorkItemCleanupService @Inject() (
-                                                 repository: SubscriptionWorkItemRepository,
-                                                 subscriptionAuditService: SubscriptionAuditService,
-                                                 subscriptionEmailService: SubscriptionEmailService,
-                                                 appConfig: AppConfig
+  repository: SubscriptionWorkItemRepository,
+  subscriptionAuditService: SubscriptionAuditService,
+  subscriptionEmailService: SubscriptionEmailService,
+  appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends RequestAwareLogging {
 

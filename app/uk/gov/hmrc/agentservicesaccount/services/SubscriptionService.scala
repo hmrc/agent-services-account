@@ -67,8 +67,8 @@ extends RequestAwareLogging:
       (None, None)
 
   private def checkExistingEnrolments(
-                                       regime: AgentRegime,
-                                       groupId: GroupId
+    regime: AgentRegime,
+    groupId: GroupId
   )(using request: RequestHeader): Future[Done] = enrolmentStoreProxyConnector.queryEnrolmentsAllocatedToGroup(groupId).map { enrolments =>
     if enrolments.exists(e => e.service == regime.enrolmentKey && e.state == "Activated") then
       throw UpstreamErrorResponse(
@@ -106,11 +106,11 @@ extends RequestAwareLogging:
   }
 
   def startSubscriptionProcess(
-                                arn: Arn,
-                                subscriptionRequest: SubscriptionRequest,
-                                regime: AgentRegime,
-                                adminCredId: CredId,
-                                groupId: GroupId
+    arn: Arn,
+    subscriptionRequest: SubscriptionRequest,
+    regime: AgentRegime,
+    adminCredId: CredId,
+    groupId: GroupId
   )(using request: RequestHeader): Future[Done] =
     for {
       _ <- checkExistingEnrolments(
@@ -175,11 +175,11 @@ extends RequestAwareLogging:
     }
 
   private def createWorkItem(
-                              arn: Arn,
-                              subscriptionRequest: SaSubscriptionRequest | CtSubscriptionRequest,
-                              regime: AgentRegime,
-                              adminCredId: CredId,
-                              groupId: GroupId
+    arn: Arn,
+    subscriptionRequest: SaSubscriptionRequest | CtSubscriptionRequest,
+    regime: AgentRegime,
+    adminCredId: CredId,
+    groupId: GroupId
   )(using request: RequestHeader): Future[SubscriptionWorkItem] =
     // Local stub-only: ESP stubs require session + bearer; never persist in QA/Prod.
     val (optSessionId, optBearerToken) = maybeCaptureStubHeaders()

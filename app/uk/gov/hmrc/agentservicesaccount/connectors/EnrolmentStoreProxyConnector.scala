@@ -77,9 +77,9 @@ class EnrolmentStoreProxyConnector @Inject() (
       }
 
   def queryKnownFactsForAgent(
-                               regime: AgentRegime,
-                               agentReference: String,
-                               postcode: Option[PayePostcode.Valid]
+    regime: AgentRegime,
+    agentReference: String,
+    postcode: Option[PayePostcode.Valid]
   )(using HeaderCarrier): Future[Option[Es20Response]] =
     es20RequestFor(
       regime,
@@ -90,9 +90,9 @@ class EnrolmentStoreProxyConnector @Inject() (
       case Some(request) => executeEs20Lookup(request)
 
   private def es20RequestFor(
-                              regime: AgentRegime,
-                              agentReference: String,
-                              postcode: Option[PayePostcode.Valid]
+    regime: AgentRegime,
+    agentReference: String,
+    postcode: Option[PayePostcode.Valid]
   ): Option[Es20Request] =
     (regime, postcode) match
       case (AgentRegime.PAYE, Some(pc)) =>
@@ -128,10 +128,10 @@ class EnrolmentStoreProxyConnector @Inject() (
 
   // ES8
   def allocateAgentEnrolment(
-                              regime: AgentRegime,
-                              groupId: GroupId,
-                              agentReference: String,
-                              adminCredId: CredId
+    regime: AgentRegime,
+    groupId: GroupId,
+    agentReference: String,
+    adminCredId: CredId
   )(using HeaderCarrier): Future[Unit] = {
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
 
@@ -158,9 +158,9 @@ class EnrolmentStoreProxyConnector @Inject() (
 
   // ES9
   def deallocateAgentEnrolment(
-                                groupId: GroupId,
-                                regime: AgentRegime,
-                                agentReference: String
+    groupId: GroupId,
+    regime: AgentRegime,
+    agentReference: String
   )(using HeaderCarrier): Future[Unit] = {
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
 

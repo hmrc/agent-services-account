@@ -76,11 +76,11 @@ class AuditService @Inject() (
   )
 
   def auditSubscription(
-                               arn: Arn,
-                               regime: AgentRegime,
-                               isSuccessful: Boolean,
-                               agentCode: Option[String],
-                               failureReason: Option[String]
+    arn: Arn,
+    regime: AgentRegime,
+    isSuccessful: Boolean,
+    agentCode: Option[String],
+    failureReason: Option[String]
   )(using request: RequestHeader): Future[AuditResult] = {
 
     audit(

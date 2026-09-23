@@ -42,11 +42,11 @@ import scala.util.control.NonFatal
 
 @Singleton
 class RoboticsWorker @Inject() (
-                                 workItemService: RoboticsWorkItemService,
-                                 roboticsInvocationConnector: RoboticsInvocationConnector,
-                                 subscriptionAuditService: SubscriptionAuditService,
-                                 subscriptionEmailService: SubscriptionEmailService,
-                                 appConfig: AppConfig
+  workItemService: RoboticsWorkItemService,
+  roboticsInvocationConnector: RoboticsInvocationConnector,
+  subscriptionAuditService: SubscriptionAuditService,
+  subscriptionEmailService: SubscriptionEmailService,
+  appConfig: AppConfig
 )(using
   ec: ExecutionContext
 )

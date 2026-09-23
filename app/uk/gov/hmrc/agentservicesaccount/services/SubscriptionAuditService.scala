@@ -37,9 +37,9 @@ extends RequestAwareLogging {
   given RequestHeader = RequestSupport.thereIsNoRequest
 
   def auditSuccess(
-                    arn: Arn,
-                    regime: AgentRegime,
-                    agentCode: Option[String]
+    arn: Arn,
+    regime: AgentRegime,
+    agentCode: Option[String]
   ): Future[Unit] = auditService.auditSubscription(
     arn = arn,
     regime = regime,
@@ -56,9 +56,9 @@ extends RequestAwareLogging {
     }
 
   def auditFailure(
-                    arn: Arn,
-                    regime: AgentRegime,
-                    failureReason: String
+    arn: Arn,
+    regime: AgentRegime,
+    failureReason: String
   ): Future[Unit] = auditService.auditSubscription(
     arn = arn,
     regime = regime,

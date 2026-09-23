@@ -30,17 +30,17 @@ import java.time.Instant
 import java.util.UUID
 
 case class SubscriptionWorkItem(
-                                 arn: Arn,
-                                 subscriptionRequest: SubscriptionRequest,
-                                 regime: AgentRegime,
-                                 agentReference: Option[AgentReference],
-                                 groupId: GroupId,
-                                 adminCredId: CredId,
-                                 requestId: String = UUID.randomUUID().toString,
-                                 roboticsInvokedAt: Option[Instant] = None,
-                                 sessionId: Option[String] = None, // Local stub-only: ESP stubs require X-Session-ID; keep None for QA/Prod.
-                                 bearerToken: Option[String] = None, // Local stub-only: ESP stubs require Authorization; never persist in QA/Prod.
-                                 entityType: String = AgentEntityType.Unknown
+  arn: Arn,
+  subscriptionRequest: SubscriptionRequest,
+  regime: AgentRegime,
+  agentReference: Option[AgentReference],
+  groupId: GroupId,
+  adminCredId: CredId,
+  requestId: String = UUID.randomUUID().toString,
+  roboticsInvokedAt: Option[Instant] = None,
+  sessionId: Option[String] = None, // Local stub-only: ESP stubs require X-Session-ID; keep None for QA/Prod.
+  bearerToken: Option[String] = None, // Local stub-only: ESP stubs require Authorization; never persist in QA/Prod.
+  entityType: String = AgentEntityType.Unknown
 )
 
 object SubscriptionWorkItem:

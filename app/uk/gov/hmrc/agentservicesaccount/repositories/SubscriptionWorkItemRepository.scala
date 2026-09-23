@@ -125,9 +125,9 @@ with RequestAwareLogging:
     .map(_.getModifiedCount > 0)
 
   def pullAwaitingKnownFacts(
-                              regime: AgentRegime,
-                              failedBefore: Instant,
-                              availableBefore: Instant
+    regime: AgentRegime,
+    failedBefore: Instant,
+    availableBefore: Instant
   ): Future[Option[WorkItem[SubscriptionWorkItem]]] = {
     def findNextItemByQuery(query: Bson): Future[Option[WorkItem[SubscriptionWorkItem]]] = coll
       .findOneAndUpdate(
@@ -173,9 +173,9 @@ with RequestAwareLogging:
   }
 
   def pullAwaitingRobotics(
-                            regime: AgentRegime,
-                            failedBefore: Instant,
-                            availableBefore: Instant
+    regime: AgentRegime,
+    failedBefore: Instant,
+    availableBefore: Instant
   ): Future[Option[WorkItem[SubscriptionWorkItem]]] = {
     def findNextItemByQuery(query: Bson): Future[Option[WorkItem[SubscriptionWorkItem]]] = coll
       .findOneAndUpdate(
