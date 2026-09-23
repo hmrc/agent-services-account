@@ -52,10 +52,10 @@ with BeforeAndAfterEach {
   }
 
   private def buildWorkItem(
-                             regime: AgentRegime,
-                             isWelsh: Boolean = false,
-                             email: Option[String] = Some("agent@example.com"),
-                             agentReference: Option[AgentReference] = Some(AgentReference("A12345"))
+    regime: AgentRegime,
+    isWelsh: Boolean = false,
+    email: Option[String] = Some("agent@example.com"),
+    agentReference: Option[AgentReference] = Some(AgentReference("A12345"))
   ): SubscriptionWorkItem = SubscriptionWorkItem(
     arn = Arn("TARN0000001"),
     subscriptionRequest =

@@ -78,12 +78,12 @@ with MockSubscriptionEmailService:
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private def buildWorkItem(
-                             regime: AgentRegime,
-                             failureCount: Int,
-                             agentReference: Option[AgentReference] = Some(AgentReference("A12345")),
-                             groupId: GroupId = GroupId("ITEM-GROUP"),
-                             adminCredId: CredId = CredId("ITEM-ADMIN"),
-                             subscriptionRequest: SubscriptionRequest
+    regime: AgentRegime,
+    failureCount: Int,
+    agentReference: Option[AgentReference] = Some(AgentReference("A12345")),
+    groupId: GroupId = GroupId("ITEM-GROUP"),
+    adminCredId: CredId = CredId("ITEM-ADMIN"),
+    subscriptionRequest: SubscriptionRequest
   ) = WorkItem(
     id = new ObjectId(),
     receivedAt = Instant.now(),

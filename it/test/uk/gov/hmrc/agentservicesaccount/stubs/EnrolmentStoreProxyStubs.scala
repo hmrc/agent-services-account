@@ -81,9 +81,9 @@ trait EnrolmentStoreProxyStubs:
   )
 
   def givenEs9CallSucceeds(
-                            groupId: GroupId,
-                            regime: AgentRegime,
-                            agentReference: String
+    groupId: GroupId,
+    regime: AgentRegime,
+    agentReference: String
   ): Unit = {
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
     stubFor(
@@ -96,9 +96,9 @@ trait EnrolmentStoreProxyStubs:
   }
 
   def givenEs9CallFails(
-                         groupId: GroupId,
-                         regime: AgentRegime,
-                         agentReference: String
+    groupId: GroupId,
+    regime: AgentRegime,
+    agentReference: String
   ): Unit = {
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
     stubFor(

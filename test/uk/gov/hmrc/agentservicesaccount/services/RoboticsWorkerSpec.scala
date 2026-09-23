@@ -75,11 +75,11 @@ with MockSubscriptionEmailService:
   val testAdminCredId = CredId("test-cred-id")
 
   private def buildWorkItem(
-                             regime: AgentRegime,
-                             request: SubscriptionRequest,
-                             requestId: String,
-                             failureCount: Int = 0,
-                             entityType: String = AgentEntityType.SoleTrader
+    regime: AgentRegime,
+    request: SubscriptionRequest,
+    requestId: String,
+    failureCount: Int = 0,
+    entityType: String = AgentEntityType.SoleTrader
   ): WorkItem[SubscriptionWorkItem] = WorkItem(
     id = new ObjectId(),
     receivedAt = Instant.now(),
