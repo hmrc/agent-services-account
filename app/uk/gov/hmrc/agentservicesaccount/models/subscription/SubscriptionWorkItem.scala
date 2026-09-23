@@ -32,7 +32,7 @@ import java.util.UUID
 case class SubscriptionWorkItem(
   arn: Arn,
   subscriptionRequest: SubscriptionRequest,
-  regime: LegacyRegime,
+  regime: AgentRegime,
   agentReference: Option[AgentReference],
   groupId: GroupId,
   adminCredId: CredId,
@@ -45,7 +45,7 @@ case class SubscriptionWorkItem(
 
 object SubscriptionWorkItem:
 
-  private def mongoReads(using crypto: Encrypter & Decrypter) = (__ \ "regime").read[LegacyRegime].flatMap { regime =>
+  private def mongoReads(using crypto: Encrypter & Decrypter) = (__ \ "regime").read[AgentRegime].flatMap { regime =>
     (
       (__ \ "arn").read[Arn] and
         (__ \ "subscriptionRequest").read[String](using stringEncrypterDecrypter).map[SubscriptionRequest](string =>
@@ -69,7 +69,7 @@ object SubscriptionWorkItem:
         (__ \ "subscriptionRequest").write[String](using stringEncrypterDecrypter).contramap[SubscriptionRequest](subscriptionRequest =>
           Json.toJson(subscriptionRequest).toString
         ) and
-        (__ \ "regime").write[LegacyRegime] and
+        (__ \ "regime").write[AgentRegime] and
         (__ \ "agentReference").writeNullable[AgentReference] and
         (__ \ "groupId").write[GroupId] and
         (__ \ "adminCredId").write[CredId] and

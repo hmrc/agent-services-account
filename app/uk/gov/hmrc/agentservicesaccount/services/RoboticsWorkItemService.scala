@@ -17,7 +17,7 @@
 package uk.gov.hmrc.agentservicesaccount.services
 
 import org.apache.pekko.Done
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
@@ -37,7 +37,7 @@ class RoboticsWorkItemService @Inject() (
 )(using ExecutionContext):
 
   def pullOutstanding(
-    regime: LegacyRegime,
+    regime: AgentRegime,
     retryInterval: FiniteDuration
   ): Future[Option[WorkItem[SubscriptionWorkItem]]] =
     val now = Instant.now()

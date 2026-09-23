@@ -21,7 +21,7 @@ import org.scalatest.exceptions.TestFailedException
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime.{CT, PAYE, SA}
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime.{CT, PAYE, SA}
 import uk.gov.hmrc.agentservicesaccount.models.subscription.PayePostcode
 import uk.gov.hmrc.agentservicesaccount.models.{Enrolment, Es20Enrolment, Es20Response, GroupId, Identifier}
 import uk.gov.hmrc.agentservicesaccount.stubs.EnrolmentStoreProxyStubs

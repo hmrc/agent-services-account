@@ -22,24 +22,24 @@ import org.scalatest.TestSuite
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
-import uk.gov.hmrc.agentservicesaccount.services.LegacySubscriptionEmailService
+import uk.gov.hmrc.agentservicesaccount.services.SubscriptionEmailService
 
 import scala.concurrent.Future
 
-trait MockLegacySubscriptionEmailService
+trait MockSubscriptionEmailService
 extends MockitoSugar { this: TestSuite =>
 
-  val mockLegacySubscriptionEmailService: LegacySubscriptionEmailService = mock[LegacySubscriptionEmailService]
+  val mockSubscriptionEmailService: SubscriptionEmailService = mock[SubscriptionEmailService]
 
   def mockSendCompletionEmailIgnoreErrors(): Unit = {
     when(
-      mockLegacySubscriptionEmailService.sendCompletionEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
+      mockSubscriptionEmailService.sendCompletionEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
     ).thenReturn(Future.successful(()))
   }
 
   def mockSendFailureEmailIgnoreErrors(): Unit = {
     when(
-      mockLegacySubscriptionEmailService.sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
+      mockSubscriptionEmailService.sendFailureEmailIgnoreErrors(any[SubscriptionWorkItem])(using any[RequestHeader])
     ).thenReturn(Future.successful(()))
 
   }

@@ -44,8 +44,8 @@ import scala.util.control.NonFatal
 class RoboticsWorker @Inject() (
   workItemService: RoboticsWorkItemService,
   roboticsInvocationConnector: RoboticsInvocationConnector,
-  legacySubscriptionAuditService: LegacySubscriptionAuditService,
-  legacySubscriptionEmailService: LegacySubscriptionEmailService,
+  subscriptionAuditService: SubscriptionAuditService,
+  subscriptionEmailService: SubscriptionEmailService,
   appConfig: AppConfig
 )(using
   ec: ExecutionContext
@@ -56,7 +56,7 @@ extends RequestAwareLogging:
 
   def runOnce(using
     jobConfig: WorkItemJobConfig,
-    regime: LegacyRegime & UsesRobotics
+    regime: AgentRegime & UsesRobotics
   ): Future[Done] = workItemService.pullOutstanding(
     regime,
     jobConfig.retryInterval
@@ -132,13 +132,13 @@ extends RequestAwareLogging:
   private def process(
     workItem: WorkItem[SubscriptionWorkItem]
   )(using
-    regime: LegacyRegime & UsesRobotics
+    regime: AgentRegime & UsesRobotics
   ): Future[Done] = {
     val request = workItem.item.subscriptionRequest
     val targetSystem =
       regime match {
-        case LegacyRegime.SA => TargetSystem.CESA
-        case LegacyRegime.CT => TargetSystem.COTAX
+        case AgentRegime.SA => TargetSystem.CESA
+        case AgentRegime.CT => TargetSystem.COTAX
       }
 
     val operationData: JsObject = createRoboticsRequestBodyForAllEnvironments(
@@ -174,12 +174,12 @@ extends RequestAwareLogging:
   def handleFailure(workItem: WorkItem[SubscriptionWorkItem])(using jobConfig: WorkItemJobConfig): Future[Done] =
     if workItem.failureCount + 1 >= jobConfig.maxAttempts then {
       for {
-        _ <- legacySubscriptionAuditService.auditFailure(
+        _ <- subscriptionAuditService.auditFailure(
           arn = workItem.item.arn,
           regime = workItem.item.regime,
           failureReason = "Max retry attempts reached in RoboticsWorker"
         ).recover { case _ => () }
-        _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
+        _ <- subscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
         result <- workItemService.markPermanentlyFailed(workItem)
       } yield result
     }

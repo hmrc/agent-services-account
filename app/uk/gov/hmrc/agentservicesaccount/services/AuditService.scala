@@ -26,10 +26,10 @@ import uk.gov.hmrc.agentservicesaccount.models.audit.AgentCheckAuditEvent
 import uk.gov.hmrc.agentservicesaccount.models.audit.AgentCheckFailureNotificationAuditEvent
 import uk.gov.hmrc.agentservicesaccount.models.audit.AuditDetail
 import uk.gov.hmrc.agentservicesaccount.models.audit.EmailData
-import uk.gov.hmrc.agentservicesaccount.models.audit.LegacySubscriptionAuditEvent
+import uk.gov.hmrc.agentservicesaccount.models.audit.SubscriptionAuditEvent
 import uk.gov.hmrc.agentservicesaccount.models.AgentCheckOutcome
 import uk.gov.hmrc.agentservicesaccount.models.EntityCheckNotification
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
@@ -75,20 +75,20 @@ class AuditService @Inject() (
     )
   )
 
-  def auditLegacySubscription(
+  def auditSubscription(
     arn: Arn,
-    regime: LegacyRegime,
+    regime: AgentRegime,
     isSuccessful: Boolean,
-    legacyAgentCode: Option[String],
+    agentCode: Option[String],
     failureReason: Option[String]
   )(using request: RequestHeader): Future[AuditResult] = {
 
     audit(
-      LegacySubscriptionAuditEvent(
+      SubscriptionAuditEvent(
         agentReferenceNumber = arn,
-        legacyAgentService = regime.enrolmentKey,
+        agentService = regime.enrolmentKey,
         isSuccessful = isSuccessful,
-        legacyAgentCode = legacyAgentCode.filter(_ => isSuccessful || legacyAgentCode.isDefined),
+        agentCode = agentCode.filter(_ => isSuccessful || agentCode.isDefined),
         failureReason =
           if (!isSuccessful)
             failureReason

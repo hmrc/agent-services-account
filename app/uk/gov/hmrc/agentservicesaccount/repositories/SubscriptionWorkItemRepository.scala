@@ -25,7 +25,7 @@ import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentReference
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.models.subscription.SubscriptionWorkItem
 import uk.gov.hmrc.agentservicesaccount.repositories.SubscriptionWorkItemRepository.customWorkItemFields
 import uk.gov.hmrc.crypto.Decrypter
@@ -90,7 +90,7 @@ with RequestAwareLogging:
 
   def findByArnAndRegime(
     arn: Arn,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[Option[WorkItem[SubscriptionWorkItem]]] = {
     coll.find(
       Filters.and(
@@ -125,7 +125,7 @@ with RequestAwareLogging:
     .map(_.getModifiedCount > 0)
 
   def pullAwaitingKnownFacts(
-    regime: LegacyRegime,
+    regime: AgentRegime,
     failedBefore: Instant,
     availableBefore: Instant
   ): Future[Option[WorkItem[SubscriptionWorkItem]]] = {
@@ -173,7 +173,7 @@ with RequestAwareLogging:
   }
 
   def pullAwaitingRobotics(
-    regime: LegacyRegime,
+    regime: AgentRegime,
     failedBefore: Instant,
     availableBefore: Instant
   ): Future[Option[WorkItem[SubscriptionWorkItem]]] = {

@@ -39,8 +39,8 @@ class KnownFactsWorker @Inject() (
   workItemService: KnownFactsWorkItemService,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector,
   usersGroupsSearchConnector: UsersGroupsSearchConnector,
-  legacySubscriptionAuditService: LegacySubscriptionAuditService,
-  legacySubscriptionEmailService: LegacySubscriptionEmailService
+  subscriptionAuditService: SubscriptionAuditService,
+  subscriptionEmailService: SubscriptionEmailService
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
@@ -48,7 +48,7 @@ extends RequestAwareLogging:
 
   def runOnce(using
     jobConfig: WorkItemJobConfig,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[Done] = workItemService.pullOutstanding(regime, jobConfig.retryInterval).flatMap {
     case None => Future.successful(Done)
     case Some(workItem) =>
@@ -61,14 +61,14 @@ extends RequestAwareLogging:
 
   private def process(workItem: WorkItem[SubscriptionWorkItem])(using
     jobConfig: WorkItemJobConfig,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[Done] =
     (regime, workItem.item.agentReference, postcodeFor(workItem.item)) match
       case (_, None, _) =>
         logger.error(s"[KnownFactsWorker] $regime work item missing agent reference: ${workItem.item.requestId}" +
           s"(this should not be possible as the mongo query requires an agent reference to be present)")
         handleFailure(workItem)
-      case (LegacyRegime.PAYE, Some(_), None) =>
+      case (AgentRegime.PAYE, Some(_), None) =>
         logger.warn(s"[KnownFactsWorker] PAYE work item missing usable postcode for ES20 lookup: ${workItem.item.requestId}")
         workItemService.markPermanentlyFailed(workItem)
       case (_, Some(agentReference), postcode) =>
@@ -94,17 +94,17 @@ extends RequestAwareLogging:
     agentReference: AgentReference
   )(using
     hc: HeaderCarrier,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[Done] = allocateAgentEnrolment(workItem, agentReference.value).flatMap {
     case AllocationOutcome.Success |
         AllocationOutcome.RetriedAfterConflict =>
       for {
-        _ <- legacySubscriptionAuditService.auditSuccess(
+        _ <- subscriptionAuditService.auditSuccess(
           arn = workItem.item.arn,
           regime = regime,
-          legacyAgentCode = Some(agentReference.value)
+          agentCode = Some(agentReference.value)
         )
-        _ <- legacySubscriptionEmailService.sendCompletionEmailIgnoreErrors(workItem.item)
+        _ <- subscriptionEmailService.sendCompletionEmailIgnoreErrors(workItem.item)
         done <- workItemService.complete(workItem)
       } yield done
     case AllocationOutcome.MissingEnrolment => Future.failed(new RuntimeException("Could not find enrolment while dealing with MultipleEnrolmentsConflict"))
@@ -118,7 +118,7 @@ extends RequestAwareLogging:
     agentReference: String
   )(using
     hc: HeaderCarrier,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[AllocationOutcome] = enrolmentStoreProxyConnector
     .allocateAgentEnrolment(
       regime = regime,
@@ -150,7 +150,7 @@ extends RequestAwareLogging:
     agentReference: String
   )(using
     hc: HeaderCarrier,
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[AllocationOutcome] = enrolmentStoreProxyConnector
     .queryEnrolmentsAllocatedToGroup(workItem.item.groupId)
     .flatMap { enrolments =>
@@ -180,13 +180,13 @@ extends RequestAwareLogging:
 
   private def failAsAlreadySubscribed(
     workItem: WorkItem[SubscriptionWorkItem],
-    regime: LegacyRegime
+    regime: AgentRegime
   ): Future[AllocationOutcome] =
     logger.warn(
       s"[KnownFactsWorker] $regime active enrolment already exists for group ${workItem.item.groupId.value}"
     )
     for {
-      _ <- legacySubscriptionAuditService.auditFailure(
+      _ <- subscriptionAuditService.auditFailure(
         arn = workItem.item.arn,
         regime = regime,
         failureReason = s"Agent already subscribed to $regime"
@@ -199,12 +199,12 @@ extends RequestAwareLogging:
   ): Future[Done] =
     if workItem.failureCount + 1 >= jobConfig.maxAttempts then
       for {
-        _ <- legacySubscriptionAuditService.auditFailure(
+        _ <- subscriptionAuditService.auditFailure(
           arn = workItem.item.arn,
           regime = workItem.item.regime,
           failureReason = "Max retry attempts reached in KnownFactsWorker"
         )
-        _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
+        _ <- subscriptionEmailService.sendFailureEmailIgnoreErrors(workItem.item)
         done <- workItemService.markPermanentlyFailed(workItem)
       } yield done
     else

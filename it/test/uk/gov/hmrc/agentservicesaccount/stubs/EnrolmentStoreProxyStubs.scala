@@ -18,13 +18,13 @@ package uk.gov.hmrc.agentservicesaccount.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.libs.json.Json
-import uk.gov.hmrc.agentservicesaccount.models.subscription.LegacyRegime
+import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentRegime
 import uk.gov.hmrc.agentservicesaccount.models.Es20Response
 import uk.gov.hmrc.agentservicesaccount.models.GroupId
 
 trait EnrolmentStoreProxyStubs:
 
-  def givenEs3CallSucceeds(groupId: GroupId)(regimes: LegacyRegime*): Unit = stubFor(
+  def givenEs3CallSucceeds(groupId: GroupId)(regimes: AgentRegime*): Unit = stubFor(
     get(urlEqualTo(s"/enrolment-store-proxy/enrolment-store/groups/${groupId.value}/enrolments?type=principal"))
       .willReturn(
         aResponse()
@@ -82,7 +82,7 @@ trait EnrolmentStoreProxyStubs:
 
   def givenEs9CallSucceeds(
     groupId: GroupId,
-    regime: LegacyRegime,
+    regime: AgentRegime,
     agentReference: String
   ): Unit = {
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"
@@ -97,7 +97,7 @@ trait EnrolmentStoreProxyStubs:
 
   def givenEs9CallFails(
     groupId: GroupId,
-    regime: LegacyRegime,
+    regime: AgentRegime,
     agentReference: String
   ): Unit = {
     val enrolmentKey = s"${regime.enrolmentKey}~${regime.agentReferenceKey}~$agentReference"

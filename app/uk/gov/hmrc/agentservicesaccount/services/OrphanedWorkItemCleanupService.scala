@@ -34,8 +34,8 @@ import scala.concurrent.Future
 @Singleton
 class OrphanedWorkItemCleanupService @Inject() (
   repository: SubscriptionWorkItemRepository,
-  legacySubscriptionAuditService: LegacySubscriptionAuditService,
-  legacySubscriptionEmailService: LegacySubscriptionEmailService,
+  subscriptionAuditService: SubscriptionAuditService,
+  subscriptionEmailService: SubscriptionEmailService,
   appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends RequestAwareLogging {
@@ -73,15 +73,13 @@ extends RequestAwareLogging {
     repository.markPermanentlyFailed(workItem.id).flatMap {
       case true =>
         for {
-          _ <- legacySubscriptionAuditService.auditFailure(
+          _ <- subscriptionAuditService.auditFailure(
             arn = item.arn,
             regime = item.regime,
             failureReason = reason
           )
-          _ = logger.warn(
-            s"[OrphanedWorkItemCleanupService] Marked work item permanently failed as it did not receive a callback for too long: ${workItem.item.requestId}"
-          )
-          _ <- legacySubscriptionEmailService.sendFailureEmailIgnoreErrors(item)
+          _ = logger.warn(s"[OrphanedWorkItemCleanupService] Marked work item permanently failed as it did not receive a callback for too long: ${workItem.item.requestId}")
+          _ <- subscriptionEmailService.sendFailureEmailIgnoreErrors(item)
         } yield Done
       case false =>
         logger.warn(s"[OrphanedWorkItemCleanupService] Failed to mark work item permanently failed: ${workItem.item.requestId}")
