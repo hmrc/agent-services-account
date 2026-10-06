@@ -57,7 +57,6 @@ with BeforeAndAfterEach:
   private val agentRecordWithoutUtr = agentRecordWithUtr.copy(uniqueTaxReference = None)
   private given RequestHeader = FakeRequest()
 
-//  TODO: 12392 Need to duplicate these tests for HipConnector.getRegistration case
   "resolve" should {
     "use HIP for agent record lookup" in {
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))

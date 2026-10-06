@@ -139,7 +139,7 @@ with AgentAuthStubs:
       response.body[String] should include("Postcode is required for subscription requests in UK")
       repository.coll.find().headOption().futureValue shouldBe None
 
-    "return 200 for SA regime" in:
+    "return 200 for SA regime - hipGetRegistrationIsEnabled false" in:
       isLoggedInAsASAgent(testArn)
 
       givenEs3CallSucceeds(testGroupId)()
@@ -151,7 +151,7 @@ with AgentAuthStubs:
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(SA)
       repository.coll.find().headOption().futureValue.map(_.item.entityType) shouldBe Some(AgentEntityType.SoleTrader)
 
-    "return 200 for CT regime" in:
+    "return 200 for CT regime - hipGetRegistrationIsEnabled false" in:
       isLoggedInAsASAgent(testArn)
 
       givenEs3CallSucceeds(testGroupId)()
@@ -162,6 +162,30 @@ with AgentAuthStubs:
       response.status shouldBe 200
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(CT)
       repository.coll.find().headOption().futureValue.map(_.item.entityType) shouldBe Some(AgentEntityType.Unknown)
+
+  "return 200 for SA regime - hipGetRegistrationIsEnabled true" in :
+    isLoggedInAsASAgent(testArn)
+
+    givenEs3CallSucceeds(testGroupId)()
+    givenHIPGetAgentRecordSuspendedAgent(testArn, s""""${testUtr.value}"""")
+    givenHipGetRegistrationData(testUtr, isIndividual = true)
+    val response = post(s"/subscription-request/$SA")(testSaSubscriptionRequest)
+
+    response.status shouldBe 200
+    repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(SA)
+    repository.coll.find().headOption().futureValue.map(_.item.entityType) shouldBe Some(AgentEntityType.SoleTrader)
+
+  "return 200 for CT regime - hipGetRegistrationIsEnabled true" in :
+    isLoggedInAsASAgent(testArn)
+
+    givenEs3CallSucceeds(testGroupId)()
+    givenHIPGetAgentRecordSuspendedAgent(testArn, s""""${testUtr.value}"""")
+    givenHipGetRegistrationData(testUtr, isIndividual = false)
+    val response = post(s"/subscription-request/$CT")(testCtSubscriptionRequest)
+
+    response.status shouldBe 200
+    repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(CT)
+    repository.coll.find().headOption().futureValue.map(_.item.entityType) shouldBe Some(AgentEntityType.Unknown)
 
   "GET /subscription-info" should:
     "return 200 with the correct information for an in progress work item" in:

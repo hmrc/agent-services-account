@@ -23,6 +23,7 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
+import uk.gov.hmrc.domain.TaxIdentifier
 
 trait HipStubs {
 
@@ -178,6 +179,99 @@ trait HipStubs {
       verify(
         count,
         putRequestedFor(urlMatching(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
+      )
+    }
+  
+  def givenHipGetRegistrationData(
+                                   utr: Utr,
+                                   isIndividual: Boolean
+                                 ): StubMapping = {
+    val registrationDataForOrganisation =
+      s"""
+         |{
+         |   "contactDetails" : {},
+         |   "organisation" : {
+         |      "organisationName" : "CT AGENT 165",
+         |      "organisationType" : "Not Specified",
+         |      "isAGroup" : false
+         |   },
+         |   "address" : {
+         |      "addressLine1" : "Matheson House 165",
+         |      "countryCode" : "GB",
+         |      "addressLine2" : "Grange Central 165",
+         |      "addressLine4" : "Shropshire 165",
+         |      "addressLine3" : "Telford 165",
+         |      "postalCode" : "TF3 4ER"
+         |   },
+         |   "isEditable" : false,
+         |   "isAnAgent" : true,
+         |   "safeId" : "XH0000100100761",
+         |   "agentReferenceNumber" : "SARN0001028",
+         |   "isAnASAgent" : true,
+         |   "isAnIndividual" : false,
+         |   "sapNumber" : "0100100761"
+         |}
+       """.stripMargin
+
+    val registrationDataForIndividual =
+      s"""
+         |{
+         |   "isAnIndividual" : true,
+         |   "isAnASAgent" : true,
+         |   "isEditable" : false,
+         |   "isAnAgent" : true,
+         |   "contactDetails" : {},
+         |   "safeId" : "XR0000100115180",
+         |   "agentReferenceNumber" : "PARN0002156",
+         |   "individual" : {
+         |      "firstName" : "First Name QM",
+         |      "dateOfBirth" : "1992-05-10",
+         |      "lastName" : "Last Name QM"
+         |   },
+         |   "address" : {
+         |      "postalCode" : "TF3 4ER",
+         |      "addressLine4" : "AddressFour 190",
+         |      "addressLine2" : "AddressTwo 190",
+         |      "addressLine1" : "AddressOne 190",
+         |      "addressLine3" : "AddressThree 190",
+         |      "countryCode" : "GB"
+         |   },
+         |   "sapNumber" : "0100115180"
+         |}
+       """.stripMargin
+    def registrationData(isIndividual: Boolean) =
+      if (isIndividual)
+        registrationDataForIndividual
+      else
+        registrationDataForOrganisation
+    stubFor(
+      post(urlEqualTo(s"/registration/individual/utr/${utr.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(registrationData(isIndividual))
+        )
+    )
+  }
+
+  def givenHipGetRegistrationNotFound(utr: Utr): StubMapping = stubFor(
+    post(urlEqualTo(s"/registration/individual/utr/${utr.value}"))
+      .willReturn(
+        aResponse()
+          .withStatus(404)
+      )
+  )
+
+  def verifyHipGetRegistrationData(
+                                    utr: Utr,
+                                    count: Int = 1
+                                  ): Unit =
+    eventually(Timeout(Span(5, Seconds))) {
+      verify(
+        count,
+        postRequestedFor(
+          urlEqualTo(s"/registration/individual/utr/${utr.value}")
+        )
       )
     }
 
