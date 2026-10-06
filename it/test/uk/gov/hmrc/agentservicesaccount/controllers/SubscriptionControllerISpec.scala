@@ -139,6 +139,7 @@ with AgentAuthStubs:
       response.body[String] should include("Postcode is required for subscription requests in UK")
       repository.coll.find().headOption().futureValue shouldBe None
 
+//    TODO: 12392 Implement
     "return 200 for SA regime - hipGetRegistrationIsEnabled false" in:
       isLoggedInAsASAgent(testArn)
 
@@ -151,6 +152,7 @@ with AgentAuthStubs:
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(SA)
       repository.coll.find().headOption().futureValue.map(_.item.entityType) shouldBe Some(AgentEntityType.SoleTrader)
 
+//    TODO: 12392 Implement
     "return 200 for CT regime - hipGetRegistrationIsEnabled false" in:
       isLoggedInAsASAgent(testArn)
 
@@ -163,6 +165,7 @@ with AgentAuthStubs:
       repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(CT)
       repository.coll.find().headOption().futureValue.map(_.item.entityType) shouldBe Some(AgentEntityType.Unknown)
 
+//  TODO: 12392 Implement
   "return 200 for SA regime - hipGetRegistrationIsEnabled true" in :
     isLoggedInAsASAgent(testArn)
 
@@ -175,6 +178,7 @@ with AgentAuthStubs:
     repository.coll.find().headOption().futureValue.map(_.item.regime) shouldBe Some(SA)
     repository.coll.find().headOption().futureValue.map(_.item.entityType) shouldBe Some(AgentEntityType.SoleTrader)
 
+//  TODO: 12392 Implement
   "return 200 for CT regime - hipGetRegistrationIsEnabled true" in :
     isLoggedInAsASAgent(testArn)
 
