@@ -18,21 +18,19 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
+import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR, UNPROCESSABLE_ENTITY}
 import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.helpers.CommonHeaders
-import play.api.libs.json.{JsValue, Json}
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
-import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
-import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
-import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
+import play.api.libs.json.{JsObject, JsValue, Json}
+import uk.gov.hmrc.agentservicesaccount.models.{AgentDetailsResponse, DesRegistrationOrganisation, DesRegistrationRequest, DesRegistrationResponse, HipAgentSubscriptionResponse, HipAmendPayload, HipAmendResponse}
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import play.api.libs.ws.writeableOf_JsValue
-import uk.gov.hmrc.http.{HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.{BadRequestException, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import java.net.URL
@@ -108,60 +106,46 @@ with RequestAwareLogging {
         .map(_ => response)
     }
 
-//  def getBusinessPartnerRecord(
-//                                utr: Utr
-//                              )(implicit
-//                                rh: RequestHeader
-//                              ): Future[Option[BusinessPartnerRecordResponse]] = getBusinessPartnerRecordJson(utr).map {
-//    case Some(r) =>
-//      val innerJson = (r \ "success").as[JsObject]
-//      Some(
-//        BusinessPartnerRecordResponse(
-//          organisationName = (innerJson \ "organisation" \ "organisationName").asOpt[String],
-//          agentReferenceNumber = (innerJson \ "agentReferenceNumber").asOpt[Arn],
-//          individualName = (innerJson \ "individual" \ "firstName").asOpt[String]
-//            .flatMap { firstName =>
-//              (innerJson \ "individual" \ "lastName").asOpt[String].map { lastName =>
-//                s"$firstName $lastName"
-//              }
-//            },
-//          address =
-//            (innerJson \ "address").validate[DesBusinessAddress] match {
-//              case JsSuccess(value, _) => value
-//              case JsError(_) => throw new Exception("HIP response has a bad address format")
-//            },
-//          emailAddress = (innerJson \ "agencyDetails" \ "agencyEmail")
-//            .asOpt[String]
-//            .orElse((innerJson \ "contactDetails" \ "emailAddress").asOpt[String]),
-//          primaryPhoneNumber = (innerJson \ "contactDetails" \ "primaryPhoneNumber").asOpt[String],
-//          isAnAsaAgent = (innerJson \ "isAnASAgent").as[Boolean]
-//        )
-//      )
-//    case _ => None
-//  }
+  def getBusinessPartnerRecord(utr: Utr)(implicit rh: RequestHeader): Future[Option[DesRegistrationResponse]] =
+    getBusinessPartnerRecordJson(utr).map {
+      case Some(r) =>
+        val innerJson = (r \ "success").as[JsObject]
+        Some(
+          DesRegistrationResponse(
+            isAnIndividual = (innerJson \ "isAnIndividual").as[Boolean],
+//            TODO: 12392 Rewrite this in a neater way
+            organisation = if ((innerJson \ "organisation").isDefined) {
+              Some(
+                DesRegistrationOrganisation(
+                  organisationType = (innerJson \ "organisation" \ "organisationType").asOpt[String]
+                )
+              )
+            } else None
+          )
+        )
+      case _ => None
+    }
 
-//  private def getBusinessPartnerRecordJson(
-//                                            utr: Utr
-//                                          )(implicit rh: RequestHeader): Future[Option[JsValue]] =
-//    val url: URL = url"$baseUrl/RESTAdapter/registration/UTR/${utr.value}"
-//    httpV2
-//      .post(url)
-//      .setHeader(hipHeaders*)
-//      .withBody(Json.toJson(BusinessPartnerRecordRequest(isAnAgent = false)))
-//      .execute[HttpResponse]
-//      .map { response =>
-//        response.status match {
-//          case CREATED => Some(response.json)
-//          case UNPROCESSABLE_ENTITY if isNotFound(response.json) => None
-//          case error =>
-//            throw UpstreamErrorResponse(
-//              s"[HIP-GetAgentRegistration-POST] returned status: $error",
-//              INTERNAL_SERVER_ERROR
-//            )
-//        }
-//      }
-//      .recover { case badRequest: BadRequestException => throw new Exception(s"400 Bad Request response from HIP for utr ${utr.value}", badRequest) }
+  private def getBusinessPartnerRecordJson(utr: Utr)(implicit rh: RequestHeader): Future[Option[JsValue]] =
+    val url: URL = url"$baseUrl/RESTAdapter/registration/UTR/${utr.value}"
+    httpV2
+      .post(url)
+      .setHeader(hipHeaders*)
+      .withBody(Json.toJson(DesRegistrationRequest()))
+      .execute[HttpResponse]
+      .map { response =>
+        response.status match {
+          case CREATED => Some(response.json)
+          case UNPROCESSABLE_ENTITY if isNotFound(response.json) => None
+          case error =>
+            throw UpstreamErrorResponse(
+              s"[HIP-GetAgentRegistration-POST] returned status: $error",
+              INTERNAL_SERVER_ERROR
+            )
+        }
+      }
+      .recover { case badRequest: BadRequestException => throw new Exception(s"400 Bad Request response from HIP for utr ${utr.value}", badRequest) }
 
-//  private def isNotFound(r: JsValue): Boolean = (r \ "errors" \ "code").as[String].contains("002")
+  private def isNotFound(r: JsValue): Boolean = (r \ "errors" \ "code").as[String].contains("002")
 
 }
