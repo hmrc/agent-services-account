@@ -42,6 +42,7 @@ extends RequestAwareLogging:
       record.uniqueTaxReference match
         case None => Future.successful(AgentEntityType.Overseas)
         case Some(utr) =>
+//          TODO: 12392 Need to add use of FS here
           desConnector
             .getRegistration(utr)
             .map(_.map(toEntityType).getOrElse(AgentEntityType.Unknown))
