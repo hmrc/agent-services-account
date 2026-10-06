@@ -52,7 +52,7 @@ class AppConfig @Inject() (
 
   val hipBaseUrl: String = servicesConfig.baseUrl("hip")
   val hipAuthToken: String = servicesConfig.getString("microservice.services.hip.authorization-token")
-  val hipBusinessRecordIsEnabled: Boolean = servicesConfig.getBoolean("features.hip-business-partner-record.enabled")
+  val hipGetRegistrationIsEnabled: Boolean = servicesConfig.getBoolean("features.hip-get-registration.enabled")
 
   val automapLockExpires: Duration = servicesConfig.getDuration("agent.automap.lock.expires")
   val entityChecksLockExpires: Duration = servicesConfig.getDuration("agent.entity-check.lock.expires")

@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.agentservicesaccount.services
 
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.eq as eqTo
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
 import play.api.mvc.RequestHeader
@@ -73,7 +72,7 @@ with BeforeAndAfterEach:
       verify(hipConnector).getAgentRecord(eqTo(testArn))(using any[RequestHeader])
     }
 
-    "return Overseas when the agent record has no UTR" in {
+    "return Overseas when the agent record has no UTR - hipGetRegistrationIsEnabled false" in {
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithoutUtr))
 
       service.resolve(testArn).futureValue shouldBe AgentEntityType.Overseas
@@ -101,7 +100,44 @@ with BeforeAndAfterEach:
       }
     }
 
-    "return Unknown when registration lookup returns no data" in {
+    "return Unknown when registration lookup returns no data - hipGetRegistrationIsEnabled false" in {
+      when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
+      when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader])).thenReturn(Future.successful(None))
+
+      service.resolve(testArn).futureValue shouldBe AgentEntityType.Unknown
+    }
+
+//    TODO: 12392 Implement
+    "return Overseas when the agent record has no UTR - hipGetRegistrationIsEnabled true" in {
+      when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithoutUtr))
+
+      service.resolve(testArn).futureValue shouldBe AgentEntityType.Overseas
+
+      verify(desConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
+    }
+
+    Seq(
+      "LLP" -> AgentEntityType.LimitedLiabilityPartnership,
+      "Corporate body" -> AgentEntityType.LimitedCompany,
+      "Corporate Body" -> AgentEntityType.LimitedCompany,
+      "Not Specified" -> AgentEntityType.Unknown,
+      "Unincorporated body" -> AgentEntityType.Unknown,
+      "0000" -> AgentEntityType.Unknown
+    ).foreach { case (desOrganisationType, expectedEntityType) =>
+      s"map DES organisation type '$desOrganisationType' to '$expectedEntityType'" in {
+        when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
+        when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
+          .thenReturn(Future.successful(Some(DesRegistrationResponse(
+            isAnIndividual = false,
+            organisation = Some(DesRegistrationOrganisation(Some(desOrganisationType)))
+          ))))
+
+        service.resolve(testArn).futureValue shouldBe expectedEntityType
+      }
+    }
+
+//    TODO: 12392 Implement
+    "return Unknown when registration lookup returns no data - true" in {
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
       when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader])).thenReturn(Future.successful(None))
 
