@@ -181,7 +181,7 @@ trait HipStubs {
         putRequestedFor(urlMatching(s"/etmp/RESTAdapter/generic/agent/subscription/${arn.value}"))
       )
     }
-  
+
   def givenHipGetRegistrationData(
                                    utr: Utr,
                                    isIndividual: Boolean
@@ -245,6 +245,7 @@ trait HipStubs {
       else
         registrationDataForOrganisation
     stubFor(
+//      TODO: 12392 Correct url
       post(urlEqualTo(s"/registration/individual/utr/${utr.value}"))
         .willReturn(
           aResponse()
@@ -255,6 +256,7 @@ trait HipStubs {
   }
 
   def givenHipGetRegistrationNotFound(utr: Utr): StubMapping = stubFor(
+//    TODO: 12392 Correct url
     post(urlEqualTo(s"/registration/individual/utr/${utr.value}"))
       .willReturn(
         aResponse()
@@ -270,6 +272,7 @@ trait HipStubs {
       verify(
         count,
         postRequestedFor(
+//          TODO: 12392 Correct url
           urlEqualTo(s"/registration/individual/utr/${utr.value}")
         )
       )

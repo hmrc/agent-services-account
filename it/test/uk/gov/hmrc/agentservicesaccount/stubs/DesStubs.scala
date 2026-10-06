@@ -225,7 +225,6 @@ trait DesStubs {
       )
   )
 
-//  TODO: 12392 Copy equivalent into HipStubs
   def givenDESGetRegistrationData(
     utr: Utr,
     isIndividual: Boolean
@@ -238,7 +237,6 @@ trait DesStubs {
       )
   )
 
-  //  TODO: 12392 Copy equivalent into HipStubs
   def givenDESGetRegistrationNotFound(utr: Utr): StubMapping = stubFor(
     post(urlEqualTo(s"/registration/individual/utr/${utr.value}"))
       .willReturn(
@@ -260,7 +258,6 @@ trait DesStubs {
       )
     }
 
-  //  TODO: 12392 Copy equivalent into HipStubs
   def verifyDESGetRegistrationData(
     utr: Utr,
     count: Int = 1
