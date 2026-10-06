@@ -70,6 +70,7 @@ with DataStreamStub {
 
   val utr = Utr("1234567890")
 
+//  TODO: 12392 Copy these tests and modify for HipConnector
   "DesConnector getRegistration" should {
     "post no-name-match lookup to the individual UTR path and return registration data" in {
       givenDESGetRegistrationData(utr, isIndividual = false)
