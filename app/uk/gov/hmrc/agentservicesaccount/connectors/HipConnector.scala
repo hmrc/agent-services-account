@@ -106,8 +106,8 @@ with RequestAwareLogging {
         .map(_ => response)
     }
 
-  def getBusinessPartnerRecord(utr: Utr)(implicit rh: RequestHeader): Future[Option[DesRegistrationResponse]] =
-    getBusinessPartnerRecordJson(utr).map {
+  def getRegistration(utr: Utr)(implicit rh: RequestHeader): Future[Option[DesRegistrationResponse]] =
+    getRegistrationJson(utr).map {
       case Some(r) =>
         val innerJson = (r \ "success").as[JsObject]
         Some(
@@ -126,7 +126,7 @@ with RequestAwareLogging {
       case _ => None
     }
 
-  private def getBusinessPartnerRecordJson(utr: Utr)(implicit rh: RequestHeader): Future[Option[JsValue]] =
+  private def getRegistrationJson(utr: Utr)(implicit rh: RequestHeader): Future[Option[JsValue]] =
     val url: URL = url"$baseUrl/RESTAdapter/registration/UTR/${utr.value}"
     httpV2
       .post(url)
