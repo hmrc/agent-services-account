@@ -87,7 +87,7 @@ with BeforeAndAfterEach:
       "Unincorporated body" -> AgentEntityType.Unknown,
       "0000" -> AgentEntityType.Unknown
     ).foreach { case (desOrganisationType, expectedEntityType) =>
-      s"map DES organisation type '$desOrganisationType' to '$expectedEntityType'" in {
+      s"map DES organisation type '$desOrganisationType' to '$expectedEntityType' - hipGetRegistrationIsEnabled false" in {
         when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
         when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
           .thenReturn(Future.successful(Some(DesRegistrationResponse(
@@ -123,7 +123,7 @@ with BeforeAndAfterEach:
       "Unincorporated body" -> AgentEntityType.Unknown,
       "0000" -> AgentEntityType.Unknown
     ).foreach { case (desOrganisationType, expectedEntityType) =>
-      s"map DES organisation type '$desOrganisationType' to '$expectedEntityType'" in {
+      s"map DES organisation type '$desOrganisationType' to '$expectedEntityType' - hipGetRegistrationIsEnabled true" in {
         when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
         when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
           .thenReturn(Future.successful(Some(DesRegistrationResponse(
@@ -136,7 +136,7 @@ with BeforeAndAfterEach:
     }
 
 //    TODO: 12392 Implement
-    "return Unknown when registration lookup returns no data - true" in {
+    "return Unknown when registration lookup returns no data - hipGetRegistrationIsEnabled true" in {
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
       when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader])).thenReturn(Future.successful(None))
 
