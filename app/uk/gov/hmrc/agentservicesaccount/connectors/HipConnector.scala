@@ -127,7 +127,7 @@ with RequestAwareLogging {
     }
 
   private def getRegistrationJson(utr: Utr)(implicit rh: RequestHeader): Future[Option[JsValue]] =
-    val url: URL = url"$baseUrl/RESTAdapter/registration/UTR/${utr.value}"
+    val url: URL = url"$baseUrl/etmp/RESTAdapter/registration/UTR/${utr.value}"
     httpV2
       .post(url)
       .setHeader(hipHeaders*)

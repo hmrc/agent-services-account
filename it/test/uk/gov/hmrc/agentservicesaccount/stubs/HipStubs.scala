@@ -245,8 +245,7 @@ trait HipStubs {
       else
         registrationDataForOrganisation
     stubFor(
-//      TODO: 12392 Correct url
-      post(urlEqualTo(s"/registration/individual/utr/${utr.value}"))
+      post(urlEqualTo(s"/etmp/RESTAdapter/registration/UTR/${utr.value}"))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -256,8 +255,7 @@ trait HipStubs {
   }
 
   def givenHipGetRegistrationNotFound(utr: Utr): StubMapping = stubFor(
-//    TODO: 12392 Correct url
-    post(urlEqualTo(s"/registration/individual/utr/${utr.value}"))
+    post(urlEqualTo(s"/etmp/RESTAdapter/registration/UTR/${utr.value}"))
       .willReturn(
         aResponse()
           .withStatus(404)
@@ -272,8 +270,7 @@ trait HipStubs {
       verify(
         count,
         postRequestedFor(
-//          TODO: 12392 Correct url
-          urlEqualTo(s"/registration/individual/utr/${utr.value}")
+          urlEqualTo(s"/etmp/RESTAdapter/registration/UTR/${utr.value}")
         )
       )
     }
