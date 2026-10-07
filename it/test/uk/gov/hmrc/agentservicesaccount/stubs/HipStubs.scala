@@ -22,7 +22,7 @@ import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
-import play.api.http.Status.UNPROCESSABLE_ENTITY
+import play.api.http.Status.{CREATED, UNPROCESSABLE_ENTITY}
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 
 trait HipStubs {
@@ -182,10 +182,7 @@ trait HipStubs {
       )
     }
 
-  def givenHipGetRegistrationData(
-                                   utr: Utr,
-                                   isIndividual: Boolean
-                                 ): StubMapping = {
+  def givenHipGetRegistrationData(utr: Utr, isIndividual: Boolean): StubMapping = {
     val registrationDataForOrganisation =
       s"""
          |{
@@ -252,7 +249,7 @@ trait HipStubs {
       post(urlEqualTo(s"/etmp/RESTAdapter/registration/UTR/${utr.value}"))
         .willReturn(
           aResponse()
-            .withStatus(201)
+            .withStatus(CREATED)
             .withBody(registrationData(isIndividual))
         )
     )
@@ -280,10 +277,7 @@ trait HipStubs {
     )
   }
 
-  def verifyHipGetRegistrationData(
-                                    utr: Utr,
-                                    count: Int = 1
-                                  ): Unit =
+  def verifyHipGetRegistrationData(utr: Utr, count: Int = 1): Unit =
     eventually(Timeout(Span(5, Seconds))) {
       verify(
         count,
