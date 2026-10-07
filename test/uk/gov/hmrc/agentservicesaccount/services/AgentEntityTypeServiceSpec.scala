@@ -75,6 +75,7 @@ with BeforeAndAfterEach:
     }
 
     "return Overseas when the agent record has no UTR - hipGetRegistrationIsEnabled false" in {
+      when(appConfig.hipGetRegistrationIsEnabled).thenReturn(false)
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithoutUtr))
 
       service.resolve(testArn).futureValue shouldBe AgentEntityType.Overseas
@@ -92,6 +93,7 @@ with BeforeAndAfterEach:
       "0000" -> AgentEntityType.Unknown
     ).foreach { case (desOrganisationType, expectedEntityType) =>
       s"map DES organisation type '$desOrganisationType' to '$expectedEntityType' - hipGetRegistrationIsEnabled false" in {
+        when(appConfig.hipGetRegistrationIsEnabled).thenReturn(false)
         when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
         when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
           .thenReturn(Future.successful(Some(DesRegistrationResponse(
@@ -105,6 +107,7 @@ with BeforeAndAfterEach:
     }
 
     "return Unknown when registration lookup returns no data - hipGetRegistrationIsEnabled false" in {
+      when(appConfig.hipGetRegistrationIsEnabled).thenReturn(false)
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
       when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader])).thenReturn(Future.successful(None))
       verify(hipConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
@@ -113,6 +116,7 @@ with BeforeAndAfterEach:
     }
 
     "return Overseas when the agent record has no UTR - hipGetRegistrationIsEnabled true" in {
+      when(appConfig.hipGetRegistrationIsEnabled).thenReturn(true)
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithoutUtr))
 
       service.resolve(testArn).futureValue shouldBe AgentEntityType.Overseas
@@ -129,8 +133,8 @@ with BeforeAndAfterEach:
       "Unincorporated body" -> AgentEntityType.Unknown,
       "0000" -> AgentEntityType.Unknown
     ).foreach { case (desOrganisationType, expectedEntityType) =>
-//      TODO: 12392: FIX
       s"map DES organisation type '$desOrganisationType' to '$expectedEntityType' - hipGetRegistrationIsEnabled true" in {
+        when(appConfig.hipGetRegistrationIsEnabled).thenReturn(true)
         when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
         when(hipConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
           .thenReturn(Future.successful(Some(DesRegistrationResponse(
@@ -144,6 +148,7 @@ with BeforeAndAfterEach:
     }
 
     "return Unknown when registration lookup returns no data - hipGetRegistrationIsEnabled true" in {
+      when(appConfig.hipGetRegistrationIsEnabled).thenReturn(true)
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
       when(hipConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader])).thenReturn(Future.successful(None))
       verify(desConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
