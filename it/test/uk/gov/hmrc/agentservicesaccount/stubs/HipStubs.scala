@@ -23,7 +23,6 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
-import uk.gov.hmrc.domain.TaxIdentifier
 
 trait HipStubs {
 
@@ -189,54 +188,58 @@ trait HipStubs {
     val registrationDataForOrganisation =
       s"""
          |{
-         |   "contactDetails" : {},
-         |   "organisation" : {
-         |      "organisationName" : "CT AGENT 165",
-         |      "organisationType" : "Not Specified",
-         |      "isAGroup" : false
-         |   },
-         |   "address" : {
-         |      "addressLine1" : "Matheson House 165",
-         |      "countryCode" : "GB",
-         |      "addressLine2" : "Grange Central 165",
-         |      "addressLine4" : "Shropshire 165",
-         |      "addressLine3" : "Telford 165",
-         |      "postalCode" : "TF3 4ER"
-         |   },
-         |   "isEditable" : false,
-         |   "isAnAgent" : true,
-         |   "safeId" : "XH0000100100761",
-         |   "agentReferenceNumber" : "SARN0001028",
-         |   "isAnASAgent" : true,
-         |   "isAnIndividual" : false,
-         |   "sapNumber" : "0100100761"
+         |  "success": {
+         |    "contactDetails" : {},
+         |    "organisation" : {
+         |        "organisationName" : "CT AGENT 165",
+         |       "organisationType" : "Not Specified",
+         |        "isAGroup" : false
+         |     },
+         |     "address" : {
+         |        "addressLine1" : "Matheson House 165",
+         |        "countryCode" : "GB",
+         |        "addressLine2" : "Grange Central 165",
+         |       "addressLine4" : "Shropshire 165",
+         |        "addressLine3" : "Telford 165",
+         |        "postalCode" : "TF3 4ER"
+         |     },
+         |     "isEditable" : false,
+         |    "isAnAgent" : true,
+         |    "safeId" : "XH0000100100761",
+         |    "agentReferenceNumber" : "SARN0001028",
+         |    "isAnASAgent" : true,
+         |     "isAnIndividual" : false,
+         |     "sapNumber" : "0100100761"
+         |  }
          |}
        """.stripMargin
 
     val registrationDataForIndividual =
       s"""
          |{
-         |   "isAnIndividual" : true,
-         |   "isAnASAgent" : true,
-         |   "isEditable" : false,
-         |   "isAnAgent" : true,
-         |   "contactDetails" : {},
-         |   "safeId" : "XR0000100115180",
-         |   "agentReferenceNumber" : "PARN0002156",
-         |   "individual" : {
-         |      "firstName" : "First Name QM",
-         |      "dateOfBirth" : "1992-05-10",
-         |      "lastName" : "Last Name QM"
-         |   },
-         |   "address" : {
-         |      "postalCode" : "TF3 4ER",
-         |      "addressLine4" : "AddressFour 190",
-         |      "addressLine2" : "AddressTwo 190",
-         |      "addressLine1" : "AddressOne 190",
-         |      "addressLine3" : "AddressThree 190",
-         |      "countryCode" : "GB"
-         |   },
-         |   "sapNumber" : "0100115180"
+         |  "success": {
+         |     "isAnIndividual" : true,
+         |     "isAnASAgent" : true,
+         |     "isEditable" : false,
+         |     "isAnAgent" : true,
+         |     "contactDetails" : {},
+         |    "safeId" : "XR0000100115180",
+         |    "agentReferenceNumber" : "PARN0002156",
+         |    "individual" : {
+         |        "firstName" : "First Name QM",
+         |        "dateOfBirth" : "1992-05-10",
+         |        "lastName" : "Last Name QM"
+         |     },
+         |    "address" : {
+         |        "postalCode" : "TF3 4ER",
+         |       "addressLine4" : "AddressFour 190",
+         |       "addressLine2" : "AddressTwo 190",
+         |       "addressLine1" : "AddressOne 190",
+         |       "addressLine3" : "AddressThree 190",
+         |       "countryCode" : "GB"
+         |     },
+         |     "sapNumber" : "0100115180"
+         |  }
          |}
        """.stripMargin
     def registrationData(isIndividual: Boolean) =
@@ -248,7 +251,7 @@ trait HipStubs {
       post(urlEqualTo(s"/etmp/RESTAdapter/registration/UTR/${utr.value}"))
         .willReturn(
           aResponse()
-            .withStatus(200)
+            .withStatus(201)
             .withBody(registrationData(isIndividual))
         )
     )
@@ -258,7 +261,7 @@ trait HipStubs {
     post(urlEqualTo(s"/etmp/RESTAdapter/registration/UTR/${utr.value}"))
       .willReturn(
         aResponse()
-          .withStatus(404)
+          .withStatus(422)
       )
   )
 
