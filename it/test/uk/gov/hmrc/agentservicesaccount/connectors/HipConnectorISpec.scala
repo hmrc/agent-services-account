@@ -187,8 +187,8 @@ with HipStubs {
 
   val utr = Utr("1234567890")
 
-//  TODO: 12392: Fix these tests
   "HipConnector getRegistration" should {
+//    TODO: 12392: FIX
     "post no-name-match lookup to the individual UTR path and return registration data" in {
       givenHipGetRegistrationData(utr, isIndividual = false)
 
@@ -199,6 +199,7 @@ with HipStubs {
       verifyHipGetRegistrationData(utr, 1)
     }
 
+//    TODO: 12392: FIX
     "return None when registration data is not found" in {
       givenHipGetRegistrationNotFound(utr)
 

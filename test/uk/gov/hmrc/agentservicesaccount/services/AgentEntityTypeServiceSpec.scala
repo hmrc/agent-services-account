@@ -129,6 +129,7 @@ with BeforeAndAfterEach:
       "Unincorporated body" -> AgentEntityType.Unknown,
       "0000" -> AgentEntityType.Unknown
     ).foreach { case (desOrganisationType, expectedEntityType) =>
+//      TODO: 12392: FIX
       s"map DES organisation type '$desOrganisationType' to '$expectedEntityType' - hipGetRegistrationIsEnabled true" in {
         when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
         when(hipConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
