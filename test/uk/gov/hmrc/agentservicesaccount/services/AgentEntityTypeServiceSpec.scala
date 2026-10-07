@@ -80,6 +80,7 @@ with BeforeAndAfterEach:
       service.resolve(testArn).futureValue shouldBe AgentEntityType.Overseas
 
       verify(desConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
+      verify(hipConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
     }
 
     Seq(
@@ -97,6 +98,7 @@ with BeforeAndAfterEach:
             isAnIndividual = false,
             organisation = Some(DesRegistrationOrganisation(Some(desOrganisationType)))
           ))))
+        verify(hipConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
 
         service.resolve(testArn).futureValue shouldBe expectedEntityType
       }
@@ -105,17 +107,18 @@ with BeforeAndAfterEach:
     "return Unknown when registration lookup returns no data - hipGetRegistrationIsEnabled false" in {
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
       when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader])).thenReturn(Future.successful(None))
+      verify(hipConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
 
       service.resolve(testArn).futureValue shouldBe AgentEntityType.Unknown
     }
 
-//    TODO: 12392 Implement
     "return Overseas when the agent record has no UTR - hipGetRegistrationIsEnabled true" in {
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithoutUtr))
 
       service.resolve(testArn).futureValue shouldBe AgentEntityType.Overseas
 
       verify(desConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
+      verify(hipConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
     }
 
     Seq(
@@ -128,20 +131,21 @@ with BeforeAndAfterEach:
     ).foreach { case (desOrganisationType, expectedEntityType) =>
       s"map DES organisation type '$desOrganisationType' to '$expectedEntityType' - hipGetRegistrationIsEnabled true" in {
         when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
-        when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
+        when(hipConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
           .thenReturn(Future.successful(Some(DesRegistrationResponse(
             isAnIndividual = false,
             organisation = Some(DesRegistrationOrganisation(Some(desOrganisationType)))
           ))))
+        verify(desConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
 
         service.resolve(testArn).futureValue shouldBe expectedEntityType
       }
     }
 
-//    TODO: 12392 Implement
     "return Unknown when registration lookup returns no data - hipGetRegistrationIsEnabled true" in {
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
-      when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader])).thenReturn(Future.successful(None))
+      when(hipConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader])).thenReturn(Future.successful(None))
+      verify(desConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
 
       service.resolve(testArn).futureValue shouldBe AgentEntityType.Unknown
     }
