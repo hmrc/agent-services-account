@@ -22,6 +22,7 @@ import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
+import play.api.http.Status.UNPROCESSABLE_ENTITY
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 
 trait HipStubs {
@@ -257,13 +258,27 @@ trait HipStubs {
     )
   }
 
-  def givenHipGetRegistrationNotFound(utr: Utr): StubMapping = stubFor(
-    post(urlEqualTo(s"/etmp/RESTAdapter/registration/UTR/${utr.value}"))
-      .willReturn(
-        aResponse()
-          .withStatus(422)
-      )
-  )
+  def givenHipGetRegistrationNotFound(utr: Utr): StubMapping = {
+    val failureResponseBody422: String = {
+      """
+        |{
+        |  "errors": {
+        |    "code": "002",
+        |    "processingDate": "2022-01-31T09:26:17Z",
+        |    "text": "No Match"
+        |  }
+        |}
+         """.stripMargin
+    }
+    stubFor(
+      post(urlEqualTo(s"/etmp/RESTAdapter/registration/UTR/${utr.value}"))
+        .willReturn(
+          aResponse()
+            .withStatus(UNPROCESSABLE_ENTITY)
+            .withBody(failureResponseBody422)
+        )
+    )
+  }
 
   def verifyHipGetRegistrationData(
                                     utr: Utr,

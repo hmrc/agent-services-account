@@ -40,6 +40,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Try
 
 @Singleton
 class HipConnector @Inject() (
@@ -136,7 +137,7 @@ with RequestAwareLogging {
       .map { response =>
         response.status match {
           case CREATED => Some(response.json)
-          case UNPROCESSABLE_ENTITY if isNotFound(response.json) => None
+          case UNPROCESSABLE_ENTITY if isNoMatchFound(response.body) => None
           case error =>
             throw UpstreamErrorResponse(
               s"[HIP-GetAgentRegistration-POST] returned status: $error",
@@ -146,6 +147,10 @@ with RequestAwareLogging {
       }
       .recover { case badRequest: BadRequestException => throw new Exception(s"400 Bad Request response from HIP for utr ${utr.value}", badRequest) }
 
-  private def isNotFound(r: JsValue): Boolean = (r \ "errors" \ "code").as[String].contains("002")
-
+  private def isNoMatchFound(body: String): Boolean = {
+    Try(Json.parse(body))
+      .toOption
+      .flatMap(json => (json \ "errors" \ "code").asOpt[String])
+      .contains("002")
+  }
 }
