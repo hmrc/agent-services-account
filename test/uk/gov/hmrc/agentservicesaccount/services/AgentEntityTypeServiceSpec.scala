@@ -23,6 +23,7 @@ import play.api.mvc.RequestHeader
 import play.api.test.FakeRequest
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
+import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
@@ -40,10 +41,12 @@ with BeforeAndAfterEach:
 
   private val desConnector = mock[DesConnector]
   private val hipConnector = mock[HipConnector]
+  private val appConfig = mock[AppConfig]
   private val service =
     new AgentEntityTypeService(
       desConnector,
-      hipConnector
+      hipConnector,
+      appConfig
     )
 
   private val testArn = Arn("AARN0000001")
