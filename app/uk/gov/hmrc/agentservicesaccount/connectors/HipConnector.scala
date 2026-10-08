@@ -114,14 +114,8 @@ with RequestAwareLogging {
         Some(
           DesRegistrationResponse(
             isAnIndividual = (innerJson \ "isAnIndividual").as[Boolean],
-//            TODO: 12392 Rewrite this in a neater way
-            organisation = if ((innerJson \ "organisation").isDefined) {
-              Some(
-                DesRegistrationOrganisation(
-                  organisationType = (innerJson \ "organisation" \ "organisationType").asOpt[String]
-                )
-              )
-            } else None
+            organisation = (innerJson \ "organisation" \ "organisationType").asOpt[String]
+              .map(ot => DesRegistrationOrganisation(Some(ot)))
           )
         )
       case _ => None
