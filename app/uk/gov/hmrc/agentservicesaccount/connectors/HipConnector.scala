@@ -19,19 +19,20 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
 import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR, UNPROCESSABLE_ENTITY}
-import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.RequestHeader
+import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.helpers.CommonHeaders
-import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.agentservicesaccount.models.{AgentDetailsResponse, DesRegistrationOrganisation, DesRegistrationRequest, DesRegistrationResponse, HipAgentSubscriptionResponse, HipAmendPayload, HipAmendResponse}
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
-import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.http.{BadRequestException, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 
 import java.net.URL
 import java.time.temporal.ChronoUnit.SECONDS
