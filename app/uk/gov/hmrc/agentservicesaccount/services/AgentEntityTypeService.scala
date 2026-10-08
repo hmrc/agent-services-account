@@ -22,7 +22,7 @@ import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
-import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationResponse
+import uk.gov.hmrc.agentservicesaccount.models.GetRegistrationResponse
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentEntityType
 
 import javax.inject.Inject
@@ -59,7 +59,7 @@ extends RequestAwareLogging:
       AgentEntityType.Unknown
     }
 
-  private def toEntityType(response: DesRegistrationResponse): String =
+  private def toEntityType(response: GetRegistrationResponse): String =
     if response.isAnIndividual then
       AgentEntityType.SoleTrader
     else

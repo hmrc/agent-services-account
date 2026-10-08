@@ -27,8 +27,8 @@ import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
 import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
-import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationOrganisation
-import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationResponse
+import uk.gov.hmrc.agentservicesaccount.models.GetRegistrationOrganisation
+import uk.gov.hmrc.agentservicesaccount.models.GetRegistrationResponse
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentEntityType
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
 
@@ -64,7 +64,7 @@ with BeforeAndAfterEach:
     "use HIP for agent record lookup" in {
       when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
       when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
-        .thenReturn(Future.successful(Some(DesRegistrationResponse(
+        .thenReturn(Future.successful(Some(GetRegistrationResponse(
           isAnIndividual = true,
           organisation = None
         ))))
@@ -96,9 +96,9 @@ with BeforeAndAfterEach:
         when(appConfig.hipGetRegistrationIsEnabled).thenReturn(false)
         when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
         when(desConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
-          .thenReturn(Future.successful(Some(DesRegistrationResponse(
+          .thenReturn(Future.successful(Some(GetRegistrationResponse(
             isAnIndividual = false,
-            organisation = Some(DesRegistrationOrganisation(Some(desOrganisationType)))
+            organisation = Some(GetRegistrationOrganisation(Some(desOrganisationType)))
           ))))
         verify(hipConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
 
@@ -137,9 +137,9 @@ with BeforeAndAfterEach:
         when(appConfig.hipGetRegistrationIsEnabled).thenReturn(true)
         when(hipConnector.getAgentRecord(eqTo(testArn))(using any[RequestHeader])).thenReturn(Future.successful(agentRecordWithUtr))
         when(hipConnector.getRegistration(eqTo(testUtr))(using any[RequestHeader]))
-          .thenReturn(Future.successful(Some(DesRegistrationResponse(
+          .thenReturn(Future.successful(Some(GetRegistrationResponse(
             isAnIndividual = false,
-            organisation = Some(DesRegistrationOrganisation(Some(desOrganisationType)))
+            organisation = Some(GetRegistrationOrganisation(Some(desOrganisationType)))
           ))))
         verify(desConnector, never()).getRegistration(any[Utr])(using any[RequestHeader])
 

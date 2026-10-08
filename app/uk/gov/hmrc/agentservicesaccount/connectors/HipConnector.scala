@@ -25,7 +25,7 @@ import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.helpers.CommonHeaders
-import uk.gov.hmrc.agentservicesaccount.models.{AgentDetailsResponse, DesRegistrationOrganisation, DesRegistrationRequest, DesRegistrationResponse, HipAgentSubscriptionResponse, HipAmendPayload, HipAmendResponse}
+import uk.gov.hmrc.agentservicesaccount.models.{AgentDetailsResponse, GetRegistrationOrganisation, GetRegistrationRequest, GetRegistrationResponse, HipAgentSubscriptionResponse, HipAmendPayload, HipAmendResponse}
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
@@ -108,15 +108,15 @@ with RequestAwareLogging {
         .map(_ => response)
     }
 
-  def getRegistration(utr: Utr)(implicit rh: RequestHeader): Future[Option[DesRegistrationResponse]] =
+  def getRegistration(utr: Utr)(implicit rh: RequestHeader): Future[Option[GetRegistrationResponse]] =
     getRegistrationJson(utr).map {
       case Some(r) =>
         val innerJson = (r \ "success").as[JsObject]
         Some(
-          DesRegistrationResponse(
+          GetRegistrationResponse(
             isAnIndividual = (innerJson \ "isAnIndividual").as[Boolean],
             organisation = (innerJson \ "organisation" \ "organisationType").asOpt[String]
-              .map(ot => DesRegistrationOrganisation(Some(ot)))
+              .map(ot => GetRegistrationOrganisation(Some(ot)))
           )
         )
       case _ => None
@@ -127,7 +127,7 @@ with RequestAwareLogging {
     httpV2
       .post(url)
       .setHeader(hipHeaders*)
-      .withBody(Json.toJson(DesRegistrationRequest()))
+      .withBody(Json.toJson(GetRegistrationRequest()))
       .execute[HttpResponse]
       .map { response =>
         response.status match {

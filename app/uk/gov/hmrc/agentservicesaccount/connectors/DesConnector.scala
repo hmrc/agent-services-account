@@ -24,8 +24,8 @@ import play.api.mvc.RequestHeader
 import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
-import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationRequest
-import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationResponse
+import uk.gov.hmrc.agentservicesaccount.models.GetRegistrationRequest
+import uk.gov.hmrc.agentservicesaccount.models.GetRegistrationResponse
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.HttpReads.Implicits.*
@@ -60,19 +60,19 @@ with RequestAwareLogging {
   private val CorrelationId = "CorrelationId"
 
   // API #1163 / #1164 (API 1 / 4) Registration. Existing agent-subscription uses the individual path for UTR lookups.
-  def getRegistration(utr: Utr)(using request: RequestHeader): Future[Option[DesRegistrationResponse]] = {
+  def getRegistration(utr: Utr)(using request: RequestHeader): Future[Option[GetRegistrationResponse]] = {
     val url = url"$baseUrl/registration/individual/utr/${utr.value}"
-    retryFor[Option[DesRegistrationResponse]](s"GetRegistration connector post $url")(retryCondition) {
+    retryFor[Option[GetRegistrationResponse]](s"GetRegistration connector post $url")(retryCondition) {
       httpV2
         .post(url)
         .setHeader(desHeaders(
           authorizationToken,
           environment
         )*)
-        .withBody(Json.toJson(DesRegistrationRequest()))
+        .withBody(Json.toJson(GetRegistrationRequest()))
         .execute[HttpResponse]
         .flatMap {
-          case response if response.status == OK => response.as[DesRegistrationResponse].map(Some(_))
+          case response if response.status == OK => response.as[GetRegistrationResponse].map(Some(_))
           case response if response.status == NOT_FOUND => Future.successful(None)
           case response => response.error
         }
