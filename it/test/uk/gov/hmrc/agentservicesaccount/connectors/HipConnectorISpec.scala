@@ -185,4 +185,25 @@ with HipStubs {
     }
   }
 
+  val utr = Utr("1234567890")
+
+  "HipConnector getRegistration" should {
+    "post no-name-match lookup to the individual UTR path and return registration data" in {
+      givenHipGetRegistrationData(utr, isIndividual = false)
+
+      val result = hipConnector.getRegistration(utr).futureValue
+
+      result.map(_.isAnIndividual) shouldBe Some(false)
+      result.flatMap(_.organisation.flatMap(_.organisationType)) shouldBe Some("Not Specified")
+      verifyHipGetRegistrationData(utr, 1)
+    }
+
+    "return None when registration data is not found" in {
+      givenHipGetRegistrationNotFound(utr)
+
+      hipConnector.getRegistration(utr).futureValue shouldBe None
+      verifyHipGetRegistrationData(utr, 1)
+    }
+  }
+
 }

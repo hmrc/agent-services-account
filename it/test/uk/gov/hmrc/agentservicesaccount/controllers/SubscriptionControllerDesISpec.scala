@@ -42,7 +42,7 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus.PermanentlyFailed
 import java.util.UUID
 import org.scalatest.OptionValues.*
 
-class SubscriptionControllerISpec
+class SubscriptionControllerDesISpec
 extends ComponentSpecHelper
 with AgentEpayeRegistrationStubs
 with AgentMappingStubs
@@ -56,6 +56,10 @@ with AgentAuthStubs:
   override def beforeEach(): Unit =
     repository.coll.drop().head().futureValue
     super.beforeEach()
+
+  override def extraConfig: Map[String, Any] = Map(
+    "features.hip-get-registration.enabled" -> "false"
+  )
 
   val testArn = Arn("AARN0000001")
   val testUtr = Utr("7000000002")

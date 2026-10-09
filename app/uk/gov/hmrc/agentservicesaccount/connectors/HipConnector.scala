@@ -18,22 +18,21 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
-import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
+import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR, UNPROCESSABLE_ENTITY}
 import play.api.mvc.RequestHeader
-import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.ws.writeableOf_JsValue
+import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.helpers.CommonHeaders
-import play.api.libs.json.Json
-import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
-import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
-import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
-import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
+import uk.gov.hmrc.agentservicesaccount.models.{AgentDetailsResponse, GetRegistrationOrganisation, GetRegistrationRequest, GetRegistrationResponse, HipAgentSubscriptionResponse, HipAmendPayload, HipAmendResponse}
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
+import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
-import play.api.libs.ws.writeableOf_JsValue
-import uk.gov.hmrc.http.StringContextOps
+import uk.gov.hmrc.http.{BadRequestException, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 
 import java.net.URL
 import java.time.temporal.ChronoUnit.SECONDS
@@ -42,6 +41,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Try
 
 @Singleton
 class HipConnector @Inject() (
@@ -108,4 +108,44 @@ with RequestAwareLogging {
         .map(_ => response)
     }
 
+  def getRegistration(utr: Utr)(implicit rh: RequestHeader): Future[Option[GetRegistrationResponse]] =
+    getRegistrationJson(utr).map {
+      case Some(r) =>
+        val innerJson = (r \ "success").as[JsObject]
+        Some(
+          GetRegistrationResponse(
+            isAnIndividual = (innerJson \ "isAnIndividual").as[Boolean],
+            organisation = (innerJson \ "organisation" \ "organisationType").asOpt[String]
+              .map(ot => GetRegistrationOrganisation(Some(ot)))
+          )
+        )
+      case _ => None
+    }
+
+  private def getRegistrationJson(utr: Utr)(implicit rh: RequestHeader): Future[Option[JsValue]] =
+    val url: URL = url"$baseUrl/etmp/RESTAdapter/registration/UTR/${utr.value}"
+    httpV2
+      .post(url)
+      .setHeader(hipHeaders*)
+      .withBody(Json.toJson(GetRegistrationRequest()))
+      .execute[HttpResponse]
+      .map { response =>
+        response.status match {
+          case CREATED => Some(response.json)
+          case UNPROCESSABLE_ENTITY if isNoMatchFound(response.body) => None
+          case error =>
+            throw UpstreamErrorResponse(
+              s"[HIP-GetAgentRegistration-POST] returned status: $error",
+              INTERNAL_SERVER_ERROR
+            )
+        }
+      }
+      .recover { case badRequest: BadRequestException => throw new Exception(s"400 Bad Request response from HIP for utr ${utr.value}", badRequest) }
+
+  private def isNoMatchFound(body: String): Boolean = {
+    Try(Json.parse(body))
+      .toOption
+      .flatMap(json => (json \ "errors" \ "code").asOpt[String])
+      .contains("002")
+  }
 }

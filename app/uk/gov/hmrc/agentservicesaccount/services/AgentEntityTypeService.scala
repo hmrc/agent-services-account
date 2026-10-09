@@ -19,9 +19,10 @@ package uk.gov.hmrc.agentservicesaccount.services
 import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import play.api.mvc.RequestHeader
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.DesConnector
 import uk.gov.hmrc.agentservicesaccount.connectors.HipConnector
-import uk.gov.hmrc.agentservicesaccount.models.DesRegistrationResponse
+import uk.gov.hmrc.agentservicesaccount.models.GetRegistrationResponse
 import uk.gov.hmrc.agentservicesaccount.models.subscription.AgentEntityType
 
 import javax.inject.Inject
@@ -33,7 +34,8 @@ import scala.util.control.NonFatal
 @Singleton
 class AgentEntityTypeService @Inject() (
   desConnector: DesConnector,
-  hipConnector: HipConnector
+  hipConnector: HipConnector,
+  appConfig: AppConfig
 )(using ec: ExecutionContext)
 extends RequestAwareLogging:
 
@@ -42,16 +44,22 @@ extends RequestAwareLogging:
       record.uniqueTaxReference match
         case None => Future.successful(AgentEntityType.Overseas)
         case Some(utr) =>
-          desConnector
-            .getRegistration(utr)
-            .map(_.map(toEntityType).getOrElse(AgentEntityType.Unknown))
+          if (appConfig.hipGetRegistrationIsEnabled) {
+            hipConnector
+              .getRegistration(utr)
+              .map(_.map(toEntityType).getOrElse(AgentEntityType.Unknown))
+          } else {
+            desConnector
+              .getRegistration(utr)
+              .map(_.map(toEntityType).getOrElse(AgentEntityType.Unknown))
+          }
     }
     .recover { case NonFatal(error) =>
       logger.warn(s"[AgentEntityTypeService] Failed to resolve entity type for ARN ${arn.value}", error)
       AgentEntityType.Unknown
     }
 
-  private def toEntityType(response: DesRegistrationResponse): String =
+  private def toEntityType(response: GetRegistrationResponse): String =
     if response.isAnIndividual then
       AgentEntityType.SoleTrader
     else

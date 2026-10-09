@@ -18,26 +18,26 @@ package uk.gov.hmrc.agentservicesaccount.models
 
 import play.api.libs.json.*
 
-case class DesRegistrationRequest(
+case class GetRegistrationRequest(
   regime: String = "ITSA",
   requiresNameMatch: Boolean = false,
   isAnAgent: Boolean = false
 )
 
-object DesRegistrationRequest:
-  given OFormat[DesRegistrationRequest] = Json.format
+object GetRegistrationRequest:
+  given OFormat[GetRegistrationRequest] = Json.format
 
-case class DesRegistrationOrganisation(
+case class GetRegistrationOrganisation(
   organisationType: Option[String]
 )
 
-object DesRegistrationOrganisation:
-  given Reads[DesRegistrationOrganisation] = (__ \ "organisationType").readNullable[String].map(DesRegistrationOrganisation.apply)
+object GetRegistrationOrganisation:
+  given Reads[GetRegistrationOrganisation] = (__ \ "organisationType").readNullable[String].map(GetRegistrationOrganisation.apply)
 
-case class DesRegistrationResponse(
+case class GetRegistrationResponse(
   isAnIndividual: Boolean,
-  organisation: Option[DesRegistrationOrganisation]
+  organisation: Option[GetRegistrationOrganisation]
 )
 
-object DesRegistrationResponse:
-  given Reads[DesRegistrationResponse] = Json.reads
+object GetRegistrationResponse:
+  given Reads[GetRegistrationResponse] = Json.reads
