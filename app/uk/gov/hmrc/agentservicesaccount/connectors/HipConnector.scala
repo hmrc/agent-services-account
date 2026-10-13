@@ -76,12 +76,12 @@ with RequestAwareLogging {
     retryFor[HipAgentSubscriptionResponse](s"HIP get $url")(retryCondition) {
       httpV2
         .get(url)
-        .setHeader(hipHeaders*)
+        .setHeader(hipHeaders()*)
         .executeAndDeserialise[HipAgentSubscriptionResponse]
     }
   }
 
-  private def hipHeaders(using request: RequestHeader): Seq[(String, String)] = {
+  private def hipHeaders(originatingSystem: String = originatingSystem)(using request: RequestHeader): Seq[(String, String)] = {
     CommonHeaders() ++ Seq(
       "Authorization" -> s"Basic $authToken",
       "correlationid" -> UUID.randomUUID().toString,
@@ -100,7 +100,7 @@ with RequestAwareLogging {
       httpV2
         .put(url)
         .withBody(Json.toJson(payload))
-        .setHeader(hipHeaders*)
+        .setHeader(hipHeaders()*)
         .executeAndDeserialise[HipAmendResponse]
     }.flatMap { response =>
       agentCacheProvider.agentDetailsCache.delete(key = arn.value)
@@ -126,7 +126,7 @@ with RequestAwareLogging {
     val url: URL = url"$baseUrl/etmp/RESTAdapter/registration/UTR/${utr.value}"
     httpV2
       .post(url)
-      .setHeader(hipHeaders*)
+      .setHeader(hipHeaders(originatingSystem = "MDTP")*)
       .withBody(Json.toJson(GetRegistrationRequest()))
       .execute[HttpResponse]
       .map { response =>
