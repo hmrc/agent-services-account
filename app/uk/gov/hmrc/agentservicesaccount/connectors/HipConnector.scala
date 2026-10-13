@@ -56,6 +56,8 @@ with RequestAwareLogging {
 
   private val baseUrl = appConfig.hipBaseUrl
   private val authToken = appConfig.hipAuthToken
+  private val originatingSystem = "MDTP-ASA"
+  private val transmittingSystem = "HIP"
 
   def getAgentRecord(arn: Arn)(using request: RequestHeader): Future[AgentDetailsResponse] = {
 
@@ -79,13 +81,13 @@ with RequestAwareLogging {
     }
   }
 
-  private def hipHeaders(originatingSystem: String = "MDTP-ASA")(using request: RequestHeader): Seq[(String, String)] = {
+  private def hipHeaders(originatingSystem: String = originatingSystem)(using request: RequestHeader): Seq[(String, String)] = {
     CommonHeaders() ++ Seq(
       "Authorization" -> s"Basic $authToken",
       "correlationid" -> UUID.randomUUID().toString,
       "X-Originating-System" -> originatingSystem,
       "X-Receipt-Date" -> java.time.Instant.now().truncatedTo(SECONDS).toString,
-      "X-Transmitting-System" -> "HIP"
+      "X-Transmitting-System" -> transmittingSystem
     )
   }
 
