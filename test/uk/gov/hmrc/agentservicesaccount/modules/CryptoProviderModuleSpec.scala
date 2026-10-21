@@ -20,9 +20,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
-import uk.gov.hmrc.crypto.Crypted
-import uk.gov.hmrc.crypto.PlainBytes
-import uk.gov.hmrc.crypto.PlainText
+import uk.gov.hmrc.crypto.{Crypted, PlainBytes, PlainText, SymmetricCryptoFactory}
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -33,7 +31,7 @@ extends UnitSpec {
   def configuration(fieldLevelEncryptionEnabled: Boolean) = Configuration(
     ConfigFactory.parseString(s"""fieldLevelEncryption {
                                  |  enable = $fieldLevelEncryptionEnabled
-                                 |  key = "1xC9CogNovnCIAGEFzfJy5b3jjS+7616IxLoj3wm2Yejx/yy"
+                                 |  key = "hWmZq3t6w9zrCeF5JiNcRfUjXn2r5u7x"
                                  |}
                                  |""".stripMargin)
   )
@@ -46,6 +44,28 @@ extends UnitSpec {
     "provide a no-op crypto instance if field-level encryption is disabled in config" in {
       val x = new CryptoProviderModule().aesCryptoInstance(configuration(fieldLevelEncryptionEnabled = false))
       x shouldBe a[NoCrypto]
+    }
+  }
+
+  "aesCryptoInstance" should {
+    "encrypt new values with AES-GCM from field level encryption config" in {
+      val crypto = new CryptoProviderModule().aesCryptoInstance(configuration(fieldLevelEncryptionEnabled = true))
+      val firstEncrypted = crypto.encrypt(PlainText("user-answer"))
+      val secondEncrypted = crypto.encrypt(PlainText("user-answer"))
+      firstEncrypted.value should not be "user-answer"
+      secondEncrypted.value should not be "user-answer"
+      firstEncrypted should not be secondEncrypted
+      crypto.decrypt(firstEncrypted).value shouldBe "user-answer"
+      crypto.decrypt(secondEncrypted).value shouldBe "user-answer"
+    }
+
+    "decrypt old AES values using the same field level encryption key as fallback" in {
+      val oldAesCrypto = SymmetricCryptoFactory.aesCrypto(configuration(fieldLevelEncryptionEnabled = true).get("fieldLevelEncryption.key"))
+      val oldAesEncrypted = oldAesCrypto.encrypt(PlainText("pre-migration-answer"))
+
+      val crypto = new CryptoProviderModule().aesCryptoInstance(configuration(fieldLevelEncryptionEnabled = true))
+
+      crypto.decrypt(oldAesEncrypted).value shouldBe "pre-migration-answer"
     }
   }
 
