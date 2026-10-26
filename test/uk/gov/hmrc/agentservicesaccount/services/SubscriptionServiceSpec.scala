@@ -124,7 +124,7 @@ with BeforeAndAfterEach {
     )
   private val agentEntityTypeService = mock[AgentEntityTypeService]
 
-  given Encrypter & Decrypter = SymmetricCryptoFactory.aesCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
+  given Encrypter & Decrypter = SymmetricCryptoFactory.aesGcmCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   private val repoConfig = ConfigFactory.parseString(

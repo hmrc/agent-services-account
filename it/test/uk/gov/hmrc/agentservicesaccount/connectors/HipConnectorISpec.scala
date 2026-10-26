@@ -37,7 +37,7 @@ import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepositor
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.stubs.HipStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
-import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
+import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesGcmCrypto
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.crypto.PlainText
@@ -68,8 +68,8 @@ with HipStubs {
   private implicit lazy val as: ActorSystem = ActorSystem()
 
   private implicit val crypto: Encrypter
-    & Decrypter = aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
-  
+    & Decrypter = aesGcmCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
+
   lazy val agentDataCache =
     new AgencyDetailsCacheRepository(
       app.injector.instanceOf[Configuration],
