@@ -20,7 +20,10 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import uk.gov.hmrc.agentservicesaccount.utils.UnitSpec
-import uk.gov.hmrc.crypto.{Crypted, PlainBytes, PlainText, SymmetricCryptoFactory}
+import uk.gov.hmrc.crypto.Crypted
+import uk.gov.hmrc.crypto.PlainBytes
+import uk.gov.hmrc.crypto.PlainText
+import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64

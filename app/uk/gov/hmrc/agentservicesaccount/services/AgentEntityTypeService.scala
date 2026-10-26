@@ -48,7 +48,8 @@ extends RequestAwareLogging:
             hipConnector
               .getRegistration(utr)
               .map(_.map(toEntityType).getOrElse(AgentEntityType.Unknown))
-          } else {
+          }
+          else {
             desConnector
               .getRegistration(utr)
               .map(_.map(toEntityType).getOrElse(AgentEntityType.Unknown))

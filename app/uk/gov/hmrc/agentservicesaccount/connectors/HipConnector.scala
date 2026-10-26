@@ -18,19 +18,33 @@ package uk.gov.hmrc.agentservicesaccount.connectors
 
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
-import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR, UNPROCESSABLE_ENTITY}
+import play.api.http.Status.CREATED
+import play.api.http.Status.INTERNAL_SERVER_ERROR
+import play.api.http.Status.UNPROCESSABLE_ENTITY
 import play.api.mvc.RequestHeader
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 import play.api.libs.ws.writeableOf_JsValue
-import uk.gov.hmrc.agentmtdidentifiers.model.{Arn, Utr}
+import uk.gov.hmrc.agentmtdidentifiers.model.Arn
+import uk.gov.hmrc.agentmtdidentifiers.model.Utr
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
 import uk.gov.hmrc.agentservicesaccount.connectors.helpers.CommonHeaders
-import uk.gov.hmrc.agentservicesaccount.models.{AgentDetailsResponse, GetRegistrationOrganisation, GetRegistrationRequest, GetRegistrationResponse, HipAgentSubscriptionResponse, HipAmendPayload, HipAmendResponse}
+import uk.gov.hmrc.agentservicesaccount.models.AgentDetailsResponse
+import uk.gov.hmrc.agentservicesaccount.models.GetRegistrationOrganisation
+import uk.gov.hmrc.agentservicesaccount.models.GetRegistrationRequest
+import uk.gov.hmrc.agentservicesaccount.models.GetRegistrationResponse
+import uk.gov.hmrc.agentservicesaccount.models.HipAgentSubscriptionResponse
+import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload
+import uk.gov.hmrc.agentservicesaccount.models.HipAmendResponse
 import uk.gov.hmrc.agentservicesaccount.models.HipAmendPayload.given
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.utils.RequestAwareLogging
 import uk.gov.hmrc.agentservicesaccount.utils.RequestSupport.given
-import uk.gov.hmrc.http.{BadRequestException, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.BadRequestException
+import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.StringContextOps
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 
@@ -108,19 +122,18 @@ with RequestAwareLogging {
         .map(_ => response)
     }
 
-  def getRegistration(utr: Utr)(implicit rh: RequestHeader): Future[Option[GetRegistrationResponse]] =
-    getRegistrationJson(utr).map {
-      case Some(r) =>
-        val innerJson = (r \ "success").as[JsObject]
-        Some(
-          GetRegistrationResponse(
-            isAnIndividual = (innerJson \ "isAnIndividual").as[Boolean],
-            organisation = (innerJson \ "organisation" \ "organisationType").asOpt[String]
-              .map(ot => GetRegistrationOrganisation(Some(ot)))
-          )
+  def getRegistration(utr: Utr)(implicit rh: RequestHeader): Future[Option[GetRegistrationResponse]] = getRegistrationJson(utr).map {
+    case Some(r) =>
+      val innerJson = (r \ "success").as[JsObject]
+      Some(
+        GetRegistrationResponse(
+          isAnIndividual = (innerJson \ "isAnIndividual").as[Boolean],
+          organisation = (innerJson \ "organisation" \ "organisationType").asOpt[String]
+            .map(ot => GetRegistrationOrganisation(Some(ot)))
         )
-      case _ => None
-    }
+      )
+    case _ => None
+  }
 
   private def getRegistrationJson(utr: Utr)(implicit rh: RequestHeader): Future[Option[JsValue]] =
     val url: URL = url"$baseUrl/etmp/RESTAdapter/registration/UTR/${utr.value}"
@@ -148,4 +161,5 @@ with RequestAwareLogging {
       .flatMap(json => (json \ "errors" \ "code").asOpt[String])
       .contains("002")
   }
+
 }

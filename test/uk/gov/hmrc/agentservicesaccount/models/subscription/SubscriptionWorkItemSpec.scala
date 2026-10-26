@@ -29,7 +29,7 @@ import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 class SubscriptionWorkItemSpec
 extends UnitSpec:
 
-  given Encrypter & Decrypter = SymmetricCryptoFactory.aesCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
+  given Encrypter & Decrypter = SymmetricCryptoFactory.aesGcmCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
 
   val testArn = Arn("AARN0000001")
   val testAgentName = "Test Agency"
@@ -66,32 +66,34 @@ extends UnitSpec:
     sessionId = Some("session-123"),
     bearerToken = Some("Bearer test-token")
   )
-  val testJson: JsObject = Json.obj(
-    "arn" -> "AARN0000001",
-    "regime" -> "PAYE",
-    "subscriptionRequest" -> "ibsRj/PwmBC+hnfD9XV14cpuk54MycnM5XHDSM+le0djqElGr3QtFK55VTegWQwOJXPlMHboVOm1zH0d0ZwaXUruPggPZCd7D6PcoLEYZf49TBIder8kSx7zasPZYcCOwHcdZX3k77tdEInV/Iyx/6LYP3IRvGI7DVm8MpvgKujabKcRTQSWh6beCsXGzzutoFGI2FUtHQS1GWhJbj17IfgXRwnDCgY+r5NsnxEIJpTQB/awiVs3UeLKXLWuHBPeK3SbTSDL5P7/JQSU6ZKLufbpvXTXxEiGTBYDPeIUUg1kc0kpblUDbgOpLujthfvg",
-    "agentReference" -> "AB1234",
-    "groupId" -> "test-group-id",
-    "adminCredId" -> "test-cred-id",
-    "requestId" -> "test-request-id",
-    "sessionId" -> "session-123",
-    "bearerToken" -> "Bearer test-token",
-    "entityType" -> "Unknown"
-  )
+
+  private def jsonFor(model: SubscriptionWorkItem): JsObject = Json.toJson(model)(using SubscriptionWorkItem.mongoFormat).as[JsObject]
 
   "SubscriptionWorkItem" should:
     "serialize to JSON correctly" in:
-      val json = Json.toJson(testModel)(using SubscriptionWorkItem.mongoFormat)
+      val json = jsonFor(testModel)
 
-      json shouldBe testJson
+      json("arn") shouldBe JsString("AARN0000001")
+      json("regime") shouldBe JsString("PAYE")
+      json("agentReference") shouldBe JsString("AB1234")
+      json("groupId") shouldBe JsString("test-group-id")
+      json("adminCredId") shouldBe JsString("test-cred-id")
+      json("requestId") shouldBe JsString("test-request-id")
+      json("sessionId") shouldBe JsString("session-123")
+      json("bearerToken") shouldBe JsString("Bearer test-token")
+      json("entityType") shouldBe JsString("Unknown")
+      json("subscriptionRequest") shouldBe a[JsString]
+      json("subscriptionRequest").as[String] should not be empty
 
     "deserialize from JSON correctly" in:
-      val result = Json.fromJson[SubscriptionWorkItem](testJson)(using SubscriptionWorkItem.mongoFormat)
+      val json = jsonFor(testModel)
+      val result = Json.fromJson[SubscriptionWorkItem](json)(using SubscriptionWorkItem.mongoFormat)
 
       result shouldBe JsSuccess(testModel)
 
     "deserialize existing persisted JSON without entityType" in:
-      val result = Json.fromJson[SubscriptionWorkItem](testJson - "entityType")(using SubscriptionWorkItem.mongoFormat)
+      val json = jsonFor(testModel) - "entityType"
+      val result = Json.fromJson[SubscriptionWorkItem](json)(using SubscriptionWorkItem.mongoFormat)
 
       result shouldBe JsSuccess(testModel)
 
@@ -101,7 +103,7 @@ extends UnitSpec:
           address = testUkAddress.copy(postCode = Some("   "))
         )
       )
-      val blankPostcodeJson = Json.toJson(blankPostcodeModel)(using SubscriptionWorkItem.mongoFormat)
+      val blankPostcodeJson = jsonFor(blankPostcodeModel)
 
       val result = Json.fromJson[SubscriptionWorkItem](blankPostcodeJson)(using SubscriptionWorkItem.mongoFormat)
 

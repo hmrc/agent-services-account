@@ -78,7 +78,9 @@ extends RequestAwareLogging {
             regime = item.regime,
             failureReason = reason
           )
-          _ = logger.warn(s"[OrphanedWorkItemCleanupService] Marked work item permanently failed as it did not receive a callback for too long: ${workItem.item.requestId}")
+          _ = logger.warn(
+            s"[OrphanedWorkItemCleanupService] Marked work item permanently failed as it did not receive a callback for too long: ${workItem.item.requestId}"
+          )
           _ <- subscriptionEmailService.sendFailureEmailIgnoreErrors(item)
         } yield Done
       case false =>

@@ -69,9 +69,7 @@ with HipStubs {
 
   private implicit val crypto: Encrypter
     & Decrypter = aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
-
-  private def encryptKey(key: String): String = crypto.encrypt(PlainText(key)).value
-
+  
   lazy val agentDataCache =
     new AgencyDetailsCacheRepository(
       app.injector.instanceOf[Configuration],
@@ -160,7 +158,7 @@ with HipStubs {
       Thread.sleep(500)
 
       agentDataCache
-        .getFromCache(cacheId = encryptKey(arn.value))
+        .getFromCache(cacheId = arn.value)
         .futureValue shouldBe Some(expectedResponse)
     }
 

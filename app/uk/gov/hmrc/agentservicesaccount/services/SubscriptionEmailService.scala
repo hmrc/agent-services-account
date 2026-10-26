@@ -31,7 +31,7 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 @Singleton
-class SubscriptionEmailService @Inject()(
+class SubscriptionEmailService @Inject() (
   emailConnector: EmailConnector
 )(using ec: ExecutionContext)
 extends RequestAwareLogging {
@@ -49,9 +49,7 @@ extends RequestAwareLogging {
   def sendCompletionEmailIgnoreErrors(
     workItem: SubscriptionWorkItem
   )(using RequestHeader): Future[Unit] = sendCompletionEmail(workItem)
-    .recover { case NonFatal(error) =>
-      logger.warn(s"[SubscriptionEmailService] Failed to send completion email for request ${workItem.requestId}", error)
-    }
+    .recover { case NonFatal(error) => logger.warn(s"[SubscriptionEmailService] Failed to send completion email for request ${workItem.requestId}", error) }
 
   private def sendFailureEmail(
     workItem: SubscriptionWorkItem
