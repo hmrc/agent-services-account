@@ -18,7 +18,6 @@ package uk.gov.hmrc.agentservicesaccount.modules
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-
 import play.api.inject.Binding
 import play.api.inject.Module
 import play.api.Configuration
@@ -34,18 +33,29 @@ import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 class CryptoProviderModule
 extends Module {
 
-  def aesCryptoInstance(configuration: Configuration): Encrypter & Decrypter =
-    if (configuration.underlying.getBoolean("fieldLevelEncryption.enable"))
-      SymmetricCryptoFactory.aesCryptoFromConfig("fieldLevelEncryption", configuration.underlying)
-    else
-      NoCrypto
-
   override def bindings(
     environment: Environment,
     configuration: Configuration
   ): Seq[Binding[?]] = Seq(
     bind[Encrypter & Decrypter].qualifiedWith("aes").toInstance(aesCryptoInstance(configuration))
   )
+
+  def aesCryptoInstance(configuration: Configuration): Encrypter & Decrypter =
+    if (configuration.underlying.getBoolean("fieldLevelEncryption.enable"))
+      aesGcmCryptoWithAesFallback(configuration)
+    else
+      NoCrypto
+
+  private def aesGcmCryptoWithAesFallback(configuration: Configuration): Encrypter
+    & Decrypter = {
+    val config = configuration.underlying
+    val aesGcmKey = config.getString("fieldLevelEncryption.key")
+
+    SymmetricCryptoFactory.composeCrypto(
+      currentCrypto = SymmetricCryptoFactory.aesGcmCrypto(aesGcmKey),
+      previousDecrypters = Seq(SymmetricCryptoFactory.aesCrypto(aesGcmKey))
+    )
+  }
 
 }
 

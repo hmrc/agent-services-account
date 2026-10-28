@@ -58,7 +58,7 @@ with BeforeAndAfterEach {
 
   private given RequestHeader = NoRequest
 
-  given Encrypter & Decrypter = SymmetricCryptoFactory.aesCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
+  given Encrypter & Decrypter = SymmetricCryptoFactory.aesGcmCrypto("edkOOwt7uvzw1TXnFIN6aRVHkfWcgiOrbBvkEQvO65g=")
 
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 

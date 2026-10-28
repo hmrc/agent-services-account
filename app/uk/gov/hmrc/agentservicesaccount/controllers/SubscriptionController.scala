@@ -39,7 +39,7 @@ import uk.gov.hmrc.agentservicesaccount.services.SubscriptionService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 @Singleton
-class SubscriptionController @Inject()(
+class SubscriptionController @Inject() (
   subscriptionService: SubscriptionService,
   cc: ControllerComponents,
   authActions: AuthActions

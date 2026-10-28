@@ -74,22 +74,15 @@ with Cache[AgentDetailsResponse] {
   def apply(
     key: String
   )(body: => Future[AgentDetailsResponse])(implicit ec: ExecutionContext): Future[AgentDetailsResponse] = {
-    val encryptedKey = crypto.encrypt(PlainText(key)).value
-    getFromCache(encryptedKey).flatMap {
-      case Some(v) =>
-        record.counter(s"Count-$key-from-cache")
-        Future.successful(v)
+    getFromCache(key).flatMap {
+      case Some(v) => Future.successful(v)
       case None =>
         body.andThen {
-          case Success(v) =>
-            record.counter(s"Count-$key-from-source")
-            putCache(encryptedKey)(v).map(_ => v)
+          case Success(v) => putCache(key)(v).map(_ => v)
         }
     }
   }
 
-  override def delete(key: String)(using ec: ExecutionContext): Future[Unit] =
-    val encryptedKey = crypto.encrypt(PlainText(key)).value
-    deleteFromCache(encryptedKey)
+  override def delete(key: String)(using ec: ExecutionContext): Future[Unit] = deleteFromCache(key)
 
 }

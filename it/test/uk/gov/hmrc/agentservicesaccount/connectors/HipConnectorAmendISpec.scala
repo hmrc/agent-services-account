@@ -26,12 +26,13 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.agentmtdidentifiers.model.Arn
 import uk.gov.hmrc.agentservicesaccount.config.AppConfig
+import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesGcmCrypto
 import uk.gov.hmrc.agentservicesaccount.models.*
 import uk.gov.hmrc.agentservicesaccount.repositories.AgencyDetailsCacheRepository
 import uk.gov.hmrc.agentservicesaccount.services.CacheProvider
 import uk.gov.hmrc.agentservicesaccount.stubs.HipStubs
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
-import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
+import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesGcmCrypto
 import uk.gov.hmrc.crypto.Decrypter
 import uk.gov.hmrc.crypto.Encrypter
 import uk.gov.hmrc.http.client.HttpClientV2
@@ -61,7 +62,7 @@ with HipStubs {
   given as: ActorSystem = ActorSystem()
 
   private given (Encrypter & Decrypter) =
-    aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
+    aesGcmCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
 
   lazy val agentDataCache =
     AgencyDetailsCacheRepository(

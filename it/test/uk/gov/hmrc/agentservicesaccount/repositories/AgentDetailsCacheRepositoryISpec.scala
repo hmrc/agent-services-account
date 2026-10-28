@@ -20,12 +20,11 @@ import com.codahale.metrics.MetricRegistry
 import org.mongodb.scala.ObservableFuture
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import play.api.Configuration
-import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.agentmtdidentifiers.model.{SuspensionDetails, Utr}
 import uk.gov.hmrc.agentservicesaccount.models.{AgencyDetails, AgentDetailsResponse, BusinessAddress, UpdateStatus}
 import uk.gov.hmrc.agentservicesaccount.utils.ComponentSpecHelper
-import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesCrypto
-import uk.gov.hmrc.crypto.{Crypted, Decrypter, Encrypter, PlainText}
+import uk.gov.hmrc.crypto.SymmetricCryptoFactory.aesGcmCrypto
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.CurrentTimestampSupport
 import uk.gov.hmrc.mongo.cache.CacheItem
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
@@ -51,9 +50,7 @@ class AgentDetailsCacheRepositoryISpec
     }
 
   private implicit val crypto: Encrypter
-    & Decrypter = aesCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
-  private def encryptKey(key: String): String = crypto.encrypt(PlainText(key)).value
-  private def decryptKey(field: String): String = crypto.decrypt(Crypted(field)).value
+    & Decrypter = aesGcmCrypto("0xbYzrPV9/GmVEGazywGswm7yRYoWy2BraeJnjOUgcY=")
 
   private val agencyDetailsCacheRepository: AgencyDetailsCacheRepository =
     new AgencyDetailsCacheRepository(
@@ -96,39 +93,9 @@ class AgentDetailsCacheRepositoryISpec
     reriskStatus = None
   )
 
-  private val agentDetailsEncryptedJson: JsValue = Json.parse("""
-                                                                |{
-                                                                |  "dataKey": {
-                                                                |    "uniqueTaxReference": "dYxKUcQi7brfw2LV/jTF6Q==",
-                                                                |    "agencyDetails": {
-                                                                |      "agencyName": "Wdx+pMEDlSl5CvlEZi6MpDrLGPNjnx0XLGviZ3VCXKk=",
-                                                                |      "agencyEmail": "HsqaxGDAUITyI08IQPDg0RxkRDlJHhe7tYcQPq70wz8=",
-                                                                |      "agencyTelephone": "vxQ+sLG39lJBSyQcAmLLEg==",
-                                                                |      "agencyAddress": {
-                                                                |        "addressLine1": "dSa/QR2l10hGIhYZBl0nRg==",
-                                                                |        "addressLine2": "vCy7qMC2hQ6E1M+TAkldhkif+6omWtQ7ge93+XqTuUQ=",
-                                                                |        "addressLine3": "vCy7qMC2hQ6E1M+TAkldhkzV5LrzZyjqwSUyFZ6PcPQ=",
-                                                                |        "addressLine4": "vCy7qMC2hQ6E1M+TAkldhhD6UE6fqfY3hml1fQwr/OU=",
-                                                                |        "postalCode": "tnJ/JZ8+U+FQ2CWid13eHw==",
-                                                                |        "countryCode": "h87BRos/A2asGKgzRou3Sg=="
-                                                                |      }
-                                                                |    },
-                                                                |    "suspensionDetails": {
-                                                                |      "suspensionStatus": true,
-                                                                |      "regimes": [
-                                                                |        "ALL"
-                                                                |      ]
-                                                                |    },
-                                                                |    "isAnIndividual": true,
-                                                                |    "updateDetailsStatus" : "ACCEPTED",
-                                                                |    "amlSupervisionUpdateStatus" : "REJECTED",
-                                                                |    "directorPartnerUpdateStatus": "REQUIRED",
-                                                                |    "acceptNewTermsStatus": "PENDING"
-                                                                |  }
-                                                                |}
-                                                                |""".stripMargin)
+  private def decryptCachedData(cacheItem: CacheItem): AgentDetailsResponse =
+    (cacheItem.data \ "dataKey").validate[AgentDetailsResponse](using agencyDetailsCacheRepository.format).get
 
-  private def encryptedCacheId(key: String): String = encryptKey(key)
 
   "AgencyDetailsCacheRepository" when {
     "key does not exist in cache" should {
@@ -143,21 +110,20 @@ class AgentDetailsCacheRepositoryISpec
           agencyDetailsCacheRepository.cacheRepo.collection.find().toFuture().futureValue.size shouldBe 1
         }
 
-        val cachedResult = agencyDetailsCacheRepository.getFromCache(encryptedCacheId("agent-2")).futureValue
+        val cachedResult = agencyDetailsCacheRepository.getFromCache("agent-2").futureValue
         cachedResult shouldBe Some(agencyDetailsResponse)
 
         val cacheItem: CacheItem = agencyDetailsCacheRepository.cacheRepo.
           collection.find()
           .toFuture().futureValue.head
-        cacheItem.data shouldBe agentDetailsEncryptedJson
-        cacheItem.id shouldBe encryptedCacheId("agent-2")
-        decryptKey(cacheItem.id) shouldBe "agent-2"
+        decryptCachedData(cacheItem) shouldBe agencyDetailsResponse
+        cacheItem.id shouldBe "agent-2"
       }
     }
 
     "key exists in cache" should {
       "return the cached data" in {
-        agencyDetailsCacheRepository.putCache(cacheId = encryptedCacheId("agent-1"))(agencyDetailsResponse).futureValue
+        agencyDetailsCacheRepository.putCache(cacheId = "agent-1")(agencyDetailsResponse).futureValue
 
         val result: AgentDetailsResponse =
           agencyDetailsCacheRepository("agent-1")(Future.failed(throw new RuntimeException("Should not be called"))).futureValue
@@ -165,8 +131,8 @@ class AgentDetailsCacheRepositoryISpec
         result shouldBe agencyDetailsResponse
 
         val cacheItem: CacheItem = agencyDetailsCacheRepository.cacheRepo.collection.find().toFuture().futureValue.head
-        cacheItem.data shouldBe agentDetailsEncryptedJson
-        cacheItem.id shouldBe encryptedCacheId("agent-1")
+        decryptCachedData(cacheItem) shouldBe agencyDetailsResponse
+        cacheItem.id shouldBe "agent-1"
       }
     }
   }
